@@ -382,4 +382,53 @@ class QueryBuilder
     {
         $this->bind('limit', [$count]);
     }
+
+    // TODO
+    protected function whenClauseBinder(bool $value, callable $callback, callable|null $else)
+    {
+        if ($value) {
+            $callback($this);
+        } elseif (!is_null($else)) {
+            $else($this);
+        }
+    }
+
+    protected function getClause()
+    {
+        $this->executeQuery($this->pickUpThePieces($this->bindings));
+    }
+
+    private function pickUpThePieces(array $bindings): string
+    {
+        $query = '';
+
+        foreach ($bindings as $bindingName => $binding) {
+            if (!empty($binding)) {
+                if (is_string($bindingName)) {
+                    $query .= strtoupper($bindingName);
+                }
+
+                if (is_array($binding)) {
+                    $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
+                } else {
+                    if (!strpbrk($binding, '()`')) {
+                        $binding = strtoupper($binding);
+                    }
+
+                    $query .= ' ' . $binding . ' ';
+                }
+            }
+        }
+
+        return trim(
+            preg_replace('/\s+/', ' ', $query)
+        );
+    }
+
+    private function executeQuery(string $statement)
+    {
+        dd($statement);
+
+        return 0;
+    }
 }

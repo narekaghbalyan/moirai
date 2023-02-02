@@ -159,4 +159,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function when(bool $value, callable $callback, callable|null $else = null): self
+    {
+        $this->whenClauseBinder($value, $callback, $else);
+
+        return $this;
+    }
+
+    public function get()
+    {
+        $this->getClause();
+
+        return $this;
+    }
 }
