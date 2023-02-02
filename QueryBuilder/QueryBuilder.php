@@ -33,4 +33,9 @@ class QueryBuilder
             $flattenedColumns
         ]);
     }
+
+    protected function fromClauseBinder(string $table): void
+    {
+        $this->bind('from', [$this->concludeGraveAccent($table)]);
+    }
 }

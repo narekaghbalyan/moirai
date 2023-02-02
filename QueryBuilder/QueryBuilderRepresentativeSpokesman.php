@@ -17,4 +17,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function from(string $table): self
+    {
+        $this->fromClauseBinder($table);
+
+        return $this;
+    }
+
+    public function table(string $table): self
+    {
+        $this->from($table);
+
+        return $this;
+    }
 }
