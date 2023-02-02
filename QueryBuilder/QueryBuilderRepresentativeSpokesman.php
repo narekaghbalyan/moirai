@@ -122,4 +122,41 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function having(string|array $column, string|null $operator = null, string|null $value = ''): self
+    {
+        $this->baseConditionClauseBinder('', 'having', $column, $operator, $value);
+
+        return $this;
+    }
+
+    // TODO having between
+
+    public function limit(int $count): self
+    {
+        $this->limitClauseBinder($count);
+
+        return $this;
+    }
+
+    public function offset(int $count): self
+    {
+        $this->offsetClauseBinder($count);
+
+        return $this;
+    }
+
+    public function skip(int $count): self
+    {
+        $this->offset($count);
+
+        return $this;
+    }
+
+    public function take(int $count): self
+    {
+        $this->limit($count);
+
+        return $this;
+    }
 }

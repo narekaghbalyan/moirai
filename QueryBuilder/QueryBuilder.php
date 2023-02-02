@@ -372,4 +372,14 @@ class QueryBuilder
             $flattenedColumns
         ]);
     }
+
+    protected function offsetClauseBinder(int $count)
+    {
+        $this->bind('offset', [$count]);
+    }
+
+    protected function limitClauseBinder(int $count)
+    {
+        $this->bind('limit', [$count]);
+    }
 }
