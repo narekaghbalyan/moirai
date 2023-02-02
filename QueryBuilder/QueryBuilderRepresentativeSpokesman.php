@@ -10,4 +10,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function distinct(array|string ...$columns): self
+    {
+        $this->selectClauseBinder(true, $columns);
+
+        return $this;
+    }
 }
