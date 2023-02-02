@@ -87,4 +87,25 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function orderBy(string|array $column, string $direction = 'asc'): self
+    {
+        $this->orderByClauseBinder($column, $direction);
+
+        return $this;
+    }
+
+    public function latest(string|array $column): self
+    {
+        $this->orderBy($column, 'desc');
+
+        return $this;
+    }
+
+    public function oldest(string|array $column): self
+    {
+        $this->orderBy($column);
+
+        return $this;
+    }
 }

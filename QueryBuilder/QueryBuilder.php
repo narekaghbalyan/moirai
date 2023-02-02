@@ -345,4 +345,22 @@ class QueryBuilder
             );
         }
     }
+
+    protected function orderByClauseBinder(string|array $column, string $direction, bool $inRandomOrder = false)
+    {
+        if (!$inRandomOrder) {
+            $this->checkDirectionMatching($direction);
+
+            if (is_array($column)) {
+                $this->throwExceptionIfArrayAssociative($column);
+            }
+
+            $column = $this->concludeGraveAccent($column);
+        }
+
+        $this->bind('orderBy', [
+            !$inRandomOrder ? $column : '',
+            !$inRandomOrder ? $direction : 'rand(' . $column . ')'
+        ]);
+    }
 }
