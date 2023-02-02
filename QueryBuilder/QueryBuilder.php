@@ -398,6 +398,120 @@ class QueryBuilder
         $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 
+    // odku -> on duplicate key update
+    protected function insertClauseBinder(array $columnsWithValues,
+                                          string $insertType = 'insert',
+                                          mixed $query = null,
+                                          bool $ignore = false,
+                                          bool $odku = false,
+                                          string|array|null $uniqueBy = null,
+                                          string|array|null $update = null)
+    {
+        if (empty($columnsWithValues)) {
+            throw new Exception('Array cannot be empty.');
+        }
+
+        $firstElement = $columnsWithValues[array_key_first($columnsWithValues)];
+
+        $columnsWithValues = is_array($firstElement) && is_array(
+            $firstElement[array_key_first($firstElement)]
+        ) ? $firstElement : $columnsWithValues;
+
+        if (is_null($query)) {
+            $this->changeQueryTypeToInsert($insertType);
+
+            if ($odku) {
+                if (!is_array($columnsWithValues[array_key_first($columnsWithValues)])) {
+                    $columnsWithValues = [$columnsWithValues];
+                }
+
+                $readyUpdate = '';
+
+                if (is_null($update)) {
+                    $update = $columnsWithValues[0];
+
+                    $update = array_values(array_flip($update));
+                }
+
+                $lastKey = array_key_last($update);
+
+                foreach ($update as $key => $item) {
+                    $readyUpdate .= ' '
+                        . $this->concludeGraveAccent($item)
+                        . ' = VALUES('
+                        . $this->concludeGraveAccent($item)
+                        . ')';
+
+                    $key !== $lastKey ? $readyUpdate .= ',' : $readyUpdate .= '';
+                }
+            }
+
+            $usedColumns = [];
+
+            $columnsAlreadyReserved = false;
+
+            $odkuStatementReadyForInsertion = false;
+
+            foreach ($columnsWithValues as $key => $columnWithValue) {
+                $this->throwExceptionIfArrayIsNotAssociative($columnWithValue);
+
+                $columns = $this->concludeGraveAccent(
+                    array_keys($columnWithValue)
+                );
+
+                $usedColumns[] = $columns;
+
+                if (count(array_unique($usedColumns, SORT_REGULAR)) !== 1) {
+                    throw new Exception('Columns in arrays do not match');
+                }
+
+                $values = array_values($columnWithValue);
+
+                if (!$columnsAlreadyReserved) {
+                    if ($ignore) {
+                        array_unshift($this->bindings[$insertType], 'IGNORE');
+                    }
+                }
+
+                if ($key === array_key_last($columnWithValue)) {
+                    $odkuStatementReadyForInsertion = true;
+                }
+
+                $this->bind($insertType, [
+                    !$columnsAlreadyReserved ? '(' . implode(', ', $columns) . ')' : '',
+                    !$columnsAlreadyReserved ? 'VALUES' : '',
+                    '(' . implode(', ', $values) . ')',
+                    $odku ? ($odkuStatementReadyForInsertion ? 'ON DUPLICATE KEY UPDATE' . $readyUpdate : '') : '',
+                ]);
+
+                $columnsAlreadyReserved = true;
+            }
+        } else {
+            $this->throwExceptionIfArrayAssociative($columnsWithValues);
+
+            $columnsWithValues = $this->concludeGraveAccent($columnsWithValues);
+
+            $tables = $this->getBinding('from');
+
+            if (count($tables) > 1) {
+                $query->replaceBind('from', $tables[array_key_last($tables)]);
+            }
+
+            $subQueryBindings = $query->getBindings();
+
+            $this->changeQueryTypeToInsert($insertType);
+
+            $this->replaceBind($insertType, ['INTO', $tables[array_key_first($tables)]]);
+
+            $this->bind($insertType, [
+                '(' . implode(', ', $columnsWithValues) . ')',
+                $subQueryBindings
+            ]);
+        }
+
+        return $this->executeQuery($this->pickUpThePieces($this->bindings));
+    }
+
     private function pickUpThePieces(array $bindings): string
     {
         $query = '';

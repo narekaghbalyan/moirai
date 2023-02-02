@@ -173,4 +173,55 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    // not multiple rows
+    // ->insert(['id' => 1, 'name' => 'Test']);
+    // insert into table (`c1`, `c2`) values ('v1', 'v2')
+    // multiple rows
+    // ->insert(['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']);
+    // or
+    // ->insert([['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']]);
+    // insert into table (`c1`, `c2`) values ('v1', 'v2') ('v3', 'v4')
+    public function insert(array ...$columnsWithValues)
+    {
+        $this->insertClauseBinder($columnsWithValues);
+
+        // TODO return value
+    }
+
+    // not multiple rows
+    // ->insertWithIgnore(['id' => 1, 'name' => 'Test']);
+    // insert ignore into table (`c1`, `c2`) values ('v1', 'v2')
+    // multiple rows
+    // ->insertWithIgnore(['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']);
+    // or
+    // ->insertWithIgnore([['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']]);
+    // insert ignore into table (`c1`, `c2`) values ('v1', 'v2') ('v3', 'v4')
+    public function insertWithIgnore(array ...$columnsWithValues)
+    {
+        $this->insertClauseBinder($columnsWithValues, 'insert', null, true);
+
+        // TODO return value
+    }
+
+    // ->insertUsing(['id', 'name'], $q->where(['id' => 1])->get('id', 'name'));
+    // insert into table (`id`, `name`) values (query result values)
+    public function insertUsing(array $columns, $query)
+    {
+        $this->insertClauseBinder($columns, 'insert', $query);
+
+        // TODO return value
+    }
+
+    // ->upsert(['id' => 1, 'name'=> 'Test'], ['id', 'name']);
+    // INSERT INTO `users` (`id`, `name`) VALUES (1, Test) ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `name` = VALUES(`name`)
+    // If not exists second array unique keys in table -> insert first array columns with values
+    // If exists second array unique keys in table -> if empty third array -> update first array columns with values
+    //                                                if not empty third array ->  update third array columns with first array values
+    public function upsert(array $values, string|array|null $update = null, string|array|null $uniqueBy = null)
+    {
+        $this->insertClauseBinder($values, 'insert', null, false, true, $uniqueBy, $update);
+
+        // TODO return value
+    }
 }
