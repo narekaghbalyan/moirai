@@ -108,4 +108,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function inRandomOrder(string $column): self
+    {
+        $this->orderByClauseBinder($column, '', true);
+
+        return $this;
+    }
+
+    public function groupBy(string|array ...$columns): self
+    {
+        $this->groupByClauseBinder($columns);
+
+        return $this;
+    }
 }

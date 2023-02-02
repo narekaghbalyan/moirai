@@ -363,4 +363,13 @@ class QueryBuilder
             !$inRandomOrder ? $direction : 'rand(' . $column . ')'
         ]);
     }
+
+    protected function groupByClauseBinder(string|array ...$columns)
+    {
+        $flattenedColumns = $this->concludeGraveAccent($columns);
+
+        $this->bind('groupBy', [
+            $flattenedColumns
+        ]);
+    }
 }
