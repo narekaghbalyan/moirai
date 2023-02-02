@@ -1,0 +1,9 @@
+{
+    "name": "narekaghbalyan/moarai.loc",
+    "autoload": {
+        "psr-4": {
+            "Moarai\\": ""
+        }
+    },
+    "require": {}
+}
