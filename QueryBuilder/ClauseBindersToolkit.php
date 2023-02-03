@@ -28,6 +28,35 @@ trait ClauseBindersToolkit
         'asc', 'desc'
     ];
 
+
+
+    protected function bind(string $bindingName, array $binding): void
+    {
+        $this->bindings[$bindingName][] = $binding;
+    }
+
+    protected function replaceBind(string $bindingName, array $binding): void
+    {
+        $this->bindings[$bindingName] = $binding;
+    }
+
+    protected function getBinding(string $bindingName): mixed
+    {
+        return $this->bindings[$bindingName];
+    }
+
+    protected function getBindings(): array
+    {
+        return $this->bindings;
+    }
+
+    protected function devastateBindings(): void
+    {
+        $this->bindings = [];
+    }
+
+
+
     protected function checkMatching(string $suspect, array $dataFromWhichToCheck): bool
     {
         return in_array($suspect, $dataFromWhichToCheck);
@@ -51,6 +80,9 @@ trait ClauseBindersToolkit
         }
     }
 
+
+
+
     protected function isAssociative(array $array): bool
     {
         $supposedKeys = range(0, count($array) - 1);
@@ -58,55 +90,56 @@ trait ClauseBindersToolkit
         return array_keys($array) !== $supposedKeys;
     }
 
-    protected function concludeSingleQuotes(string $subject): string
+
+
+
+
+
+    protected function concludeSingleQuotes(string|array $subject): string|array
     {
-        return "'" . $subject . "'";
+        return $this->concludeSymbols($subject, "'");
     }
 
-    protected function concludeDoubleQuotes(string $subject): string
+    protected function concludeDoubleQuotes(string|array $subject): string|array
     {
-        return '"' . $subject . '"';
+        return $this->concludeSymbols($subject, '"');
     }
 
     protected function concludeGraveAccent(string|array $subject): string|array
     {
+        return $this->concludeSymbols($subject, '`');
+    }
+
+    protected function concludeBrackets(string|array $subject): string|array
+    {
+        return $this->concludeSymbols($subject, '(', ')');
+    }
+
+    private function concludeSymbols(string|array $subject, string $openSymbol, string $closingSymbol = null): string|array
+    {
         $flattenedSubject = [];
 
+        if (is_null($closingSymbol)) {
+            $closingSymbol = $openSymbol;
+        }
+
         if (is_string($subject)) {
-            return '`' . $subject . '`';
+            return $openSymbol . $subject . $closingSymbol;
         } else {
-            array_walk_recursive($subject, function ($item) use (&$flattenedSubject) {
-                $flattenedSubject[] = '`' . $item . '`';
+            array_walk_recursive($subject, function ($item) use (&$flattenedSubject, $openSymbol, $closingSymbol) {
+                $flattenedSubject[] = $openSymbol . $item . $closingSymbol;
             });
         }
 
         return $flattenedSubject;
     }
 
-    protected function bind(string $bindingName, array $binding): void
-    {
-        $this->bindings[$bindingName][] = $binding;
-    }
 
-    protected function replaceBind(string $bindingName, array $binding): void
-    {
-        $this->bindings[$bindingName] = $binding;
-    }
 
-    protected function getBindings(): array
-    {
-        return $this->bindings;
-    }
 
-    protected function getBinding(string $bindingName): mixed
-    {
-        return $this->bindings[$bindingName];
-    }
 
-    protected function devastateBindings(): void
-    {
-        $this->bindings = [];
-    }
+
+
 
     protected function changeQueryTypeToInsert(string $bindingName)
     {
@@ -116,6 +149,8 @@ trait ClauseBindersToolkit
             $bindingName => ['into', $table]
         ];
     }
+
+
 
     protected function runCallback(string $bindingName, string $whereLogicalType, callable $callback): void
     {
@@ -140,6 +175,9 @@ trait ClauseBindersToolkit
 
         $this->bind($bindingName, [')']);
     }
+
+
+
 
     protected function throwExceptionIfMisplacedArray(mixed $subject): void
     {

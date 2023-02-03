@@ -199,7 +199,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // insert ignore into table (`c1`, `c2`) values ('v1', 'v2') ('v3', 'v4')
     public function insertWithIgnore(array ...$columnsWithValues)
     {
-        $this->insertClauseBinder($columnsWithValues, 'insert', null, true);
+        $this->insertClauseBinder($columnsWithValues, null, true);
 
         // TODO return value
     }
@@ -208,7 +208,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // insert into table (`id`, `name`) values (query result values)
     public function insertUsing(array $columns, $query)
     {
-        $this->insertClauseBinder($columns, 'insert', $query);
+        $this->insertClauseBinder($columns, $query);
 
         // TODO return value
     }
@@ -220,7 +220,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     //                                                if not empty third array ->  update third array columns with first array values
     public function upsert(array $values, string|array|null $update = null, string|array|null $uniqueBy = null)
     {
-        $this->insertClauseBinder($values, 'insert', null, false, true, $uniqueBy, $update);
+        $this->insertClauseBinder($values, null, false, true, $uniqueBy, $update);
 
         // TODO return value
     }

@@ -3,10 +3,13 @@
 namespace Moarai\QueryBuilder;
 
 use Exception;
+use Moarai\Drivers\AvailableDbmsDrivers;
 
 class QueryBuilder
 {
     use ClauseBindersToolkit;
+
+    protected string $driver = AvailableDbmsDrivers::POSTGRESQL;
 
     protected array $bindings = [
         'select' => [],
@@ -22,6 +25,11 @@ class QueryBuilder
         'offset' => []
     ];
 
+    public function getDriver()
+    {
+        return $this->driver;
+    }
+
     protected function selectClauseBinder(bool $distinct = false, array|string ...$columns): void
     {
         $flattenedColumns = $this->concludeGraveAccent($columns);
@@ -31,7 +39,7 @@ class QueryBuilder
         }
 
         $this->bind('select', [
-            $distinct ? 'distinct' : '',
+            $distinct ? 'DISTINCT' : '',
             $flattenedColumns
         ]);
     }
@@ -92,7 +100,7 @@ class QueryBuilder
                             ]);
                         } else {
                             $this->bind($conditionType, [
-                                'and',
+                                'AND',
                                 $this->concludeGraveAccent($columnName),
                                 '=',
                                 $columnValue
@@ -175,19 +183,20 @@ class QueryBuilder
                 if (count($range) !== 2) {
                     throw new Exception(
                         'Array for range must contain 2 elements. 
-                    The first value is the beginning of the range, the second value is the end of the range.'
+                        The first value is the beginning of the range, the second value is the end of the range.'
                     );
                 }
 
                 if (!empty($endOfRange)) {
                     throw new Exception(
-                        'If the range is specified as an array, then the third argument of the function must be skipped.'
+                        'If the range is specified as an array, then the third argument 
+                        of the function must be skipped.'
                     );
                 }
 
                 if ($betweenColumns) {
-                    $startOfRange = '(select ' . $range[0] . ')';
-                    $endOfRange = '(select ' . $range[1] . ')';
+                    $startOfRange = $this->concludeBrackets('SELECT ' . $range[0]);
+                    $endOfRange = $this->concludeBrackets('SELECT ' . $range[1]);
                 } else {
                     $startOfRange = $range[0];
                     $endOfRange = $range[1];
@@ -203,9 +212,9 @@ class QueryBuilder
             $this->bind('where', [
                 $whereLogicalType,
                 $this->concludeGraveAccent($column),
-                $isNotCondition ? 'not' : '',
-                'between',
-                $startOfRange . ' and ' . $endOfRange
+                $isNotCondition ? 'NOT' : '',
+                'BETWEEN',
+                $startOfRange . ' AND ' . $endOfRange
             ]);
         } else {
             $this->runCallback(
@@ -256,7 +265,7 @@ class QueryBuilder
 
         $this->bind('where', [
             $whereLogicalType,
-            $isNotCondition ? 'not' : '',
+            $isNotCondition ? 'NOT' : '',
             $this->concludeGraveAccent($firstColumn),
             $operator,
             $this->concludeGraveAccent($secondColumn),
@@ -269,8 +278,8 @@ class QueryBuilder
     {
         $this->bind('where', [
             $whereLogicalType,
-            $isNotCondition ? 'not' : '',
-            'exists'
+            $isNotCondition ? 'NOT' : '',
+            'EXISTS'
         ]);
 
         $this->runCallbackForVirginInstance(
@@ -279,6 +288,11 @@ class QueryBuilder
         );
     }
 
+    /*
+     * 'against (',
+     * $value,
+     * 'in natural language mode)'
+     */
     protected function whereFullTextClauseBinder(string $whereLogicalType,
                                                  string $column,
                                                  string $value,
@@ -286,12 +300,11 @@ class QueryBuilder
     {
         $this->bind('where', [
             $whereLogicalType,
-            $isNotCondition ? 'not' : '',
-            'match',
+            $isNotCondition ? 'NOT' : '',
+            'MATCH',
             $this->concludeGraveAccent($column),
-            'against (',
-            $value,
-            'in natural language mode)'
+            'against',
+            $this->concludeBrackets($value . 'in natural language mode')
         ]);
     }
 
@@ -313,8 +326,9 @@ class QueryBuilder
             $this->bind('where', [
                 $whereLogicalType,
                 $this->concludeGraveAccent($column),
-                $isNotCondition ? 'not' : '', 'in',
-                '(' . implode(', ', $setOfSupposedVariables) . ')'
+                $isNotCondition ? 'NOT' : '',
+                'IN',
+                $this->concludeBrackets(implode(', ', $setOfSupposedVariables))
             ]);
         } else {
             $this->runCallback(
@@ -333,8 +347,8 @@ class QueryBuilder
             $this->bind('where', [
                 $whereLogicalType,
                 $this->concludeGraveAccent($column),
-                'is',
-                $isNotCondition ? 'not' : '',
+                'IS',
+                $isNotCondition ? 'NOT' : '',
                 'null'
             ]);
         } else {
@@ -360,7 +374,7 @@ class QueryBuilder
 
         $this->bind('orderBy', [
             !$inRandomOrder ? $column : '',
-            !$inRandomOrder ? $direction : 'rand(' . $column . ')'
+            !$inRandomOrder ? $direction : 'RAND' . $this->concludeBrackets($column)
         ]);
     }
 
@@ -400,7 +414,6 @@ class QueryBuilder
 
     // odku -> on duplicate key update
     protected function insertClauseBinder(array $columnsWithValues,
-                                          string $insertType = 'insert',
                                           mixed $query = null,
                                           bool $ignore = false,
                                           bool $odku = false,
@@ -418,14 +431,13 @@ class QueryBuilder
         ) ? $firstElement : $columnsWithValues;
 
         if (is_null($query)) {
-            $this->changeQueryTypeToInsert($insertType);
+            $this->changeQueryTypeToInsert('insert');
+
 
             if ($odku) {
                 if (!is_array($columnsWithValues[array_key_first($columnsWithValues)])) {
                     $columnsWithValues = [$columnsWithValues];
                 }
-
-                $readyUpdate = '';
 
                 if (is_null($update)) {
                     $update = $columnsWithValues[0];
@@ -435,14 +447,52 @@ class QueryBuilder
 
                 $lastKey = array_key_last($update);
 
+                $readyUpdate = '';
+
                 foreach ($update as $key => $item) {
-                    $readyUpdate .= ' '
-                        . $this->concludeGraveAccent($item)
-                        . ' = VALUES('
-                        . $this->concludeGraveAccent($item)
-                        . ')';
+                    $readyUpdate .= ' ' . $this->concludeGraveAccent($item);
+
+                    $readyUpdate .= match ($this->getDriver()) {
+                        AvailableDbmsDrivers::MYSQL => ' = VALUES' . $this->concludeBrackets(
+                                $this->concludeGraveAccent($item)
+                            ),
+                        AvailableDbmsDrivers::POSTGRESQL => ' = EXCLUDED.' . $item,
+                    };
 
                     $key !== $lastKey ? $readyUpdate .= ',' : $readyUpdate .= '';
+                }
+
+                switch ($this->getDriver()) {
+                    case AvailableDbmsDrivers::MYSQL:
+                        $odkuPostfix = 'ON DUPLICATE KEY UPDATE' . $readyUpdate;
+
+                        break;
+                    case AvailableDbmsDrivers::POSTGRESQL:
+                        $odkuPostfix = 'ON CONFLICT ';
+
+                        if (empty($uniqueBy)) {
+                            throw new Exception(
+                                'When using "on conflict" command in postgreSQL, those fields that are 
+                                        unique must be filled in the "upsert" method.'
+                            );
+                        } elseif (is_array($uniqueBy)) {
+                            $odkuPostfix .= $this->concludeBrackets(
+                                implode(
+                                    ', ',
+                                    $this->concludeGraveAccent(
+                                        $uniqueBy ? $uniqueBy : ''
+                                    )
+                                )
+                            );
+                        } elseif (is_string($uniqueBy)) {
+                            $odkuPostfix .= $this->concludeBrackets(
+                                $this->concludeGraveAccent($uniqueBy)
+                            );
+                        }
+
+                        $odkuPostfix .= ' DO UPDATE SET ' . $readyUpdate;
+
+                        break;
                 }
             }
 
@@ -469,19 +519,21 @@ class QueryBuilder
 
                 if (!$columnsAlreadyReserved) {
                     if ($ignore) {
-                        array_unshift($this->bindings[$insertType], 'IGNORE');
+                        array_unshift($this->bindings['insert'], 'IGNORE');
                     }
                 }
 
-                if ($key === array_key_last($columnWithValue)) {
+                if ($key === array_key_last($columnsWithValues)) {
                     $odkuStatementReadyForInsertion = true;
                 }
 
-                $this->bind($insertType, [
-                    !$columnsAlreadyReserved ? '(' . implode(', ', $columns) . ')' : '',
+                $this->bind('insert', [
+                    !$columnsAlreadyReserved ? $this->concludeBrackets(implode(', ', $columns)) : '',
                     !$columnsAlreadyReserved ? 'VALUES' : '',
-                    '(' . implode(', ', $values) . ')',
-                    $odku ? ($odkuStatementReadyForInsertion ? 'ON DUPLICATE KEY UPDATE' . $readyUpdate : '') : '',
+                    $this->concludeBrackets(implode(', ', $values)),
+                    $odku ? (
+                    $odkuStatementReadyForInsertion ? $odkuPostfix : ''
+                    ) : '',
                 ]);
 
                 $columnsAlreadyReserved = true;
@@ -497,14 +549,18 @@ class QueryBuilder
                 $query->replaceBind('from', $tables[array_key_last($tables)]);
             }
 
+            if (!is_object($query) || !method_exists($query, 'getBindings')) {
+                throw new Exception('The second argument must be a query.');
+            }
+
             $subQueryBindings = $query->getBindings();
 
-            $this->changeQueryTypeToInsert($insertType);
+            $this->changeQueryTypeToInsert('insert');
 
-            $this->replaceBind($insertType, ['INTO', $tables[array_key_first($tables)]]);
+            $this->replaceBind('insert', ['INTO', $tables[array_key_first($tables)]]);
 
-            $this->bind($insertType, [
-                '(' . implode(', ', $columnsWithValues) . ')',
+            $this->bind('insert', [
+                $this->concludeBrackets(implode(', ', $columnsWithValues)),
                 $subQueryBindings
             ]);
         }
