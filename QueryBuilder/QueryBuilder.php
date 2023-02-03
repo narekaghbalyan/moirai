@@ -412,6 +412,7 @@ class QueryBuilder
         $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 
+    // odku available ^ PostgreSQL 9.5.
     // odku -> on duplicate key update
     protected function insertClauseBinder(array $columnsWithValues,
                                           mixed $query = null,
@@ -432,7 +433,6 @@ class QueryBuilder
 
         if (is_null($query)) {
             $this->changeQueryTypeToInsert('insert');
-
 
             if ($odku) {
                 if (!is_array($columnsWithValues[array_key_first($columnsWithValues)])) {
@@ -475,6 +475,8 @@ class QueryBuilder
                                 'When using "on conflict" command in postgreSQL, those fields that are 
                                         unique must be filled in the "upsert" method.'
                             );
+
+                            // TODO put away exception
                         } elseif (is_array($uniqueBy)) {
                             $odkuPostfix .= $this->concludeBrackets(
                                 implode(
@@ -517,12 +519,6 @@ class QueryBuilder
 
                 $values = array_values($columnWithValue);
 
-                if (!$columnsAlreadyReserved) {
-                    if ($ignore) {
-                        array_unshift($this->bindings['insert'], 'IGNORE');
-                    }
-                }
-
                 if ($key === array_key_last($columnsWithValues)) {
                     $odkuStatementReadyForInsertion = true;
                 }
@@ -537,6 +533,19 @@ class QueryBuilder
                 ]);
 
                 $columnsAlreadyReserved = true;
+            }
+
+            if ($ignore) {
+                switch ($this->getDriver()) {
+                    case AvailableDbmsDrivers::MYSQL:
+                        array_unshift($this->bindings['insert'], 'IGNORE');
+
+                        break;
+                    case AvailableDbmsDrivers::POSTGRESQL;
+                        $this->bind('insert', ['ON CONFLICT DO NOTHING']);
+
+                        break;
+                }
             }
         } else {
             $this->throwExceptionIfArrayAssociative($columnsWithValues);
