@@ -25,7 +25,7 @@ class QueryBuilder
         'offset' => []
     ];
 
-    public function getDriver()
+    public function getDriver(): string
     {
         return $this->driver;
     }
@@ -294,17 +294,35 @@ class QueryBuilder
      * 'in natural language mode)'
      */
     protected function whereFullTextClauseBinder(string $whereLogicalType,
-                                                 string $column,
+                                                 string|array $column,
                                                  string $value,
+                                                 string $searchModifier,
                                                  bool $isNotCondition = false): void
     {
+        $column = $this->concludeBrackets(implode(', ', $this->concludeGraveAccent($column)));
+
+        $value = $this->concludeDoubleQuotes($value);
+
+        switch ($this->getDriver()) {
+            case AvailableDbmsDrivers::MYSQL:
+                if ()
+
+                $value .= ' ' . $searchModifier;
+
+                break;
+            case AvailableDbmsDrivers::POSTGRESQL:
+                $value .= ' ' . $searchModifier;
+
+                break;
+        }
+
         $this->bind('where', [
             $whereLogicalType,
             $isNotCondition ? 'NOT' : '',
             'MATCH',
-            $this->concludeGraveAccent($column),
-            'against',
-            $this->concludeBrackets($value . 'in natural language mode')
+            $column,
+            'AGAINST',
+            $this->concludeBrackets($value)
         ]);
     }
 
@@ -412,8 +430,13 @@ class QueryBuilder
         $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 
-    // odku available ^ PostgreSQL 9.5.
-    // odku -> on duplicate key update
+    // ODKU -> on duplicate key update
+    // ODKU available ^ PostgreSQL 9.5.
+    // ODKU available ^ SQLite 3.24.0 (04.06.2018)
+    // <-- SqLite (PostgreSQL, MySQL ?) - UPSERT не вмешивается в случае сбоя NOT NULL или ограничений
+    // внешнего ключа или ограничений, реализованных с помощью триггеров.
+    // В настоящее время UPSERT не работает с виртуальными столами. -->
+
     protected function insertClauseBinder(array $columnsWithValues,
                                           mixed $query = null,
                                           bool $ignore = false,
@@ -541,7 +564,7 @@ class QueryBuilder
                         array_unshift($this->bindings['insert'], 'IGNORE');
 
                         break;
-                    case AvailableDbmsDrivers::POSTGRESQL;
+                    case AvailableDbmsDrivers::POSTGRESQL:
                         $this->bind('insert', ['ON CONFLICT DO NOTHING']);
 
                         break;

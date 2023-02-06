@@ -80,6 +80,15 @@ trait ClauseBindersToolkit
         }
     }
 
+    protected function checkFtsModifierMatching(string $modifier)
+    {
+        if (!$this->checkMatching($modifier, FullTextSearchModifiers::class)) {
+            throw new Exception(
+                '"' . $operator . '" is not a SQL operator.'
+            );
+        }
+    }
+
 
 
 
