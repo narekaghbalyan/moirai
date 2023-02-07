@@ -2,20 +2,11 @@
 
 namespace Moarai\QueryBuilder;
 
-class FullTextSearchModifiers
+final class FullTextSearchModifiers
 {
-    const NATURAL_LANGUAGE_MODE_WITH_QUERY_EXPANSION = 'IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION';
+    public const NATURAL_LANGUAGE_MODE = 'IN NATURAL LANGUAGE MODE';
 
-    const NATURAL_LANGUAGE_MODE = 'IN NATURAL LANGUAGE MODE';
+    public const WITH_QUERY_EXPANSION = 'WITH QUERY EXPANSION';
 
-    const WITH_QUERY_EXPANSION = 'WITH QUERY EXPANSION';
-
-    const BOOLEAN_MODE = 'IN BOOLEAN MODE';
-
-    public static function getAllDrivers(): array
-    {
-        $reflectionClass = new ReflectionClass(__CLASS__);
-
-        return $reflectionClass->getConstants();
-    }
+    public const BOOLEAN_MODE = 'IN BOOLEAN MODE';
 }

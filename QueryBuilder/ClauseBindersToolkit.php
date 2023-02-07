@@ -3,6 +3,7 @@
 namespace Moarai\QueryBuilder;
 
 use Exception;
+use ReflectionClass;
 
 trait ClauseBindersToolkit
 {
@@ -60,33 +61,6 @@ trait ClauseBindersToolkit
     protected function checkMatching(string $suspect, array $dataFromWhichToCheck): bool
     {
         return in_array($suspect, $dataFromWhichToCheck);
-    }
-
-    protected function checkOperatorMatching(string $operator)
-    {
-        if (!$this->checkMatching($operator, $this->operators)) {
-            throw new Exception(
-                '"' . $operator . '" is not a SQL operator.'
-            );
-        }
-    }
-
-    protected function checkDirectionMatching(string $direction)
-    {
-        if (!$this->checkMatching($direction, $this->groupDirections)) {
-            throw new Exception(
-                '"' . $direction . '" is not a SQL group direction.'
-            );
-        }
-    }
-
-    protected function checkFtsModifierMatching(string $modifier)
-    {
-        if (!$this->checkMatching($modifier, FullTextSearchModifiers::class)) {
-            throw new Exception(
-                '"' . $operator . '" is not a SQL operator.'
-            );
-        }
     }
 
 
@@ -209,6 +183,36 @@ trait ClauseBindersToolkit
         if (!$this->isAssociative($array)) {
             throw new Exception(
                 is_null($message) ? 'Array must be associative.' : $message
+            );
+        }
+    }
+
+
+    protected function throwExceptionIfOperatorIsInvalid(string $operator)
+    {
+        if (!$this->checkMatching($operator, $this->operators)) {
+            throw new Exception(
+                '"' . $operator . '" is not a SQL operator.'
+            );
+        }
+    }
+
+    protected function throwExceptionIfDirectionIsInvalid(string $direction)
+    {
+        if (!$this->checkMatching($direction, $this->groupDirections)) {
+            throw new Exception(
+                '"' . $direction . '" is not a SQL group direction.'
+            );
+        }
+    }
+
+    protected function throwExceptionIfFtsModifierIsInvalid(string $modifier)
+    {
+        $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);
+
+        if (!$this->checkMatching($modifier, $reflectionClass->getConstants())) {
+            throw new Exception(
+                '"' . $modifier . '" is not a modifier.'
             );
         }
     }

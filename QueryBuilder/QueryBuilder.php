@@ -9,7 +9,7 @@ class QueryBuilder
 {
     use ClauseBindersToolkit;
 
-    protected string $driver = AvailableDbmsDrivers::POSTGRESQL;
+    protected string $driver = AvailableDbmsDrivers::MYSQL;
 
     protected array $bindings = [
         'select' => [],
@@ -114,7 +114,7 @@ class QueryBuilder
                         $this->throwExceptionIfMisplacedArray($columnValue);
                     }
 
-                    $this->checkOperatorMatching($column[1]);
+                    $this->throwExceptionIfOperatorIsInvalid($column[1]);
 
                     $this->bind($conditionType, [
                         $whereLogicalType,
@@ -139,7 +139,7 @@ class QueryBuilder
                     );
                 }
             } else {
-                $this->checkOperatorMatching($operator);
+                $this->throwExceptionIfOperatorIsInvalid($operator);
             }
 
             $this->bind($conditionType, [
@@ -238,7 +238,7 @@ class QueryBuilder
                 );
             }
 
-            $this->checkOperatorMatching($operator);
+            $this->throwExceptionIfOperatorIsInvalid($operator);
         } elseif (is_array($firstColumn)) {
             if (!empty($operator) || !empty($secondColumn)) {
                 throw new Exception(
@@ -260,7 +260,7 @@ class QueryBuilder
             $operator = $columns[1];
             $secondColumn = $columns[2];
 
-            $this->checkOperatorMatching($operator);
+            $this->throwExceptionIfOperatorIsInvalid($operator);
         }
 
         $this->bind('where', [
@@ -301,16 +301,18 @@ class QueryBuilder
     {
         $column = $this->concludeBrackets(implode(', ', $this->concludeGraveAccent($column)));
 
-        $value = $this->concludeDoubleQuotes($value);
-
         switch ($this->getDriver()) {
             case AvailableDbmsDrivers::MYSQL:
-                if ()
+                $value = $this->concludeSingleQuotes($value);
+
+                $this->throwExceptionIfFtsModifierIsInvalid($searchModifier);
 
                 $value .= ' ' . $searchModifier;
 
                 break;
             case AvailableDbmsDrivers::POSTGRESQL:
+                $value = $this->concludeDoubleQuotes($value);
+
                 $value .= ' ' . $searchModifier;
 
                 break;
@@ -381,7 +383,7 @@ class QueryBuilder
     protected function orderByClauseBinder(string|array $column, string $direction, bool $inRandomOrder = false)
     {
         if (!$inRandomOrder) {
-            $this->checkDirectionMatching($direction);
+            $this->throwExceptionIfDirectionIsInvalid($direction);
 
             if (is_array($column)) {
                 $this->throwExceptionIfArrayAssociative($column);

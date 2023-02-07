@@ -122,8 +122,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * релевантные слова, найденные с вашим начальным поисковым запросом, добавляются к вашему
      * начальному поисковому запросу, и выполняется окончательный поиск. Запрос возвращает более
      * широкий результат с вашим поисковым запросом и тем, что может быть интересным,
-     * если вы согласны с таким определением интересного. :)
+     * если вы согласны с таким определением интересного.
      */
+
+    //  with query expansion mode -> Слепое расширение запроса (также известное как автоматическая обратная
+    // связь по релевантности).
 
     // whereFullText('text', 'Hello world') -> WHERE MATCH (`text`) AGAINST ("Hello world" IN NATURAL LANGUAGE MODE)
     // whereFullText(['title', 'text'], 'Hello world') -> WHERE MATCH (`title`, `text`) AGAINST ("Hello world" IN NATURAL LANGUAGE MODE)
@@ -137,7 +140,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     public function whereFullText(string|array $column, string $value,
                                   string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE): self
     {
-        $this->whereFullTextClauseBinder('', $column, $value, $searchModifier, false);
+        $this->whereFullTextClauseBinder('', $column, $value, $searchModifier);
 
         return $this;
     }

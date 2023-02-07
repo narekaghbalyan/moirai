@@ -18,7 +18,7 @@ class AvailableDbmsDrivers
 //        ];
 //    }
 
-    public static function getAllDrivers(): array
+    public static function getDrivers(): array
     {
         $reflectionClass = new ReflectionClass(__CLASS__);
 
