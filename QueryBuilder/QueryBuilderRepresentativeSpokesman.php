@@ -132,15 +132,23 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // whereFullText(['title', 'text'], 'Hello world') -> WHERE MATCH (`title`, `text`) AGAINST ("Hello world" IN NATURAL LANGUAGE MODE)
 
 
-    // whereFullText('text', 'Hello world', false) -> in natural language mode
-    // whereFullText(['text'], ['Hello world'], false) -> in natural language mode
-    // whereFullText(['text'], ['Hello world'], true) -> with query expansion mode
-    // whereFullText(['text'], ['Hello world'], true) -> with query expansion mode
+    // MySql
+    // whereFullText('text', 'Hello world', FullTextSearchModifiers::NATURAL_LANGUAGE_MODE) -> in natural language mode
+    // whereFullText(['text'], ['Hello world'], FullTextSearchModifiers::NATURAL_LANGUAGE_MODE) -> in natural language mode
+    // whereFullText(['text'], ['Hello world'], FullTextSearchModifiers::WITH_QUERY_EXPANSION) -> with query expansion mode
+    // whereFullText(['text'], ['Hello world'], FullTextSearchModifiers::BOOLEAN_MODE) -> in boolean mode
+
+    // PostgreSql
+    // whereFullText('text', 'Hello world', 'language')
+    // -> SELECT `*` FROM `users` WHERE to_tsvector('language', `text`) @@ to_tsquery('language', "Hello world")
+    // whereFullText(['text'], ['Hello world'], 'language')
+    // -> SELECT `*` FROM `users` WHERE to_tsvector('language', `text`) @@ to_tsquery('language', "Hello world")
 
     public function whereFullText(string|array $column, string $value,
-                                  string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE): self
+                                  string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE,
+                                  string|null $rankingColumn = null): self
     {
-        $this->whereFullTextClauseBinder('', $column, $value, $searchModifier);
+        $this->whereFullTextClauseBinder('', $column, $value, $searchModifier, $rankingColumn);
 
         return $this;
     }

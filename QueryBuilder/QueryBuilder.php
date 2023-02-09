@@ -9,7 +9,7 @@ class QueryBuilder
 {
     use ClauseBindersToolkit;
 
-    protected string $driver = AvailableDbmsDrivers::MYSQL;
+    protected string $driver = AvailableDbmsDrivers::POSTGRESQL;
 
     protected array $bindings = [
         'select' => [],
@@ -293,39 +293,94 @@ class QueryBuilder
      * $value,
      * 'in natural language mode)'
      */
+    /*
+     * select col1, col2, ts_rank(col, plain_tsquery('language', 'desired text')) as `rank` from `table` where col
+     * @@ plain_tsquery('language', 'desired text') order by rank desc   -> By relevance
+     *
+     * select title from table where to_tsvector('language', col1) || to_tsvector('language', col2) @@ to_tsquery('language', 'text');
+     *
+     * TODO mark word in result text
+     */
     protected function whereFullTextClauseBinder(string $whereLogicalType,
                                                  string|array $column,
                                                  string $value,
                                                  string $searchModifier,
+                                                 string|null $rankingColumn,
                                                  bool $isNotCondition = false): void
     {
-        $column = $this->concludeBrackets(implode(', ', $this->concludeGraveAccent($column)));
-
         switch ($this->getDriver()) {
             case AvailableDbmsDrivers::MYSQL:
+                $column = $this->concludeBrackets(implode(', ', $this->concludeGraveAccent($column)));
+
                 $value = $this->concludeSingleQuotes($value);
 
                 $this->throwExceptionIfFtsModifierIsInvalid($searchModifier);
 
                 $value .= ' ' . $searchModifier;
 
+                $this->bind('where', [
+                    $whereLogicalType,
+                    $isNotCondition ? 'NOT' : '',
+                    'MATCH',
+                    $column,
+                    'AGAINST',
+                    $this->concludeBrackets($value)
+                ]);
+
                 break;
             case AvailableDbmsDrivers::POSTGRESQL:
-                $value = $this->concludeDoubleQuotes($value);
+                if (!is_null($rankingColumn)) {
+                    if (!$this->checkMatching($rankingColumn, $column)) {
+                        throw new Exception(
+                            'The ranking column must be one of the columns listed in the first argument.'
+                        );
+                    }
 
-                $value .= ' ' . $searchModifier;
+                    $columnForRankingByRelevance = $this->concludeEntities(
+                            $this->concludeGraveAccent($rankingColumn),
+                            'ts_rank(',
+                            ', '
+                            . 'plain_tsquery('
+                            . $this->concludeSingleQuotes($searchModifier)
+                            . ', '
+                            . $this->concludeSingleQuotes($value)
+                            . '))'
+                        ) . ' AS `rank`';
+
+                    $this->bind('select', [
+                        $columnForRankingByRelevance
+                    ]);
+
+                    $this->bind('orderBy', [
+                        '`rank` DESC'
+                    ]);
+                }
+
+                $value = $this->concludeEntities(
+                    $this->concludeDoubleQuotes($value),
+                    'to_tsquery(' . $this->concludeSingleQuotes($searchModifier) . ', ',
+                    ')'
+                );
+
+                $tsVectors = $this->concludeEntities(
+                    $this->concludeGraveAccent($column),
+                    'to_tsvector(' . $this->concludeSingleQuotes($searchModifier) . ', ',
+                    ')'
+                );
+
+                if (is_array($tsVectors)) {
+                    $tsVectors = implode(' || ', $tsVectors);
+                }
+
+                $this->bind('where', [
+                    $whereLogicalType,
+                    $tsVectors,
+                    '@@',
+                    $value
+                ]);
 
                 break;
         }
-
-        $this->bind('where', [
-            $whereLogicalType,
-            $isNotCondition ? 'NOT' : '',
-            'MATCH',
-            $column,
-            'AGAINST',
-            $this->concludeBrackets($value)
-        ]);
     }
 
     protected function whereInClauseBinder(string $whereLogicalType,

@@ -80,25 +80,25 @@ trait ClauseBindersToolkit
 
     protected function concludeSingleQuotes(string|array $subject): string|array
     {
-        return $this->concludeSymbols($subject, "'");
+        return $this->concludeEntities($subject, "'");
     }
 
     protected function concludeDoubleQuotes(string|array $subject): string|array
     {
-        return $this->concludeSymbols($subject, '"');
+        return $this->concludeEntities($subject, '"');
     }
 
     protected function concludeGraveAccent(string|array $subject): string|array
     {
-        return $this->concludeSymbols($subject, '`');
+        return $this->concludeEntities($subject, '`');
     }
 
     protected function concludeBrackets(string|array $subject): string|array
     {
-        return $this->concludeSymbols($subject, '(', ')');
+        return $this->concludeEntities($subject, '(', ')');
     }
 
-    private function concludeSymbols(string|array $subject, string $openSymbol, string $closingSymbol = null): string|array
+    private function concludeEntities(string|array $subject, string $openSymbol, string $closingSymbol = null): string|array
     {
         $flattenedSubject = [];
 
