@@ -2,6 +2,9 @@
 
 namespace Moarai\QueryBuilder;
 
+use Moarai\Drivers\AvailableDbmsDrivers;
+use ReflectionClass;
+
 class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 {
     public function select(array|string ...$columns): self
@@ -148,6 +151,14 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
                                   string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE,
                                   string|null $rankingColumn = null): self
     {
+        if ($this->getDriver() !== AvailableDbmsDrivers::MYSQL) {
+            $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);
+
+            if ($this->checkMatching($searchModifier, $reflectionClass->getConstants())) {
+                $searchModifier = '';
+            }
+        }
+
         $this->whereFullTextClauseBinder('', $column, $value, $searchModifier, $rankingColumn);
 
         return $this;

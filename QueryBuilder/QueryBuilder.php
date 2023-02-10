@@ -289,10 +289,10 @@ class QueryBuilder
     }
 
     /*
-     * 'against (',
-     * $value,
-     * 'in natural language mode)'
-     */
+    * 'against (',
+    * $value,
+    * 'in natural language mode)'
+    */
     /*
      * select col1, col2, ts_rank(col, plain_tsquery('language', 'desired text')) as `rank` from `table` where col
      * @@ plain_tsquery('language', 'desired text') order by rank desc   -> By relevance
@@ -329,6 +329,16 @@ class QueryBuilder
 
                 break;
             case AvailableDbmsDrivers::POSTGRESQL:
+                $valueOpenExpression = 'to_tsquery(';
+
+                $vectorOpenExpression = 'to_tsvector(';
+
+                if (!empty($searchModifier)) {
+                    $valueOpenExpression .= $this->concludeSingleQuotes($searchModifier) . ', ';
+
+                    $vectorOpenExpression .= $this->concludeSingleQuotes($searchModifier) . ', ';
+                }
+
                 if (!is_null($rankingColumn)) {
                     if (!$this->checkMatching($rankingColumn, $column)) {
                         throw new Exception(
@@ -336,15 +346,24 @@ class QueryBuilder
                         );
                     }
 
+                    /*
+                     * 0 (по умолчанию): длина документа не учитывается
+                     * 1: ранг документа делится на 1 + логарифм длины документа
+                     * 2: ранг документа делится на его длину
+                     * 4: ранг документа делится на среднее гармоническое расстояние между блоками (это реализовано только в ts_rank_cd)
+                     * 8: ранг документа делится на число уникальных слов в документе
+                     * 16: ранг документа делится на 1 + логарифм числа уникальных слов в документе
+                     * 32: ранг делится своё же значение + 1
+                     */
                     $columnForRankingByRelevance = $this->concludeEntities(
-                            $this->concludeGraveAccent($rankingColumn),
+                        $vectorOpenExpression . $this->concludeDoubleQuotes($rankingColumn) . ')',
                             'ts_rank(',
                             ', '
-                            . 'plain_tsquery('
+                            . 'to_tsquery('
                             . $this->concludeSingleQuotes($searchModifier)
                             . ', '
                             . $this->concludeSingleQuotes($value)
-                            . '))'
+                            . '), 32)'
                         ) . ' AS `rank`';
 
                     $this->bind('select', [
@@ -356,15 +375,15 @@ class QueryBuilder
                     ]);
                 }
 
-                $value = $this->concludeEntities(
-                    $this->concludeDoubleQuotes($value),
-                    'to_tsquery(' . $this->concludeSingleQuotes($searchModifier) . ', ',
+                $tsVectors = $this->concludeEntities(
+                    $this->concludeDoubleQuotes($column),
+                    $vectorOpenExpression,
                     ')'
                 );
 
-                $tsVectors = $this->concludeEntities(
-                    $this->concludeGraveAccent($column),
-                    'to_tsvector(' . $this->concludeSingleQuotes($searchModifier) . ', ',
+                $value = $this->concludeEntities(
+                    $this->concludeSingleQuotes($value),
+                    $valueOpenExpression,
                     ')'
                 );
 

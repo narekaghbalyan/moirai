@@ -76,6 +76,12 @@ trait ClauseBindersToolkit
 
 
 
+//
+//    protected function wrapColumnInBlanket(string|array $subject): string|array
+//    {
+//
+//    }
+
 
 
     protected function concludeSingleQuotes(string|array $subject): string|array
