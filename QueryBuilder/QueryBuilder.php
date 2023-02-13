@@ -4,12 +4,13 @@ namespace Moarai\QueryBuilder;
 
 use Exception;
 use Moarai\Drivers\AvailableDbmsDrivers;
+use Moarai\Drivers\PostgreSqlDriver;
 
 class QueryBuilder
 {
     use ClauseBindersToolkit;
 
-    protected string $driver = AvailableDbmsDrivers::POSTGRESQL;
+    protected $driver;
 
     protected array $bindings = [
         'select' => [],
@@ -25,14 +26,19 @@ class QueryBuilder
         'offset' => []
     ];
 
+    public function __construct()
+    {
+        $this->driver = new PostgreSqlDriver();
+    }
+
     public function getDriver(): string
     {
-        return $this->driver;
+        return $this->driver->getDriverName();
     }
 
     protected function selectClauseBinder(bool $distinct = false, array|string ...$columns): void
     {
-        $flattenedColumns = $this->concludeGraveAccent($columns);
+        $flattenedColumns = $this->wrapColumnInPita($columns);
 
         if (empty($flattenedColumns)) {
             $flattenedColumns = '*';
@@ -46,7 +52,7 @@ class QueryBuilder
 
     protected function fromClauseBinder(string $table): void
     {
-        $this->bind('from', [$this->concludeGraveAccent($table)]);
+        $this->bind('from', [$this->wrapColumnInPita($table)]);
     }
 
     /*
@@ -83,7 +89,7 @@ class QueryBuilder
 
                     $this->bind($conditionType, [
                         $whereLogicalType,
-                        $this->concludeGraveAccent($column),
+                        $this->wrapColumnInPita($column),
                         '=',
                         $value
                     ]);
@@ -94,14 +100,14 @@ class QueryBuilder
                         if ($columnName === $columnFirstElementKey) {
                             $this->bind($conditionType, [
                                 $whereLogicalType,
-                                $this->concludeGraveAccent($columnName),
+                                $this->wrapColumnInPita($columnName),
                                 '=',
                                 $columnValue
                             ]);
                         } else {
                             $this->bind($conditionType, [
                                 'AND',
-                                $this->concludeGraveAccent($columnName),
+                                $this->wrapColumnInPita($columnName),
                                 '=',
                                 $columnValue
                             ]);
@@ -118,7 +124,7 @@ class QueryBuilder
 
                     $this->bind($conditionType, [
                         $whereLogicalType,
-                        $this->concludeGraveAccent($column[0]),
+                        $this->wrapColumnInPita($column[0]),
                         $column[1],
                         $column[2]
                     ]);
@@ -144,7 +150,7 @@ class QueryBuilder
 
             $this->bind($conditionType, [
                 $whereLogicalType,
-                $this->concludeGraveAccent($column),
+                $this->wrapColumnInPita($column),
                 $operator,
                 $value
             ]);
@@ -211,7 +217,7 @@ class QueryBuilder
 
             $this->bind('where', [
                 $whereLogicalType,
-                $this->concludeGraveAccent($column),
+                $this->wrapColumnInPita($column),
                 $isNotCondition ? 'NOT' : '',
                 'BETWEEN',
                 $startOfRange . ' AND ' . $endOfRange
@@ -266,9 +272,9 @@ class QueryBuilder
         $this->bind('where', [
             $whereLogicalType,
             $isNotCondition ? 'NOT' : '',
-            $this->concludeGraveAccent($firstColumn),
+            $this->wrapColumnInPita($firstColumn),
             $operator,
-            $this->concludeGraveAccent($secondColumn),
+            $this->wrapColumnInPita($secondColumn),
         ]);
     }
 
@@ -310,9 +316,9 @@ class QueryBuilder
     {
         switch ($this->getDriver()) {
             case AvailableDbmsDrivers::MYSQL:
-                $column = $this->concludeBrackets(implode(', ', $this->concludeGraveAccent($column)));
+                $column = $this->concludeBrackets(implode(', ', $this->wrapColumnInPita($column)));
 
-                $value = $this->concludeSingleQuotes($value);
+                $value = $this->wrapStringInPita($value);
 
                 $this->throwExceptionIfFtsModifierIsInvalid($searchModifier);
 
@@ -334,9 +340,9 @@ class QueryBuilder
                 $vectorOpenExpression = 'to_tsvector(';
 
                 if (!empty($searchModifier)) {
-                    $valueOpenExpression .= $this->concludeSingleQuotes($searchModifier) . ', ';
+                    $valueOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
 
-                    $vectorOpenExpression .= $this->concludeSingleQuotes($searchModifier) . ', ';
+                    $vectorOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
                 }
 
                 if (!is_null($rankingColumn)) {
@@ -356,33 +362,33 @@ class QueryBuilder
                      * 32: ранг делится своё же значение + 1
                      */
                     $columnForRankingByRelevance = $this->concludeEntities(
-                        $vectorOpenExpression . $this->concludeDoubleQuotes($rankingColumn) . ')',
+                        $vectorOpenExpression . $this->wrapColumnInPita($rankingColumn) . ')',
                             'ts_rank(',
                             ', '
                             . 'to_tsquery('
-                            . $this->concludeSingleQuotes($searchModifier)
+                            . $this->wrapStringInPita($searchModifier)
                             . ', '
-                            . $this->concludeSingleQuotes($value)
+                            . $this->wrapStringInPita($value)
                             . '), 32)'
-                        ) . ' AS `rank`';
+                        ) . ' AS ' . $this->wrapColumnInPita('rank');
 
                     $this->bind('select', [
                         $columnForRankingByRelevance
                     ]);
 
                     $this->bind('orderBy', [
-                        '`rank` DESC'
+                        $this->wrapColumnInPita('rank') . ' DESC'
                     ]);
                 }
 
                 $tsVectors = $this->concludeEntities(
-                    $this->concludeDoubleQuotes($column),
+                    $this->wrapColumnInPita($column),
                     $vectorOpenExpression,
                     ')'
                 );
 
                 $value = $this->concludeEntities(
-                    $this->concludeSingleQuotes($value),
+                    $this->wrapStringInPita($value),
                     $valueOpenExpression,
                     ')'
                 );
@@ -419,7 +425,7 @@ class QueryBuilder
 
             $this->bind('where', [
                 $whereLogicalType,
-                $this->concludeGraveAccent($column),
+                $this->wrapStringInPita($column),
                 $isNotCondition ? 'NOT' : '',
                 'IN',
                 $this->concludeBrackets(implode(', ', $setOfSupposedVariables))
@@ -440,7 +446,7 @@ class QueryBuilder
         if (!is_callable($column)) {
             $this->bind('where', [
                 $whereLogicalType,
-                $this->concludeGraveAccent($column),
+                $this->wrapStringInPita($column),
                 'IS',
                 $isNotCondition ? 'NOT' : '',
                 'null'
@@ -463,7 +469,7 @@ class QueryBuilder
                 $this->throwExceptionIfArrayAssociative($column);
             }
 
-            $column = $this->concludeGraveAccent($column);
+            $column = $this->wrapStringInPita($column);
         }
 
         $this->bind('orderBy', [
@@ -474,7 +480,7 @@ class QueryBuilder
 
     protected function groupByClauseBinder(string|array ...$columns)
     {
-        $flattenedColumns = $this->concludeGraveAccent($columns);
+        $flattenedColumns = $this->wrapStringInPita($columns);
 
         $this->bind('groupBy', [
             $flattenedColumns
@@ -549,11 +555,11 @@ class QueryBuilder
                 $readyUpdate = '';
 
                 foreach ($update as $key => $item) {
-                    $readyUpdate .= ' ' . $this->concludeGraveAccent($item);
+                    $readyUpdate .= ' ' . $this->wrapStringInPita($item);
 
                     $readyUpdate .= match ($this->getDriver()) {
                         AvailableDbmsDrivers::MYSQL => ' = VALUES' . $this->concludeBrackets(
-                                $this->concludeGraveAccent($item)
+                                $this->wrapStringInPita($item)
                             ),
                         AvailableDbmsDrivers::POSTGRESQL => ' = EXCLUDED.' . $item,
                     };
@@ -580,14 +586,14 @@ class QueryBuilder
                             $odkuPostfix .= $this->concludeBrackets(
                                 implode(
                                     ', ',
-                                    $this->concludeGraveAccent(
+                                    $this->wrapStringInPita(
                                         $uniqueBy ? $uniqueBy : ''
                                     )
                                 )
                             );
                         } elseif (is_string($uniqueBy)) {
                             $odkuPostfix .= $this->concludeBrackets(
-                                $this->concludeGraveAccent($uniqueBy)
+                                $this->wrapStringInPita($uniqueBy)
                             );
                         }
 
@@ -606,7 +612,7 @@ class QueryBuilder
             foreach ($columnsWithValues as $key => $columnWithValue) {
                 $this->throwExceptionIfArrayIsNotAssociative($columnWithValue);
 
-                $columns = $this->concludeGraveAccent(
+                $columns = $this->wrapStringInPita(
                     array_keys($columnWithValue)
                 );
 
@@ -649,7 +655,7 @@ class QueryBuilder
         } else {
             $this->throwExceptionIfArrayAssociative($columnsWithValues);
 
-            $columnsWithValues = $this->concludeGraveAccent($columnsWithValues);
+            $columnsWithValues = $this->wrapStringInPita($columnsWithValues);
 
             $tables = $this->getBinding('from');
 
@@ -689,7 +695,7 @@ class QueryBuilder
                 if (is_array($binding)) {
                     $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
                 } else {
-                    if (!strpbrk($binding, '()`')) {
+                    if (!strpbrk($binding, '()`\'"')) {
                         $binding = strtoupper($binding);
                     }
 

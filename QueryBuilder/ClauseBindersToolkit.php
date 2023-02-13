@@ -77,15 +77,15 @@ trait ClauseBindersToolkit
 
 
 
-//    protected function wrapColumnInBlanket(string|array $subject): string|array
-//    {
-//        $blanket = match ($this->getDriver()) {
-//            AvailableDbmsDrivers::MYSQL => '`',
-//            AvailableDbmsDrivers::POSTGRESQL => '"',
-//        };
-//
-//
-//    }
+    protected function wrapColumnInPita(string|array $subject): string|array
+    {
+        return $this->concludeEntities($subject, $this->driver->getPitaForColumns());
+    }
+
+    protected function wrapStringInPita(string|array $subject): string|array
+    {
+        return $this->concludeEntities($subject, $this->driver->getPitaForStrings());
+    }
 
 
 

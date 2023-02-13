@@ -18,15 +18,29 @@ abstract class Driver
         return $this->pitaForStrings;
     }
 
-    public function setPitaForColumns(string $pita): string
+    public function setPitaForColumns(string $pita): void
     {
         $this->pitaForColumns = $pita;
     }
 
-    public function setPitaForStrings(string $pita): string
+    public function setPitaForStrings(string $pita): void
     {
         $this->pitaForStrings = $pita;
     }
 
-    abstract function initializeDriver(): void;
+    abstract function initializeDriverLexicalStructure(): void;
+
+    public function initializeDriver(): void
+    {
+        $this->initializeDriverLexicalStructure();
+    }
+
+    public function getDriverName(): string
+    {
+        $driver = str_replace([__NAMESPACE__, '/', '\\', 'Driver'], '', get_called_class());
+
+        $driver = strtoupper($driver);
+
+        return AvailableDbmsDrivers::getDrivers()[$driver];
+    }
 }

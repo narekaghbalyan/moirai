@@ -4,7 +4,12 @@ namespace Moarai\Drivers;
 
 class PostgreSqlDriver extends Driver
 {
-    public function initializeDriver(): void
+    public function __construct()
+    {
+        $this->initializeDriver();
+    }
+
+    public function initializeDriverLexicalStructure(): void
     {
         $this->setPitaForColumns('"');
 
