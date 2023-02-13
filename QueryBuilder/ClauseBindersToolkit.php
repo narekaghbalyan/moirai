@@ -59,8 +59,16 @@ trait ClauseBindersToolkit
 
 
 
-    protected function checkMatching(string $suspect, array $dataFromWhichToCheck): bool
+    protected function checkMatching(string|int|float|array $suspect, array $dataFromWhichToCheck): bool
     {
+        if (is_array($suspect)) {
+            foreach ($suspect as $item) {
+                if (!in_array((int)$item, $dataFromWhichToCheck)) {
+                    return false;
+                }
+            }
+        }
+
         return in_array($suspect, $dataFromWhichToCheck);
     }
 

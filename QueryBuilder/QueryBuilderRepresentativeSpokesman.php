@@ -147,9 +147,20 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // whereFullText(['text'], ['Hello world'], 'language')
     // -> SELECT `*` FROM `users` WHERE to_tsvector('language', `text`) @@ to_tsquery('language', "Hello world")
 
+    /*
+     * 0 (по умолчанию): длина документа не учитывается
+     * 1: ранг документа делится на 1 + логарифм длины документа
+     * 2: ранг документа делится на его длину
+     * 4: ранг документа делится на среднее гармоническое расстояние между блоками (это реализовано только в ts_rank_cd)
+     * 8: ранг документа делится на число уникальных слов в документе
+     * 16: ранг документа делится на 1 + логарифм числа уникальных слов в документе
+     * 32: ранг делится своё же значение + 1
+     */
+
     public function whereFullText(string|array $column, string $value,
                                   string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE,
-                                  string|null $rankingColumn = null): self
+                                  string|null $rankingColumn = null,
+                                  string|int|array $normalizationBitmask = 32): self
     {
         if ($this->getDriver() !== AvailableDbmsDrivers::MYSQL) {
             $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);
@@ -159,7 +170,16 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
             }
         }
 
-        $this->whereFullTextClauseBinder('', $column, $value, $searchModifier, $rankingColumn);
+        dd($normalizationBitmask);
+
+        $this->whereFullTextClauseBinder(
+            '',
+            $column,
+            $value,
+            $searchModifier,
+            $rankingColumn,
+            $normalizationBitmask
+        );
 
         return $this;
     }

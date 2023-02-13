@@ -312,6 +312,7 @@ class QueryBuilder
                                                  string $value,
                                                  string $searchModifier,
                                                  string|null $rankingColumn,
+                                                 string|int|array $normalizationBitmask,
                                                  bool $isNotCondition = false): void
     {
         switch ($this->getDriver()) {
@@ -352,24 +353,26 @@ class QueryBuilder
                         );
                     }
 
-                    /*
-                     * 0 (по умолчанию): длина документа не учитывается
-                     * 1: ранг документа делится на 1 + логарифм длины документа
-                     * 2: ранг документа делится на его длину
-                     * 4: ранг документа делится на среднее гармоническое расстояние между блоками (это реализовано только в ts_rank_cd)
-                     * 8: ранг документа делится на число уникальных слов в документе
-                     * 16: ранг документа делится на 1 + логарифм числа уникальных слов в документе
-                     * 32: ранг делится своё же значение + 1
-                     */
+                    if (!$this->checkMatching($normalizationBitmask, $this->driver->normalizationBitmasks)) {
+                        throw new Exception(
+                            'The bitmask can be one of the following values "0, 1, 2, 4, 8, 16, 32". 
+                            Multiple masks can be used by passing the masks as an array.'
+                        );
+                    }
+
+                    if (is_array($normalizationBitmask)) {
+                        $normalizationBitmask = implode('|', $normalizationBitmask);
+                    }
+
                     $columnForRankingByRelevance = $this->concludeEntities(
                         $vectorOpenExpression . $this->wrapColumnInPita($rankingColumn) . ')',
-                            'ts_rank(',
+                            'ts_rank_cd(',
                             ', '
                             . 'to_tsquery('
                             . $this->wrapStringInPita($searchModifier)
                             . ', '
                             . $this->wrapStringInPita($value)
-                            . '), 32)'
+                            . '), ' . $normalizationBitmask . ')'
                         ) . ' AS ' . $this->wrapColumnInPita('rank');
 
                     $this->bind('select', [
