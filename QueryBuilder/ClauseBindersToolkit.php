@@ -3,6 +3,7 @@
 namespace Moarai\QueryBuilder;
 
 use Exception;
+use Moarai\Drivers\AvailableDbmsDrivers;
 use ReflectionClass;
 
 trait ClauseBindersToolkit
@@ -76,9 +77,13 @@ trait ClauseBindersToolkit
 
 
 
-//
 //    protected function wrapColumnInBlanket(string|array $subject): string|array
 //    {
+//        $blanket = match ($this->getDriver()) {
+//            AvailableDbmsDrivers::MYSQL => '`',
+//            AvailableDbmsDrivers::POSTGRESQL => '"',
+//        };
+//
 //
 //    }
 
