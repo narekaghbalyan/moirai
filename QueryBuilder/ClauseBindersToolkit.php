@@ -63,10 +63,12 @@ trait ClauseBindersToolkit
     {
         if (is_array($suspect)) {
             foreach ($suspect as $item) {
-                if (!in_array((int)$item, $dataFromWhichToCheck)) {
+                if (!in_array($item, $dataFromWhichToCheck)) {
                     return false;
                 }
             }
+
+            return true;
         }
 
         return in_array($suspect, $dataFromWhichToCheck);

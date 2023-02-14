@@ -170,8 +170,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
             }
         }
 
-        dd($normalizationBitmask);
-
         $this->whereFullTextClauseBinder(
             '',
             $column,
