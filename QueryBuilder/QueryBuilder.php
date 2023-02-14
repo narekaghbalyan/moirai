@@ -311,7 +311,7 @@ class QueryBuilder
                                                  string|array $column,
                                                  string $value,
                                                  string $searchModifier,
-                                                 string|null $rankingColumn,
+                                                 string|array|null $rankingColumn,
                                                  string|int|array $normalizationBitmask,
                                                  bool $isNotCondition = false): void
     {
@@ -346,6 +346,29 @@ class QueryBuilder
                     $vectorOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
                 }
 
+                if (!is_array($column)) {
+                    $column = [$column];
+                }
+
+                $weighing = $this->isAssociative($column);
+
+                if ($weighing) {
+                    $weights = $column;
+
+                    array_walk($weights, function ($value, $key) use ($weights) {
+                        $weights[$key] = strtoupper($value);
+                    });
+
+                    if (!$this->checkMatching($weights, $this->driver->getWeights())) {
+                        throw new Exception(
+                            'Wrong weight argument. The weight argument must be one of the following elements.
+                            "A", "B", "C", "D". Or the same letters in lower case translation.'
+                        );
+                    }
+
+                    $column = array_keys($column);
+                }
+
                 if (!is_null($rankingColumn)) {
                     if (!$this->checkMatching($rankingColumn, $column)) {
                         throw new Exception(
@@ -353,7 +376,7 @@ class QueryBuilder
                         );
                     }
 
-                    if (!$this->checkMatching($normalizationBitmask, $this->driver->normalizationBitmasks)) {
+                    if (!$this->checkMatching($normalizationBitmask, $this->driver->getNormalizationBitmasks())) {
                         throw new Exception(
                             'The bitmask can be one of the following values "0, 1, 2, 4, 8, 16, 32". 
                             Multiple masks can be used by passing the masks as an array.'
@@ -364,23 +387,56 @@ class QueryBuilder
                         $normalizationBitmask = implode('|', $normalizationBitmask);
                     }
 
-                    $columnForRankingByRelevance = $this->concludeEntities(
-                        $vectorOpenExpression . $this->wrapColumnInPita($rankingColumn) . ')',
+                    if (!is_array($rankingColumn)) {
+                        $rankingColumn = [$rankingColumn];
+                    }
+
+                    $columnForRankingByRelevance = '';
+
+                    $relevancyColumns = [];
+
+                    foreach ($rankingColumn as $key => $item) {
+                        $itemName = $item;
+
+                        $relevancyColumn = 'rank_' . $item;
+
+                        $relevancyColumns[] = $relevancyColumn;
+
+                        if ($weighing) {
+                            $item = $this->concludeEntities(
+                                $this->wrapColumnInPita($item),
+                                'setweight(' . $valueOpenExpression,
+                                '), ' . $this->wrapStringInPita($weights[$itemName]) . ')'
+                            );
+                        } else {
+                            $item = $this->concludeEntities(
+                                $this->wrapColumnInPita($item),
+                                $vectorOpenExpression,
+                                ')'
+                            );
+                        }
+
+                        $columnForRankingByRelevance .= $this->concludeEntities(
+                            $item,
                             'ts_rank_cd(',
                             ', '
-                            . 'to_tsquery('
-                            . $this->wrapStringInPita($searchModifier)
-                            . ', '
+                            . $valueOpenExpression
                             . $this->wrapStringInPita($value)
                             . '), ' . $normalizationBitmask . ')'
-                        ) . ' AS ' . $this->wrapColumnInPita('rank');
+                            . ' AS ' . $this->wrapColumnInPita($relevancyColumn)
+                        );
+
+                        if (count($rankingColumn) > 1 && $key !== array_key_last($rankingColumn)) {
+                            $columnForRankingByRelevance .= ', ';
+                        }
+                    }
 
                     $this->bind('select', [
                         $columnForRankingByRelevance
                     ]);
 
                     $this->bind('orderBy', [
-                        $this->wrapColumnInPita('rank') . ' DESC'
+                        implode(', ', $this->wrapColumnInPita($relevancyColumns)) . ' DESC'
                     ]);
                 }
 
