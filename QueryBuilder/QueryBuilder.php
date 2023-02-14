@@ -313,6 +313,7 @@ class QueryBuilder
                                                  string $searchModifier,
                                                  string|array|null $rankingColumn,
                                                  string|int|array $normalizationBitmask,
+                                                 bool $highlighting,
                                                  bool $isNotCondition = false): void
     {
         switch ($this->getDriver()) {
@@ -369,6 +370,31 @@ class QueryBuilder
                     $column = array_keys($column);
                 }
 
+                if ($highlighting) {
+                    $glowwormOpenExpression = 'ts_headline(';
+
+                    if (!empty($searchModifier)) {
+                        $glowwormOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
+                    }
+
+                    $glowworms = [];
+
+                    foreach ($column as $item) {
+                        $glowworms[] = $this->concludeEntities(
+                            $this->wrapColumnInPita($item) . ', ',
+                            $glowwormOpenExpression,
+                            $valueOpenExpression
+                            . $this->wrapStringInPita($value)
+                            . '))'
+                        );
+                    }
+
+                    $glowworms = implode(', ', $glowworms);
+
+
+                    $this->bind('select', [$glowworms]);
+                }
+
                 if (!is_null($rankingColumn)) {
                     if (!$this->checkMatching($rankingColumn, $column)) {
                         throw new Exception(
@@ -376,11 +402,15 @@ class QueryBuilder
                         );
                     }
 
-                    if (!$this->checkMatching($normalizationBitmask, $this->driver->getNormalizationBitmasks())) {
-                        throw new Exception(
-                            'The bitmask can be one of the following values "0, 1, 2, 4, 8, 16, 32". 
+                    if (empty($normalizationBitmask)) {
+                        $normalizationBitmask = 32;
+                    } else {
+                        if (!$this->checkMatching($normalizationBitmask, $this->driver->getNormalizationBitmasks())) {
+                            throw new Exception(
+                                'The bitmask can be one of the following values "0, 1, 2, 4, 8, 16, 32". 
                             Multiple masks can be used by passing the masks as an array.'
-                        );
+                            );
+                        }
                     }
 
                     if (is_array($normalizationBitmask)) {
@@ -391,9 +421,9 @@ class QueryBuilder
                         $rankingColumn = [$rankingColumn];
                     }
 
-                    $columnForRankingByRelevance = '';
-
                     $relevancyColumns = [];
+
+                    $columnsForRankingByRelevance = [];
 
                     foreach ($rankingColumn as $key => $item) {
                         $itemName = $item;
@@ -416,7 +446,7 @@ class QueryBuilder
                             );
                         }
 
-                        $columnForRankingByRelevance .= $this->concludeEntities(
+                        $columnsForRankingByRelevance[] = $this->concludeEntities(
                             $item,
                             'ts_rank_cd(',
                             ', '
@@ -425,14 +455,12 @@ class QueryBuilder
                             . '), ' . $normalizationBitmask . ')'
                             . ' AS ' . $this->wrapColumnInPita($relevancyColumn)
                         );
-
-                        if (count($rankingColumn) > 1 && $key !== array_key_last($rankingColumn)) {
-                            $columnForRankingByRelevance .= ', ';
-                        }
                     }
 
+                    $columnsForRankingByRelevance = implode(', ', $columnsForRankingByRelevance);
+
                     $this->bind('select', [
-                        $columnForRankingByRelevance
+                        $columnsForRankingByRelevance
                     ]);
 
                     $this->bind('orderBy', [

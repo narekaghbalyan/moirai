@@ -164,10 +164,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // ->whereFullText(['title', 'text'], 'asd', 'english', ['title', 'text']);
     // ->whereFullText(['title' => 'A', 'text' => 'B'], 'asd', 'english', ['title', 'text']);
 
-    public function whereFullText(string|array $column, string $value,
+    public function whereFullText(string|array $column,
+                                  string $value,
                                   string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE,
+                                  bool $highlighting = false,
                                   string|array|null $rankingColumn = null,
-                                  string|int|array $normalizationBitmask = 32): self
+                                  string|int|array $normalizationBitmask = 32
+                                  ): self
     {
         if ($this->getDriver() !== AvailableDbmsDrivers::MYSQL) {
             $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);
@@ -183,7 +186,8 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
             $value,
             $searchModifier,
             $rankingColumn,
-            $normalizationBitmask
+            $normalizationBitmask,
+            $highlighting
         );
 
         return $this;
