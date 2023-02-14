@@ -156,18 +156,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * 16: ранг документа делится на 1 + логарифм числа уникальных слов в документе
      * 32: ранг делится своё же значение + 1
      */
-
-    // ->whereFullText('title', 'asd');
-    // ->whereFullText(['title', 'text'], 'asd');
-    // ->whereFullText(['title', 'text'], 'asd', 'english');
-    // ->whereFullText(['title', 'text'], 'asd', 'english', 'title');
-    // ->whereFullText(['title', 'text'], 'asd', 'english', ['title', 'text']);
-    // ->whereFullText(['title' => 'A', 'text' => 'B'], 'asd', 'english', ['title', 'text']);
-
     public function whereFullText(string|array $column,
                                   string $value,
                                   string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE,
-                                  bool $highlighting = false,
+                                  bool|array $highlighting = false,
                                   string|array|null $rankingColumn = null,
                                   string|int|array $normalizationBitmask = 32
                                   ): self

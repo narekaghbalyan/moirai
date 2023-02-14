@@ -313,7 +313,7 @@ class QueryBuilder
                                                  string $searchModifier,
                                                  string|array|null $rankingColumn,
                                                  string|int|array $normalizationBitmask,
-                                                 bool $highlighting,
+                                                 bool|array $highlighting,
                                                  bool $isNotCondition = false): void
     {
         switch ($this->getDriver()) {
@@ -373,6 +373,38 @@ class QueryBuilder
                 if ($highlighting) {
                     $glowwormOpenExpression = 'ts_headline(';
 
+                    $argumentsExists = false;
+
+                    if (is_array($highlighting)) {
+                        $argumentsExists = true;
+
+                        if (!$this->checkMatching(array_keys($highlighting), $this->driver->getHighlightingArguments())) {
+                            throw new Exception(
+                                'Arguments to the highlighting function can be as follows "'
+                                . implode(', ', $this->driver->getHighlightingArguments()) . '".'
+                            );
+                        }
+
+                        $highlightingArguments = [];
+
+                        foreach ($highlighting as $argumentName => $argumentValue) {
+                            if ($argumentName === 'tag') {
+                                $highlightingArguments[] = 'StartSel=' . htmlspecialchars(
+                                        $this->concludeEntities($argumentValue, '<', '>')
+                                    );
+
+                                $highlightingArguments[] = 'StopSel=' . htmlspecialchars(
+                                        $this->concludeEntities($argumentValue, '</', '>')
+                                    );
+                            } else {
+                                $highlightingArguments[] = $argumentName . '=' . $argumentValue;
+                            }
+                        }
+
+
+                        $highlightingArguments = implode(', ', $highlightingArguments);
+                    }
+
                     if (!empty($searchModifier)) {
                         $glowwormOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
                     }
@@ -380,17 +412,22 @@ class QueryBuilder
                     $glowworms = [];
 
                     foreach ($column as $item) {
+                        $glowwormCloseExpression = $valueOpenExpression . $this->wrapStringInPita($value) . ')';
+
+                        if ($argumentsExists) {
+                            $glowwormCloseExpression .= ', ' . $this->wrapStringInPita($highlightingArguments);
+                        }
+
+                        $glowwormCloseExpression .= ')';
+
                         $glowworms[] = $this->concludeEntities(
                             $this->wrapColumnInPita($item) . ', ',
                             $glowwormOpenExpression,
-                            $valueOpenExpression
-                            . $this->wrapStringInPita($value)
-                            . '))'
+                            $glowwormCloseExpression
                         );
                     }
 
                     $glowworms = implode(', ', $glowworms);
-
 
                     $this->bind('select', [$glowworms]);
                 }

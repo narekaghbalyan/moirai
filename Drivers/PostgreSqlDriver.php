@@ -8,6 +8,16 @@ class PostgreSqlDriver extends Driver
 
     protected array $weights = ['A', 'B', 'C', 'D'];
 
+    protected array $highlightingArguments = [
+        'tag',
+        'MaxWords',
+        'MinWords',
+        'ShortWord',
+        'HighlightAll',
+        'MaxFragments',
+        'FragmentDelimiter'
+    ];
+
     public function __construct()
     {
         $this->initializeDriver();
@@ -28,5 +38,10 @@ class PostgreSqlDriver extends Driver
     public function getNormalizationBitmasks(): array
     {
         return $this->normalizationBitmasks;
+    }
+
+    public function getHighlightingArguments(): array
+    {
+        return $this->highlightingArguments;
     }
 }
