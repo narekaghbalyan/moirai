@@ -4,6 +4,7 @@ namespace Moarai\QueryBuilder;
 
 use Exception;
 use Moarai\Drivers\AvailableDbmsDrivers;
+use Moarai\Drivers\MySqlDriver;
 use Moarai\Drivers\PostgreSqlDriver;
 
 class QueryBuilder
@@ -29,6 +30,8 @@ class QueryBuilder
     public function __construct()
     {
         $this->driver = new PostgreSqlDriver();
+
+        $this->useAdditionalAccessories();
     }
 
     public function getDriver(): string
@@ -294,19 +297,6 @@ class QueryBuilder
         );
     }
 
-    /*
-    * 'against (',
-    * $value,
-    * 'in natural language mode)'
-    */
-    /*
-     * select col1, col2, ts_rank(col, plain_tsquery('language', 'desired text')) as `rank` from `table` where col
-     * @@ plain_tsquery('language', 'desired text') order by rank desc   -> By relevance
-     *
-     * select title from table where to_tsvector('language', col1) || to_tsvector('language', col2) @@ to_tsquery('language', 'text');
-     *
-     * TODO mark word in result text
-     */
     protected function whereFullTextClauseBinder(string $whereLogicalType,
                                                  string|array $column,
                                                  string $value,
@@ -318,6 +308,10 @@ class QueryBuilder
     {
         switch ($this->getDriver()) {
             case AvailableDbmsDrivers::MYSQL:
+                if (!is_array($column)) {
+                    $column = [$column];
+                }
+
                 $column = $this->concludeBrackets(implode(', ', $this->wrapColumnInPita($column)));
 
                 $value = $this->wrapStringInPita($value);
@@ -388,7 +382,7 @@ class QueryBuilder
                         $highlightingArguments = [];
 
                         foreach ($highlighting as $argumentName => $argumentValue) {
-                            if ($argumentName === 'tag') {
+                            if ($argumentName === 'Tag') {
                                 $highlightingArguments[] = 'StartSel=' . htmlspecialchars(
                                         $this->concludeEntities($argumentValue, '<', '>')
                                     );
@@ -444,8 +438,9 @@ class QueryBuilder
                     } else {
                         if (!$this->checkMatching($normalizationBitmask, $this->driver->getNormalizationBitmasks())) {
                             throw new Exception(
-                                'The bitmask can be one of the following values "0, 1, 2, 4, 8, 16, 32". 
-                            Multiple masks can be used by passing the masks as an array.'
+                                'The bitmask can be one of the following values "'
+                                . implode(', ', $this->driver->getNormalizationBitmasks())
+                                . '". Multiple masks can be used by passing the masks as an array.'
                             );
                         }
                     }
@@ -587,24 +582,55 @@ class QueryBuilder
     protected function orderByClauseBinder(string|array $column, string $direction, bool $inRandomOrder = false)
     {
         if (!$inRandomOrder) {
-            $this->throwExceptionIfDirectionIsInvalid($direction);
+            $needDirection = true;
 
-            if (is_array($column)) {
-                $this->throwExceptionIfArrayAssociative($column);
+            $direction = $this->supplementDirection($direction);
+
+            if (empty($column)) {
+                throw new Exception('"column" argument cannot be empty.');
             }
 
-            $column = $this->wrapStringInPita($column);
+            if (is_array($column)) {
+                $this->throwExceptionIfDirectionIsInvalid(strtolower($direction));
+
+                $needDirection = false;
+
+                if ($this->isAssociative($column)) {
+                    $column = array_map(function ($key, $value) {
+                        $this->throwExceptionIfDirectionIsInvalid(strtolower($value));
+
+                        $value = $this->supplementDirection($value);
+
+                        return $this->wrapColumnInPita($key) . ' ' . strtoupper($value);
+                    }, array_keys($column), $column);
+                } else {
+                    $column = array_map(function ($value) use ($direction) {
+                        return $this->wrapColumnInPita($value) . ' ' . strtoupper($direction);
+                    }, $column);
+                }
+
+                $column = implode(', ', $column);
+            } else {
+                $column = [$column];
+
+                $column = implode(', ', $this->wrapColumnInPita($column));
+            }
+        } else {
+            $randomExpression = match ($this->getDriver()) {
+                AvailableDbmsDrivers::MYSQL => 'RAND()',
+                AvailableDbmsDrivers::POSTGRESQL => 'RANDOM()',
+            };
         }
 
         $this->bind('orderBy', [
             !$inRandomOrder ? $column : '',
-            !$inRandomOrder ? $direction : 'RAND' . $this->concludeBrackets($column)
+            !$inRandomOrder ? ($needDirection ? $direction : '') : $randomExpression
         ]);
     }
 
     protected function groupByClauseBinder(string|array ...$columns)
     {
-        $flattenedColumns = $this->wrapStringInPita($columns);
+        $flattenedColumns = $this->wrapColumnInPita($columns);
 
         $this->bind('groupBy', [
             $flattenedColumns

@@ -28,12 +28,12 @@ abstract class Driver
         $this->pitaForStrings = $pita;
     }
 
-    abstract function initializeDriverLexicalStructure(): void;
-
     public function initializeDriver(): void
     {
         $this->initializeDriverLexicalStructure();
     }
+
+    abstract function initializeDriverLexicalStructure(): void;
 
     public function getDriverName(): string
     {
@@ -42,5 +42,10 @@ abstract class Driver
         $driver = strtoupper($driver);
 
         return AvailableDbmsDrivers::getDrivers()[$driver];
+    }
+
+    public function getAdditionalAccessories(): array|null
+    {
+        return $this->additionalAccessories ?? null;
     }
 }

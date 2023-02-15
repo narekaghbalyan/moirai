@@ -156,6 +156,26 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * 16: ранг документа делится на 1 + логарифм числа уникальных слов в документе
      * 32: ранг делится своё же значение + 1
      */
+    /*
+     * -- PostgreSql --
+     * ->whereFullText('title', 'Some text');
+     * ->whereFullText(['title', 'description'], 'Some text');
+     * ->whereFullText('title', 'Some text', 'english');
+     * ->whereFullText('title', 'Some text', 'english', true);
+     * ->whereFullText('title', 'Some text', 'english', true, 'title');
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, ['title', 'description]);
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', 32);
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, 2]);
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, '2']);
+     * ->whereFullText(['title', 'description'], 'Some text', 'english', ['tag' => 'mark', 'MaxWords' => 10]);
+     *
+     * -- MySql --
+     * ->whereFullText('title', 'Some text');
+     * ->whereFullText(['title', 'description'], 'Some text');
+     * ->whereFullText(['title', 'description'], 'Some text', FullTextSearchModifiers::BOOLEAN_MODE);
+     */
+
+
     public function whereFullText(string|array $column,
                                   string $value,
                                   string $searchModifier = FullTextSearchModifiers::NATURAL_LANGUAGE_MODE,
@@ -185,6 +205,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    /*
+     * ->orderBy('a', 'DESC')
+     * ->orderBy('a', 'desc')
+     * ->orderBy('a', 'asc')
+     * ->orderBy(['a', 'b'], 'asc')
+     * ->orderBy(['a' => 'asc', 'b' => 'desc'])
+     */
     public function orderBy(string|array $column, string $direction = 'asc'): self
     {
         $this->orderByClauseBinder($column, $direction);
@@ -206,9 +233,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    public function inRandomOrder(string $column): self
+    public function inRandomOrder(): self
     {
-        $this->orderByClauseBinder($column, '', true);
+        $this->orderByClauseBinder('', '', true);
 
         return $this;
     }

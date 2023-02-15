@@ -26,11 +26,20 @@ trait ClauseBindersToolkit
         'and', 'or', 'not'
     ];
 
-    protected array $groupDirections = [
+    protected array $orderDirections = [
         'asc', 'desc'
     ];
 
+    private function useAdditionalAccessories(): void
+    {
+        $additionalAccessories = $this->driver->getAdditionalAccessories();
 
+        if (!empty($additionalAccessories)) {
+            foreach ($additionalAccessories as $accessoryName => $accessory) {
+                $this->$accessoryName = array_merge($this->$accessoryName, $accessory);
+            }
+        }
+    }
 
     protected function bind(string $bindingName, array $binding): void
     {
@@ -138,6 +147,18 @@ trait ClauseBindersToolkit
         return $flattenedSubject;
     }
 
+    private function supplementDirection(string $direction): string
+    {
+        if (!in_array(strtolower($direction), ['asc', 'desc'])) {
+            $direction = match (strtolower($direction)) {
+                'nulls first' => 'ASC ' . $direction,
+                'nulls last' => 'DESC ' . $direction
+            };
+        }
+
+        return $direction;
+    }
+
 
 
 
@@ -218,11 +239,11 @@ trait ClauseBindersToolkit
         }
     }
 
-    protected function throwExceptionIfDirectionIsInvalid(string $direction)
+    protected function throwExceptionIfDirectionIsInvalid(string|array $direction)
     {
-        if (!$this->checkMatching($direction, $this->groupDirections)) {
+        if (!$this->checkMatching($direction, $this->orderDirections)) {
             throw new Exception(
-                '"' . $direction . '" is not a SQL group direction.'
+                'Direction values for "order by" expression are not valid.'
             );
         }
     }

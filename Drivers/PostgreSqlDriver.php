@@ -9,13 +9,17 @@ class PostgreSqlDriver extends Driver
     protected array $weights = ['A', 'B', 'C', 'D'];
 
     protected array $highlightingArguments = [
-        'tag',
+        'Tag',
         'MaxWords',
         'MinWords',
         'ShortWord',
         'HighlightAll',
         'MaxFragments',
         'FragmentDelimiter'
+    ];
+
+    protected array $additionalAccessories = [
+        'orderDirections' => ['nulls last', 'nulls first']
     ];
 
     public function __construct()
