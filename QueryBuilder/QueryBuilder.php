@@ -372,7 +372,9 @@ class QueryBuilder
                     if (is_array($highlighting)) {
                         $argumentsExists = true;
 
-                        if (!$this->checkMatching(array_keys($highlighting), $this->driver->getHighlightingArguments())) {
+                        if (
+                            !$this->checkMatching(array_keys($highlighting), $this->driver->getHighlightingArguments())
+                        ) {
                             throw new Exception(
                                 'Arguments to the highlighting function can be as follows "'
                                 . implode(', ', $this->driver->getHighlightingArguments()) . '".'
@@ -544,7 +546,7 @@ class QueryBuilder
 
             $this->bind('where', [
                 $whereLogicalType,
-                $this->wrapStringInPita($column),
+                $this->wrapColumnInPita($column),
                 $isNotCondition ? 'NOT' : '',
                 'IN',
                 $this->concludeBrackets(implode(', ', $setOfSupposedVariables))
@@ -565,10 +567,10 @@ class QueryBuilder
         if (!is_callable($column)) {
             $this->bind('where', [
                 $whereLogicalType,
-                $this->wrapStringInPita($column),
+                $this->wrapColumnInPita($column),
                 'IS',
                 $isNotCondition ? 'NOT' : '',
-                'null'
+                'NULL'
             ]);
         } else {
             $this->runCallback(
@@ -630,10 +632,8 @@ class QueryBuilder
 
     protected function groupByClauseBinder(string|array ...$columns)
     {
-        $flattenedColumns = $this->wrapColumnInPita($columns);
-
         $this->bind('groupBy', [
-            $flattenedColumns
+            $this->wrapColumnInPita($columns)
         ]);
     }
 
@@ -694,10 +694,12 @@ class QueryBuilder
                     $columnsWithValues = [$columnsWithValues];
                 }
 
-                if (is_null($update)) {
+                if (empty($update)) {
                     $update = $columnsWithValues[0];
 
                     $update = array_values(array_flip($update));
+                } elseif(!is_array($update)) {
+                    $update = [$update];
                 }
 
                 $lastKey = array_key_last($update);
@@ -705,7 +707,7 @@ class QueryBuilder
                 $readyUpdate = '';
 
                 foreach ($update as $key => $item) {
-                    $readyUpdate .= ' ' . $this->wrapStringInPita($item);
+                    $readyUpdate .= ' ' . $this->wrapColumnInPita($item);
 
                     $readyUpdate .= match ($this->getDriver()) {
                         AvailableDbmsDrivers::MYSQL => ' = VALUES' . $this->concludeBrackets(
@@ -725,25 +727,13 @@ class QueryBuilder
                     case AvailableDbmsDrivers::POSTGRESQL:
                         $odkuPostfix = 'ON CONFLICT ';
 
-                        if (empty($uniqueBy)) {
-                            throw new Exception(
-                                'When using "on conflict" command in postgreSQL, those fields that are 
-                                        unique must be filled in the "upsert" method.'
-                            );
+                        if (!empty($uniqueBy)) {
+                            if (is_string($uniqueBy)) {
+                                $uniqueBy = [$uniqueBy];
+                            }
 
-                            // TODO put away exception
-                        } elseif (is_array($uniqueBy)) {
                             $odkuPostfix .= $this->concludeBrackets(
-                                implode(
-                                    ', ',
-                                    $this->wrapStringInPita(
-                                        $uniqueBy ? $uniqueBy : ''
-                                    )
-                                )
-                            );
-                        } elseif (is_string($uniqueBy)) {
-                            $odkuPostfix .= $this->concludeBrackets(
-                                $this->wrapStringInPita($uniqueBy)
+                                implode(', ', $this->wrapColumnInPita($uniqueBy))
                             );
                         }
 
@@ -762,7 +752,7 @@ class QueryBuilder
             foreach ($columnsWithValues as $key => $columnWithValue) {
                 $this->throwExceptionIfArrayIsNotAssociative($columnWithValue);
 
-                $columns = $this->wrapStringInPita(
+                $columns = $this->wrapColumnInPita(
                     array_keys($columnWithValue)
                 );
 
