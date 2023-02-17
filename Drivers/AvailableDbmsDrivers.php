@@ -10,6 +10,8 @@ class AvailableDbmsDrivers
 
     const POSTGRESQL = 'postgresql';
 
+    const SQLITE = 'sqlite';
+
 //    public static function getDriversAndHandlersConformity(): array
 //    {
 //        return [

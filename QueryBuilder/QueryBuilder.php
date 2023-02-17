@@ -6,6 +6,7 @@ use Exception;
 use Moarai\Drivers\AvailableDbmsDrivers;
 use Moarai\Drivers\MySqlDriver;
 use Moarai\Drivers\PostgreSqlDriver;
+use Moarai\Drivers\SqliteDriver;
 
 class QueryBuilder
 {
@@ -29,7 +30,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new PostgreSqlDriver();
+        $this->driver = new SqliteDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -522,6 +523,74 @@ class QueryBuilder
                     $whereLogicalType,
                     $tsVectors,
                     '@@',
+                    $value
+                ]);
+
+                break;
+            case AvailableDbmsDrivers::SQLITE:
+                // TODO create a virtual table with schema creator
+
+                // CREATE VIRTUAL TABLE "virtual_demo9" USING FTS5("name", "hint");
+                // INSERT INTO "virtual_demo9" SELECT "name", "hint" FROM "demo";
+                // SELECT * FROM "virtual_demo9" WHERE "hint" MATCH 'The most';
+                // SELECT * FROM "virtual_demo11" WHERE "virtual_demo11" MATCH 'name:The most OR hint:The most';
+
+                if (!is_array($column)) {
+                    $column = [$column];
+                }
+
+                $columnsForVirtualTable = implode(', ', $this->wrapColumnInPita($column));
+
+                $fromBinding = $this->getBinding('from');
+
+                $table = null;
+
+                array_walk_recursive($fromBinding, function ($item) use (&$table) { $table = $item; });
+
+                $virtualTable = $this->wrapColumnInPita('virtual_' . str_replace('"', '', $table));
+
+                $virtualTableDeclare = 'CREATE VIRTUAL TABLE '
+                    . $virtualTable
+                    . ' USING FTS5'
+                    . $this->concludeBrackets($columnsForVirtualTable)
+                    . ';';
+
+                $insertingInVirtualTable = 'INSERT INTO '
+                    . $virtualTable
+                    . ' ' . $this->concludeBrackets($columnsForVirtualTable)
+                    . ' SELECT '
+                    . $columnsForVirtualTable
+                    . ' FROM '
+                    . $table
+                    . ';';
+
+                array_unshift($this->bindings, $virtualTableDeclare . ' ' . $insertingInVirtualTable);
+
+                if (count($column) > 1) {
+                    $columnForMatching = '';
+
+                    array_map(function ($item) use (&$columnForMatching, $value) {
+                        $columnForMatching .= $item . ':' . $value . ' ';
+                    }, $column);
+
+                    $value = $this->wrapStringInPita(trim($columnForMatching));
+
+                    $column = $virtualTable;
+                } else {
+                    $value = $this->wrapStringInPita($value);
+
+                    $column = $this->wrapColumnInPita($column);
+                }
+
+                $this->replaceBind('from', [
+                    $table . ' t INNER JOIN ' . $virtualTable . ' s ON s.id = t.id'
+                ]);
+
+                $this->bind('where', [
+                    $whereLogicalType, //?
+                    $column,
+                    $isNotCondition ? 'NOT' : '',
+                    'MATCH',
                     $value
                 ]);
 
