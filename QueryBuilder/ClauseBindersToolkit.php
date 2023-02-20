@@ -68,6 +68,21 @@ trait ClauseBindersToolkit
 
 
 
+    protected function getTableBinding(): string
+    {
+        $fromBinding = $this->getBinding('from');
+
+        $table = null;
+
+        array_walk_recursive($fromBinding, function ($item) use (&$table) {
+            $table = $item;
+        });
+
+        return $table;
+    }
+
+
+
     protected function checkMatching(string|int|float|array $suspect, array $dataFromWhichToCheck): bool
     {
         if (is_array($suspect)) {
@@ -84,8 +99,6 @@ trait ClauseBindersToolkit
     }
 
 
-
-
     protected function isAssociative(array $array): bool
     {
         $supposedKeys = range(0, count($array) - 1);
@@ -98,12 +111,16 @@ trait ClauseBindersToolkit
 
     protected function wrapColumnInPita(string|array $subject): string|array
     {
-        return $this->concludeEntities($subject, $this->driver->getPitaForColumns());
+        $pitaForColumns = $this->driver->getPitaForColumns();
+
+        return $this->concludeEntities($subject, $pitaForColumns['opening'], $pitaForColumns['closing']);
     }
 
     protected function wrapStringInPita(string|array $subject): string|array
     {
-        return $this->concludeEntities($subject, $this->driver->getPitaForStrings());
+        $pitaForStrings = $this->driver->getPitaForStrings();
+
+        return $this->concludeEntities($subject, $pitaForStrings['opening'], $pitaForStrings['closing']);
     }
 
 

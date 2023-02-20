@@ -12,6 +12,8 @@ class AvailableDbmsDrivers
 
     const SQLITE = 'sqlite';
 
+    const MSSQLSERVER = 'microsoft sql server';
+
 //    public static function getDriversAndHandlersConformity(): array
 //    {
 //        return [

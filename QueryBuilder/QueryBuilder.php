@@ -4,6 +4,7 @@ namespace Moarai\QueryBuilder;
 
 use Exception;
 use Moarai\Drivers\AvailableDbmsDrivers;
+use Moarai\Drivers\MsSqlServerDriver;
 use Moarai\Drivers\MySqlDriver;
 use Moarai\Drivers\PostgreSqlDriver;
 use Moarai\Drivers\SqliteDriver;
@@ -30,7 +31,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new SqliteDriver();
+        $this->driver = new MsSqlServerDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -541,13 +542,7 @@ class QueryBuilder
 
                 $columnsForVirtualTable = implode(', ', $this->wrapColumnInPita($column));
 
-                $fromBinding = $this->getBinding('from');
-
-                $table = null;
-
-                array_walk_recursive($fromBinding, function ($item) use (&$table) {
-                    $table = $item;
-                });
+                $table = $this->getTableBinding();
 
                 $virtualTable = $this->wrapColumnInPita('virtual_' . str_replace('"', '', $table));
 
@@ -594,6 +589,43 @@ class QueryBuilder
                     $isNotCondition ? 'NOT' : '',
                     'MATCH',
                     $value
+                ]);
+
+                break;
+            case AvailableDbmsDrivers::MSSQLSERVER:
+                if (!is_array($column)) {
+                    $column = [$column];
+                }
+
+                $table = $this->getTableBinding();
+
+                $rankingExpression = 'FREETEXTTABLE'
+                    . $this->concludeBrackets(
+                        $table
+                        . ', '
+                        . $this->wrapColumnInPita($column[0])
+                        . ', '
+                        . $this->wrapStringInPita($value)
+                    )
+                    . ' AS ' . $this->wrapColumnInPita('fts_table')
+                    . ' INNER JOIN '
+                    . $table
+                    . ' ON '
+                    . $this->wrapColumnInPita('fts_table')
+                    . '.'
+                    . $this->wrapColumnInPita('key')
+                    . ' = '
+                    . $table
+                    . '.'
+                    . $this->wrapColumnInPita('id');
+
+                $this->replaceBind('from', [$rankingExpression]);
+
+                $this->bind('orderBy', [
+                    $this->wrapColumnInPita('fts_table')
+                    . '.'
+                    . $this->wrapColumnInPita('rank')
+                    . ' DESC'
                 ]);
 
                 break;
@@ -916,7 +948,7 @@ class QueryBuilder
                 if (is_array($binding)) {
                     $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
                 } else {
-                    if (!strpbrk($binding, '()`\'"')) {
+                    if (!strpbrk($binding, '()`\'"[]')) {
                         $binding = strtoupper($binding);
                     }
 

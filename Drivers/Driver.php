@@ -4,28 +4,40 @@ namespace Moarai\Drivers;
 
 abstract class Driver
 {
-    protected string $pitaForColumns;
+    protected array $pitaForColumns = [];
 
-    protected string $pitaForStrings;
+    protected array $pitaForStrings = [];
 
-    public function getPitaForColumns(): string
+    public function getPitaForColumns(): array
     {
         return $this->pitaForColumns;
     }
 
-    public function getPitaForStrings(): string
+    public function getPitaForStrings(): array
     {
         return $this->pitaForStrings;
     }
 
-    public function setPitaForColumns(string $pita): void
+    public function setPitaForColumns(string $pita, string|null $closingPita = null): void
     {
-        $this->pitaForColumns = $pita;
+        $this->setPita($pita, $closingPita, $this->pitaForColumns);
     }
 
-    public function setPitaForStrings(string $pita): void
+    public function setPitaForStrings(string $pita, string|null $closingPita = null): void
     {
-        $this->pitaForStrings = $pita;
+        $this->setPita($pita, $closingPita, $this->pitaForStrings);
+    }
+
+    private function setPita(string $pita, string|null $closingPita, array &$pitaContainer): void
+    {
+        if (empty($closingPita)) {
+            $closingPita = $pita;
+        }
+
+        $pitaContainer = [
+            'opening' => $pita,
+            'closing' => $closingPita
+        ];
     }
 
     public function initializeDriver(): void
