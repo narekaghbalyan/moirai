@@ -374,7 +374,7 @@ class QueryBuilder
                         $argumentsExists = true;
 
                         if (
-                            !$this->checkMatching(array_keys($highlighting), $this->driver->getHighlightingArguments())
+                        !$this->checkMatching(array_keys($highlighting), $this->driver->getHighlightingArguments())
                         ) {
                             throw new Exception(
                                 'Arguments to the highlighting function can be as follows "'
@@ -545,7 +545,9 @@ class QueryBuilder
 
                 $table = null;
 
-                array_walk_recursive($fromBinding, function ($item) use (&$table) { $table = $item; });
+                array_walk_recursive($fromBinding, function ($item) use (&$table) {
+                    $table = $item;
+                });
 
                 $virtualTable = $this->wrapColumnInPita('virtual_' . str_replace('"', '', $table));
 
@@ -689,7 +691,8 @@ class QueryBuilder
         } else {
             $randomExpression = match ($this->getDriver()) {
                 AvailableDbmsDrivers::MYSQL => 'RAND()',
-                AvailableDbmsDrivers::POSTGRESQL => 'RANDOM()',
+                AvailableDbmsDrivers::POSTGRESQL,
+                AvailableDbmsDrivers::SQLITE => 'RANDOM()'
             };
         }
 
@@ -767,8 +770,14 @@ class QueryBuilder
                     $update = $columnsWithValues[0];
 
                     $update = array_values(array_flip($update));
-                } elseif(!is_array($update)) {
+                } elseif (!is_array($update)) {
                     $update = [$update];
+                }
+
+                if (!$this->checkMatching(
+                    $update, array_keys($columnsWithValues[array_key_first($columnsWithValues)]))
+                ) {
+                    throw new Exception('The field to update must be contained in the first argument.');
                 }
 
                 $lastKey = array_key_last($update);
@@ -782,7 +791,8 @@ class QueryBuilder
                         AvailableDbmsDrivers::MYSQL => ' = VALUES' . $this->concludeBrackets(
                                 $this->wrapStringInPita($item)
                             ),
-                        AvailableDbmsDrivers::POSTGRESQL => ' = EXCLUDED.' . $item,
+                        AvailableDbmsDrivers::POSTGRESQL,
+                        AvailableDbmsDrivers::SQLITE => ' = EXCLUDED.' . $item,
                     };
 
                     $key !== $lastKey ? $readyUpdate .= ',' : $readyUpdate .= '';
@@ -793,6 +803,7 @@ class QueryBuilder
                         $odkuPostfix = 'ON DUPLICATE KEY UPDATE' . $readyUpdate;
 
                         break;
+                    case AvailableDbmsDrivers::SQLITE:
                     case AvailableDbmsDrivers::POSTGRESQL:
                         $odkuPostfix = 'ON CONFLICT ';
 
@@ -840,7 +851,7 @@ class QueryBuilder
                 $this->bind('insert', [
                     !$columnsAlreadyReserved ? $this->concludeBrackets(implode(', ', $columns)) : '',
                     !$columnsAlreadyReserved ? 'VALUES' : '',
-                    $this->concludeBrackets(implode(', ', $values)),
+                    $this->concludeBrackets(implode(', ', $this->wrapStringInPita($values))),
                     $odku ? (
                     $odkuStatementReadyForInsertion ? $odkuPostfix : ''
                     ) : '',
@@ -855,6 +866,7 @@ class QueryBuilder
                         array_unshift($this->bindings['insert'], 'IGNORE');
 
                         break;
+                    case AvailableDbmsDrivers::SQLITE:
                     case AvailableDbmsDrivers::POSTGRESQL:
                         $this->bind('insert', ['ON CONFLICT DO NOTHING']);
 
