@@ -31,7 +31,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MsSqlServerDriver();
+        $this->driver = new PostgreSqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -791,7 +791,9 @@ class QueryBuilder
         ) ? $firstElement : $columnsWithValues;
 
         if (is_null($query)) {
-            $this->changeQueryTypeToInsert('insert');
+            $table = $this->getTableBinding();
+
+            $this->changeQueryTypeToInsert();
 
             if ($odku) {
                 if (!is_array($columnsWithValues[array_key_first($columnsWithValues)])) {
@@ -820,6 +822,9 @@ class QueryBuilder
                     $readyUpdate .= ' ' . $this->wrapColumnInPita($item);
 
                     $readyUpdate .= match ($this->getDriver()) {
+                        AvailableDbmsDrivers::MSSQLSERVER => ' = ' . $this->wrapStringInPita(
+                                $columnsWithValues[array_key_first($columnsWithValues)][$item]
+                            ),
                         AvailableDbmsDrivers::MYSQL => ' = VALUES' . $this->concludeBrackets(
                                 $this->wrapStringInPita($item)
                             ),
@@ -852,21 +857,123 @@ class QueryBuilder
                         $odkuPostfix .= ' DO UPDATE SET ' . $readyUpdate;
 
                         break;
+                    case AvailableDbmsDrivers::MSSQLSERVER;
+//                        $whereExpression = [];
+//
+//                        foreach ($columnsWithValues[array_key_first($columnsWithValues)] as $column => $value) {
+//                            if (in_array($column, $update)) {
+//                                continue;
+//                            }
+//
+//                            $whereExpression[] = $this->wrapColumnInPita($column) . ' = ' . $this->wrapStringInPita($value);
+//                        }
+//
+//                        $odkuPostfix = [
+//                            'IF @@ROWCOUNT = 0 BEGIN '
+//                            . 'update' => $table
+//                            . ' SET '
+//                            . $readyUpdate
+//                            . ' WHERE '
+//                            . implode(' AND ', $whereExpression)
+//                            . ';'
+//                            . ' END'
+//                        ];
+
+                        $odkuPostfix = '';
+
+                        $mergeValues = [];
+
+                        foreach ($columnsWithValues as $columnWithValue) {
+                            $mergeValues[] = $this->concludeBrackets(
+                                implode(', ', $this->wrapStringInPita($columnWithValue))
+                            );
+                        }
+
+                        $mergingTable = $this->wrapColumnInPita('moarai_source');
+
+                        $matchingExpression = [];
+
+                        if (!empty($uniqueBy)) {
+                            if (!is_array($uniqueBy)) {
+                                $uniqueBy = [$uniqueBy];
+                            }
+                        } else {
+                            $uniqueBy = array_keys(
+                                $columnsWithValues[array_key_first($columnsWithValues)]
+                            );
+                        }
+
+                        $uniqueExpression = [];
+
+                        foreach ($uniqueBy as $uniqueColumn) {
+                            $uniqueExpression[] = $this->wrapColumnInPita($uniqueColumn)
+                                . ' = '
+                                . $mergingTable
+                                . '.'
+                                . $this->wrapColumnInPita($uniqueColumn);
+                        }
+
+                        foreach ($update as $item) {
+                            $matchingExpression[] =
+                                $mergingTable
+                                . '.'
+                                . $this->wrapColumnInPita($item)
+                                . ' = '
+                                . $table
+                                . '.'
+                                . $this->wrapColumnInPita($item);
+                        }
+
+                        $mergeExpression = $table . ' USING '
+                            . $this->concludeBrackets(
+                                'VALUES ' . implode(', ', $mergeValues)
+                            )
+                            . ' '
+                            . $mergingTable
+                            . ' '
+                            . $this->concludeBrackets(
+                                implode(
+                                    ', ',
+                                    $this->wrapColumnInPita(
+                                        array_keys(
+                                            $columnsWithValues[array_key_first($columnsWithValues)]
+                                        )
+                                    )
+                                )
+                            )
+                            . ' ON '
+                            . implode(' AND ', $matchingExpression)
+                            . ' WHEN MATCHED THEN UPDATE SET '
+                            . implode(', ', $uniqueExpression)
+                            . ' WHEN NOT MATCHED THEN';
+
+                        $this->bindings = array_merge([
+                            'merge' => $mergeExpression
+                        ], $this->bindings);
+
+                        break;
                 }
             }
 
             $usedColumns = [];
 
-            $columnsAlreadyReserved = false;
+            $insertionValues = [];
 
-            $odkuStatementReadyForInsertion = false;
+            $insertionColumns = [];
 
-            foreach ($columnsWithValues as $key => $columnWithValue) {
+            foreach ($columnsWithValues as $columnWithValue) {
                 $this->throwExceptionIfArrayIsNotAssociative($columnWithValue);
 
-                $columns = $this->wrapColumnInPita(
-                    array_keys($columnWithValue)
+                $columns = $this->concludeBrackets(
+                    implode(
+                        ', ',
+                        $this->wrapColumnInPita(
+                            array_keys($columnWithValue)
+                        )
+                    )
                 );
+
+                $insertionColumns[] = $columns;
 
                 $usedColumns[] = $columns;
 
@@ -874,23 +981,19 @@ class QueryBuilder
                     throw new Exception('Columns in arrays do not match');
                 }
 
-                $values = array_values($columnWithValue);
-
-                if ($key === array_key_last($columnsWithValues)) {
-                    $odkuStatementReadyForInsertion = true;
-                }
-
-                $this->bind('insert', [
-                    !$columnsAlreadyReserved ? $this->concludeBrackets(implode(', ', $columns)) : '',
-                    !$columnsAlreadyReserved ? 'VALUES' : '',
-                    $this->concludeBrackets(implode(', ', $this->wrapStringInPita($values))),
-                    $odku ? (
-                    $odkuStatementReadyForInsertion ? $odkuPostfix : ''
-                    ) : '',
-                ]);
-
-                $columnsAlreadyReserved = true;
+                $insertionValues[] = $this->concludeBrackets(
+                    implode(', ', $this->wrapStringInPita($columnWithValue))
+                );
             }
+
+            $insertionValues = implode(', ', $insertionValues);
+
+            $this->bind('insert', [
+                $insertionColumns[array_key_first($insertionColumns)],
+                'VALUES',
+                $insertionValues,
+                $odku ? $odkuPostfix : '',
+            ]);
 
             if ($ignore) {
                 switch ($this->getDriver()) {

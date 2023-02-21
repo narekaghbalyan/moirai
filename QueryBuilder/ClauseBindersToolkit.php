@@ -183,7 +183,7 @@ trait ClauseBindersToolkit
 
 
 
-    protected function changeQueryTypeToInsert(string $bindingName)
+    protected function changeQueryTypeToInsert(string $bindingName = 'insert'): void
     {
         $table = $this->getBinding('from');
 
