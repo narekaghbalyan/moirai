@@ -31,7 +31,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new PostgreSqlDriver();
+        $this->driver = new MsSqlServerDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -893,33 +893,28 @@ class QueryBuilder
 
                         $matchingExpression = [];
 
+                        $uniqueExpression = [];
+
                         if (!empty($uniqueBy)) {
                             if (!is_array($uniqueBy)) {
                                 $uniqueBy = [$uniqueBy];
                             }
-                        } else {
-                            $uniqueBy = array_keys(
-                                $columnsWithValues[array_key_first($columnsWithValues)]
-                            );
-                        }
 
-                        $uniqueExpression = [];
-
-                        foreach ($uniqueBy as $uniqueColumn) {
-                            $uniqueExpression[] = $this->wrapColumnInPita($uniqueColumn)
-                                . ' = '
-                                . $mergingTable
-                                . '.'
-                                . $this->wrapColumnInPita($uniqueColumn);
+                            foreach ($uniqueBy as $uniqueColumn) {
+                                $uniqueExpression[] = $mergingTable
+                                    . '.'
+                                    . $this->wrapColumnInPita($uniqueColumn)
+                                    . ' = '
+                                    . $table
+                                    . '.'
+                                    . $this->wrapColumnInPita($uniqueColumn);
+                            }
                         }
 
                         foreach ($update as $item) {
-                            $matchingExpression[] =
-                                $mergingTable
-                                . '.'
-                                . $this->wrapColumnInPita($item)
+                            $matchingExpression[] = $this->wrapColumnInPita($item)
                                 . ' = '
-                                . $table
+                                . $mergingTable
                                 . '.'
                                 . $this->wrapColumnInPita($item);
                         }
@@ -942,9 +937,9 @@ class QueryBuilder
                                 )
                             )
                             . ' ON '
-                            . implode(' AND ', $matchingExpression)
+                            . implode(' AND ', $uniqueExpression)
                             . ' WHEN MATCHED THEN UPDATE SET '
-                            . implode(', ', $uniqueExpression)
+                            . implode(', ', $matchingExpression)
                             . ' WHEN NOT MATCHED THEN';
 
                         $this->bindings = array_merge([
