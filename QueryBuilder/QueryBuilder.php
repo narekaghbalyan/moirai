@@ -4,6 +4,7 @@ namespace Moarai\QueryBuilder;
 
 use Exception;
 use Moarai\Drivers\AvailableDbmsDrivers;
+use Moarai\Drivers\MariaDbDriver;
 use Moarai\Drivers\MsSqlServerDriver;
 use Moarai\Drivers\MySqlDriver;
 use Moarai\Drivers\PostgreSqlDriver;
@@ -309,6 +310,7 @@ class QueryBuilder
                                                  bool $isNotCondition = false): void
     {
         switch ($this->getDriver()) {
+            case AvailableDbmsDrivers::MARIADB:
             case AvailableDbmsDrivers::MYSQL:
                 if (!is_array($column)) {
                     $column = [$column];
@@ -722,6 +724,7 @@ class QueryBuilder
             }
         } else {
             $randomExpression = match ($this->getDriver()) {
+                AvailableDbmsDrivers::MARIADB,
                 AvailableDbmsDrivers::MYSQL => 'RAND()',
                 AvailableDbmsDrivers::POSTGRESQL,
                 AvailableDbmsDrivers::SQLITE => 'RANDOM()'
@@ -836,6 +839,7 @@ class QueryBuilder
                 }
 
                 switch ($this->getDriver()) {
+                    case AvailableDbmsDrivers::MARIADB:
                     case AvailableDbmsDrivers::MYSQL:
                         $odkuPostfix = 'ON DUPLICATE KEY UPDATE' . $readyUpdate;
 
@@ -858,27 +862,6 @@ class QueryBuilder
 
                         break;
                     case AvailableDbmsDrivers::MSSQLSERVER;
-//                        $whereExpression = [];
-//
-//                        foreach ($columnsWithValues[array_key_first($columnsWithValues)] as $column => $value) {
-//                            if (in_array($column, $update)) {
-//                                continue;
-//                            }
-//
-//                            $whereExpression[] = $this->wrapColumnInPita($column) . ' = ' . $this->wrapStringInPita($value);
-//                        }
-//
-//                        $odkuPostfix = [
-//                            'IF @@ROWCOUNT = 0 BEGIN '
-//                            . 'update' => $table
-//                            . ' SET '
-//                            . $readyUpdate
-//                            . ' WHERE '
-//                            . implode(' AND ', $whereExpression)
-//                            . ';'
-//                            . ' END'
-//                        ];
-
                         $odkuPostfix = '';
 
                         $mergeValues = [];
@@ -992,6 +975,7 @@ class QueryBuilder
 
             if ($ignore) {
                 switch ($this->getDriver()) {
+                    case AvailableDbmsDrivers::MARIADB:
                     case AvailableDbmsDrivers::MYSQL:
                         array_unshift($this->bindings['insert'], 'IGNORE');
 
@@ -1001,6 +985,10 @@ class QueryBuilder
                         $this->bind('insert', ['ON CONFLICT DO NOTHING']);
 
                         break;
+                    case AvailableDbmsDrivers::MSSQLSERVER:
+                        throw new Exception(
+                            'This database engine does not support inserting while ignoring errors.'
+                        );
                 }
             }
         } else {

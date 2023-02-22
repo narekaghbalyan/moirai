@@ -14,6 +14,8 @@ class AvailableDbmsDrivers
 
     const MSSQLSERVER = 'microsoft sql server';
 
+    const MARIADB = 'mariadb';
+
 //    public static function getDriversAndHandlersConformity(): array
 //    {
 //        return [
