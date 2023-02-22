@@ -321,7 +321,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // or
     // ->insertWithIgnore([['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']]);
     // insert ignore into table (`c1`, `c2`) values ('v1', 'v2') ('v3', 'v4')
-    public function insertWithIgnore(array ...$columnsWithValues)
+    public function insertOrIgnore(array ...$columnsWithValues)
     {
         $this->insertClauseBinder($columnsWithValues, null, true);
 

@@ -862,6 +862,8 @@ class QueryBuilder
 
                         break;
                     case AvailableDbmsDrivers::MSSQLSERVER;
+                        $this->devastateBinding('insert');
+
                         $odkuPostfix = '';
 
                         $mergeValues = [];
@@ -986,9 +988,57 @@ class QueryBuilder
 
                         break;
                     case AvailableDbmsDrivers::MSSQLSERVER:
-                        throw new Exception(
-                            'This database engine does not support inserting while ignoring errors.'
+                        $this->deleteBinding('insert');
+
+                        $mergingTable = $this->wrapColumnInPita('moarai_source');
+
+                        $columns = $this->wrapColumnInPita(
+                            array_keys($columnsWithValues[array_key_first($columnsWithValues)])
                         );
+
+                        $insertionColumns = $this->concludeBrackets(implode(', ', $columns));
+
+                        $combinationExpression = [];
+
+                        foreach ($columns as $column) {
+                            $combinationExpression[] = $mergingTable
+                                . '.'
+                                . $column
+                                . ' = '
+                                . $table
+                                . '.'
+                                . $column;
+                        }
+
+                        $combinationExpression = implode(' AND ', $combinationExpression);
+
+                        $insertionValues = [];
+
+                        foreach ($columnsWithValues as $columnWithValues) {
+                            $insertionValues[] = $this->concludeBrackets(
+                                implode(
+                                    ', ',
+                                    $this->wrapStringInPita(array_values($columnWithValues))
+                                )
+                            );
+                        }
+
+                        $insertionValues = implode(', ', $insertionValues);
+
+                        $this->bind('merge', [
+                            'INTO',
+                            $table,
+                            'USING',
+                            $mergingTable,
+                            ' ON ',
+                            $combinationExpression,
+                            'WHEN NOT MATCHED THEN INSERT',
+                            $insertionColumns,
+                            'VALUES',
+                            $insertionValues
+                        ]);
+
+                        break;
                 }
             }
         } else {

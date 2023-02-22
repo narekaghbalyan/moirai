@@ -61,9 +61,50 @@ trait ClauseBindersToolkit
         return $this->bindings;
     }
 
+    protected function devastateBinding(string $bindingName): void
+    {
+        $this->bindings[$bindingName] = [];
+    }
+
     protected function devastateBindings(): void
     {
         $this->bindings = [];
+    }
+
+    protected function deleteBinding(string $bindingName): void
+    {
+        unset($this->bindings[$bindingName]);
+    }
+
+
+    protected function renameBinding(string $bindingName, string $bindingNewName): void
+    {
+        if (!array_key_exists($bindingName, $this->bindings)) {
+            throw new Exception('Binding called "' . $bindingName . '" doesnt exist.');
+        }
+
+        $keys = array_keys($this->bindings);
+
+        $keys[array_search($bindingName, $keys)] = $bindingNewName;
+
+        $this->bindings = array_combine($keys, $this->bindings);
+    }
+
+    protected function changeQueryTypeToInsert(): void
+    {
+        $this->changeQueryType('insert');
+    }
+
+
+
+
+    protected function changeQueryType(string $bindingName): void
+    {
+        $table = $this->getBinding('from');
+
+        $this->bindings = [
+            $bindingName => ['into', $table]
+        ];
     }
 
 
@@ -183,14 +224,7 @@ trait ClauseBindersToolkit
 
 
 
-    protected function changeQueryTypeToInsert(string $bindingName = 'insert'): void
-    {
-        $table = $this->getBinding('from');
 
-        $this->bindings = [
-            $bindingName => ['into', $table]
-        ];
-    }
 
 
 
