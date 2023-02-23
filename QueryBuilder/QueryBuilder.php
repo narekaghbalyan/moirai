@@ -914,6 +914,7 @@ class QueryBuilder
                         $odkuPostfix .= ' DO UPDATE SET ' . $readyUpdate;
 
                         break;
+                    case AvailableDbmsDrivers::ORACLE:
                     case AvailableDbmsDrivers::MSSQLSERVER;
                         $this->devastateBinding('insert');
 
@@ -1040,6 +1041,7 @@ class QueryBuilder
                         $this->bind('insert', ['ON CONFLICT DO NOTHING']);
 
                         break;
+                    case AvailableDbmsDrivers::ORACLE:
                     case AvailableDbmsDrivers::MSSQLSERVER:
                         $this->deleteBinding('insert');
 
