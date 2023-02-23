@@ -781,11 +781,29 @@ class QueryBuilder
 
     protected function offsetClauseBinder(int $count)
     {
+        if ($this->getDriver() === AvailableDbmsDrivers::ORACLE) {
+            $count .= ' ROWS';
+        }
+
         $this->bind('offset', [$count]);
     }
 
-    protected function limitClauseBinder(int $count)
+    protected function limitClauseBinder(int $count, bool $inPercentages)
     {
+        if ($this->getDriver() !== AvailableDbmsDrivers::ORACLE) {
+            if ($inPercentages) {
+                throw new Exception(
+                    '"'
+                    . $this->getDriver()
+                    . '" database management system does not support limit request with percentage applied.'
+                );
+            }
+        } else {
+            $count = ' FETCH FIRST ' . $count . ' %s ' . ' ROWS ONLY';
+
+            $count = $inPercentages ? sprintf($count, 'PERCENT') : sprintf($count, '');
+        }
+
         $this->bind('limit', [$count]);
     }
 

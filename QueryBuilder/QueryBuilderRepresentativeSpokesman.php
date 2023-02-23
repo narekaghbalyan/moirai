@@ -256,9 +256,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     // TODO having between
 
-    public function limit(int $count): self
+    public function limit(int $count, bool $inPercentages = false): self
     {
-        $this->limitClauseBinder($count);
+        $this->limitClauseBinder($count, $inPercentages);
 
         return $this;
     }
@@ -277,9 +277,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    public function take(int $count): self
+    public function take(int $count, bool $inPercentages = false): self
     {
-        $this->limit($count);
+        $this->limit($count, $inPercentages);
 
         return $this;
     }
