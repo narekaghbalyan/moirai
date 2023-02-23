@@ -16,6 +16,8 @@ class AvailableDbmsDrivers
 
     const MARIADB = 'mariadb';
 
+    const ORACLE = 'oracle';
+
 //    public static function getDriversAndHandlersConformity(): array
 //    {
 //        return [

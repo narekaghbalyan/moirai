@@ -7,6 +7,7 @@ use Moarai\Drivers\AvailableDbmsDrivers;
 use Moarai\Drivers\MariaDbDriver;
 use Moarai\Drivers\MsSqlServerDriver;
 use Moarai\Drivers\MySqlDriver;
+use Moarai\Drivers\OracleDriver;
 use Moarai\Drivers\PostgreSqlDriver;
 use Moarai\Drivers\SqliteDriver;
 
@@ -32,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MsSqlServerDriver();
+        $this->driver = new OracleDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -629,6 +630,40 @@ class QueryBuilder
                     . $this->wrapColumnInPita('rank')
                     . ' DESC'
                 ]);
+
+                break;
+            case AvailableDbmsDrivers::ORACLE:
+                if (!is_array($column)) {
+                    $column = [$column];
+                }
+
+                $scores = [];
+
+                $containers = [];
+
+                foreach ($column as $iterator => $item) {
+                    $iterator += 1;
+
+                    $containers[] = 'CONTAINS'
+                        . $this->concludeBrackets(
+                            $this->wrapColumnInPita($item)
+                            . ', '
+                            . $this->wrapStringInPita($value)
+                            . ', '
+                            . $iterator
+                        )
+                        . ' > 0';
+
+                    $scores[] = 'SCORE' . $this->concludeBrackets($iterator);
+                }
+
+                $this->bind('select', [implode(', ', $scores)]);
+
+                $this->bind('where', [implode(' OR ', $containers)]);
+
+                $this->bind('orderBy', [implode(' DESC, ', $scores) . ' DESC']);
+
+                // TODO find a better option
 
                 break;
         }
