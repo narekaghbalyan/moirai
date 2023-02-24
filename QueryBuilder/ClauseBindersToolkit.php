@@ -30,6 +30,10 @@ trait ClauseBindersToolkit
         'asc', 'desc'
     ];
 
+    protected array $joinTypes = [
+        'left', 'right', 'inner', 'cross'
+    ];
+
     private function useAdditionalAccessories(): void
     {
         $additionalAccessories = $this->driver->getAdditionalAccessories();

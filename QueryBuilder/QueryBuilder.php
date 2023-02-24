@@ -1169,11 +1169,11 @@ class QueryBuilder
         $table = $this->wrapColumnInPita($table);
 
         if (strpbrk($firstColumn, '.') && strpbrk($secondColumn, '.')) {
-            $firstColumn = implode('.', $this->wrapColumnInPita(explode('.', $firstColumn)));
-
-            $secondColumn = implode('.', $this->wrapColumnInPita(explode('.', $secondColumn)));
-
-            $joinExpression = $firstColumn . ' ' . $operator . ' ' . $secondColumn;
+            $joinExpression = implode('.', $this->wrapColumnInPita(explode('.', $firstColumn)))
+                . ' '
+                . $operator
+                . ' '
+                . implode('.', $this->wrapColumnInPita(explode('.', $secondColumn)));
         } else {
             $joinExpression = $this->getTableBinding()
                 . '.'

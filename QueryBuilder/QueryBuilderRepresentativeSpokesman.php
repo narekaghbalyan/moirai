@@ -366,4 +366,25 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function leftJoin(string|array $table, string $firstColumn, string $operator, string $secondColumn): self
+    {
+        $this->join($table, $firstColumn, $operator, $secondColumn, 'left');
+
+        return $this;
+    }
+
+    public function rightJoin(string|array $table, string $firstColumn, string $operator, string $secondColumn): self
+    {
+        $this->join($table, $firstColumn, $operator, $secondColumn, 'right');
+
+        return $this;
+    }
+
+    public function crossJoin(string|array $table, string $firstColumn, string $operator, string $secondColumn): self
+    {
+        $this->join($table, $firstColumn, $operator, $secondColumn, 'cross');
+
+        return $this;
+    }
 }
