@@ -355,4 +355,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         // TODO return value
     }
+
+    public function join(string|array $table,
+                         string $firstColumn,
+                         string $operator,
+                         string $secondColumn,
+                         string $joinType = 'inner'): self
+    {
+        $this->joinClauseBinder($table, $firstColumn, $operator, $secondColumn, $joinType);
+
+        return $this;
+    }
 }

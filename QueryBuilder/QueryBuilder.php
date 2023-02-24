@@ -1154,6 +1154,46 @@ class QueryBuilder
     }
 
 
+    public function joinClauseBinder(string|array $table,
+                                     string $firstColumn,
+                                     string $operator,
+                                     string $secondColumn,
+                                     string $joinType)
+    {
+        $this->throwExceptionIfOperatorIsInvalid($operator);
+
+        $join = $joinType . 'Join';
+
+        $this->renameBinding('join', $join);
+
+        $table = $this->wrapColumnInPita($table);
+
+        if (strpbrk($firstColumn, '.') && strpbrk($secondColumn, '.')) {
+            $firstColumn = implode('.', $this->wrapColumnInPita(explode('.', $firstColumn)));
+
+            $secondColumn = implode('.', $this->wrapColumnInPita(explode('.', $secondColumn)));
+
+            $joinExpression = $firstColumn . ' ' . $operator . ' ' . $secondColumn;
+        } else {
+            $joinExpression = $this->getTableBinding()
+                . '.'
+                . $this->wrapColumnInPita($firstColumn)
+                . ' '
+                . $operator
+                . ' '
+                . $table
+                . '.'
+                . $this->wrapColumnInPita($secondColumn);
+        }
+
+        $this->bind($join, [
+            $table,
+            'ON',
+            $joinExpression
+        ]);
+    }
+
+
     private function pickUpThePieces(array $bindings): string
     {
         $query = '';
