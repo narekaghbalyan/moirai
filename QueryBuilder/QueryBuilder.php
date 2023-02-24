@@ -22,10 +22,10 @@ class QueryBuilder
         'from' => [],
         'join' => [],
         'where' => [],
+        'union' => [],
         'groupBy' => [],
         'having' => [],
         'orderBy' => [],
-        'union' => [],
         'unionOrder' => [],
         'limit' => [],
         'offset' => []
@@ -1193,6 +1193,44 @@ class QueryBuilder
         ]);
     }
 
+//    protected array $bindings = [
+//        'select' => [],
+//        'from' => [],
+//        'join' => [],
+//        'where' => [],
+//        'union' => [],
+//        'groupBy' => [],
+//        'having' => [],
+//        'orderBy' => [],
+//        'unionOrder' => [],
+//        'limit' => [],
+//        'offset' => []
+//    ];
+
+    public function unionClauseBinder($query, bool $all)
+    {
+        if (!$query instanceof QueryBuilder) {
+            throw new Exception('The "query" argument must be an instance of the query builder.');
+        }
+
+//        $bindings = array_filter($this->getBindings());
+//
+//        $bindings[array_key_last($bindings)][] = ')';
+//
+//        array_map(function ($bindingName, $binding) {
+//            $this->replaceBind($bindingName, (array)$binding);
+//        }, array_keys($bindings), array_values($bindings));
+
+        dd($this->bindings);
+
+        $query = $this->concludeBrackets($this->pickUpThePieces($query->getBindings()));
+
+        $this->bind('union', [
+            $all ? 'ALL' : '',
+            $query
+        ]);
+    }
+
 
     private function pickUpThePieces(array $bindings): string
     {
@@ -1201,7 +1239,7 @@ class QueryBuilder
         foreach ($bindings as $bindingName => $binding) {
             if (!empty($binding)) {
                 if (is_string($bindingName)) {
-                    $bindingName = implode(' ', preg_split('/(?=[A-Z])/',$bindingName));
+                    $bindingName = implode(' ', preg_split('/(?=[A-Z])/', $bindingName));
 
                     $query .= strtoupper($bindingName);
                 }

@@ -394,4 +394,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function union($query, bool $all = false): self
+    {
+        $this->unionClauseBinder($query, $all);
+
+        return $this;
+    }
 }
