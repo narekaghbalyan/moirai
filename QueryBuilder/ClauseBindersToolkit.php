@@ -30,8 +30,12 @@ trait ClauseBindersToolkit
         'asc', 'desc'
     ];
 
+
+    // left outer = left
+    // right outer = right
+    // full outer = full
     protected array $joinTypes = [
-        'left', 'right', 'inner', 'cross'
+        'left outer', 'right outer', 'full outer', 'inner', 'cross'
     ];
 
     private function useAdditionalAccessories(): void

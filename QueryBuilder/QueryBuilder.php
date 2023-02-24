@@ -1201,6 +1201,8 @@ class QueryBuilder
         foreach ($bindings as $bindingName => $binding) {
             if (!empty($binding)) {
                 if (is_string($bindingName)) {
+                    $bindingName = implode(' ', preg_split('/(?=[A-Z])/',$bindingName));
+
                     $query .= strtoupper($bindingName);
                 }
 
