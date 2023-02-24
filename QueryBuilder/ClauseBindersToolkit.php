@@ -95,16 +95,23 @@ trait ClauseBindersToolkit
         $this->changeQueryType('insert');
     }
 
+    protected function changeQueryTypeToUpdate(): void
+    {
+        $this->changeQueryType('update', false);
+    }
 
 
 
-    protected function changeQueryType(string $bindingName): void
+
+    protected function changeQueryType(string $bindingName, bool $useInto = true): void
     {
         $table = $this->getBinding('from');
 
-        $this->bindings = [
-            $bindingName => ['into', $table]
-        ];
+        $this->bindings = [$bindingName => $table];
+
+        if ($useInto) {
+            array_unshift($this->bindings[$bindingName], 'into');
+        }
     }
 
 

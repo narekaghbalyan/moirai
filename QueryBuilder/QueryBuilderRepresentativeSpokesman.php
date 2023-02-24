@@ -348,4 +348,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         // TODO return value
     }
+
+    public function update(array $columnsWithValues)
+    {
+        $this->updateClauseBinder($columnsWithValues);
+
+        // TODO return value
+    }
 }

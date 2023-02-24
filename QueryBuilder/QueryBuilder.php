@@ -1126,6 +1126,34 @@ class QueryBuilder
         return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 
+
+    protected function updateClauseBinder(array $columnsWithValues)
+    {
+        $this->throwExceptionIfArrayIsNotAssociative($columnsWithValues);
+
+        $whereExpression = $this->getBinding('where');
+
+        $this->changeQueryTypeToUpdate();
+
+        $expressionForUpdate = [];
+
+        foreach ($columnsWithValues as $column => $value) {
+            $expressionForUpdate[] = $this->wrapColumnInPita($column)
+                . ' = '
+                . $this->wrapStringInPita($value);
+        }
+
+        $this->bind('update', [
+            'SET',
+            implode(', ', $expressionForUpdate),
+        ]);
+
+        $this->bind('where', [$whereExpression]);
+
+        return $this->executeQuery($this->pickUpThePieces($this->bindings));
+    }
+
+
     private function pickUpThePieces(array $bindings): string
     {
         $query = '';
