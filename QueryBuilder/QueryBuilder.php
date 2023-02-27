@@ -1193,35 +1193,17 @@ class QueryBuilder
         ]);
     }
 
-//    protected array $bindings = [
-//        'select' => [],
-//        'from' => [],
-//        'join' => [],
-//        'where' => [],
-//        'union' => [],
-//        'groupBy' => [],
-//        'having' => [],
-//        'orderBy' => [],
-//        'unionOrder' => [],
-//        'limit' => [],
-//        'offset' => []
-//    ];
-
     public function unionClauseBinder($query, bool $all)
     {
         if (!$query instanceof QueryBuilder) {
             throw new Exception('The "query" argument must be an instance of the query builder.');
         }
 
-//        $bindings = array_filter($this->getBindings());
-//
-//        $bindings[array_key_last($bindings)][] = ')';
-//
-//        array_map(function ($bindingName, $binding) {
-//            $this->replaceBind($bindingName, (array)$binding);
-//        }, array_keys($bindings), array_values($bindings));
+        $bindings = $this->concludeBrackets($this->pickUpThePieces($this->getBindings()));
 
-        dd($this->bindings);
+        $this->devastateBindings();
+
+        $this->bindings[] = $bindings;
 
         $query = $this->concludeBrackets($this->pickUpThePieces($query->getBindings()));
 
