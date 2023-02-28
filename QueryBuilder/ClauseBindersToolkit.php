@@ -84,6 +84,22 @@ trait ClauseBindersToolkit
         unset($this->bindings[$bindingName]);
     }
 
+    protected function resetBindingsToDefault(): void
+    {
+        $this->bindings = [
+            'select' => [],
+            'from' => [],
+            'join' => [],
+            'where' => [],
+            'union' => [],
+            'groupBy' => [],
+            'having' => [],
+            'orderBy' => [],
+            'unionOrder' => [],
+            'limit' => [],
+            'offset' => []
+        ];
+    }
 
     protected function renameBinding(string $bindingName, string $bindingNewName): void
     {
@@ -109,8 +125,6 @@ trait ClauseBindersToolkit
     }
 
 
-
-
     protected function changeQueryType(string $bindingName, bool $useInto = true): void
     {
         $table = $this->getBinding('from');
@@ -121,7 +135,6 @@ trait ClauseBindersToolkit
             array_unshift($this->bindings[$bindingName], 'into');
         }
     }
-
 
 
     protected function getTableBinding(): string
@@ -136,7 +149,6 @@ trait ClauseBindersToolkit
 
         return $table;
     }
-
 
 
     protected function checkMatching(string|int|float|array $suspect, array $dataFromWhichToCheck): bool
@@ -163,8 +175,6 @@ trait ClauseBindersToolkit
     }
 
 
-
-
     protected function wrapColumnInPita(string|array $subject): string|array
     {
         $pitaForColumns = $this->driver->getPitaForColumns();
@@ -178,7 +188,6 @@ trait ClauseBindersToolkit
 
         return $this->concludeEntities($subject, $pitaForStrings['opening'], $pitaForStrings['closing']);
     }
-
 
 
     protected function concludeSingleQuotes(string|array $subject): string|array
@@ -233,16 +242,6 @@ trait ClauseBindersToolkit
     }
 
 
-
-
-
-
-
-
-
-
-
-
     protected function runCallback(string $bindingName, string $whereLogicalType, callable $callback): void
     {
         $this->bind($bindingName, [$whereLogicalType]);
@@ -266,8 +265,6 @@ trait ClauseBindersToolkit
 
         $this->bind($bindingName, [')']);
     }
-
-
 
 
     protected function throwExceptionIfMisplacedArray(mixed $subject): void

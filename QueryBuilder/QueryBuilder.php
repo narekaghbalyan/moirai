@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new OracleDriver();
+        $this->driver = new MySqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -1207,12 +1207,16 @@ class QueryBuilder
 
         $query = $this->concludeBrackets($this->pickUpThePieces($query->getBindings()));
 
-        $this->bind('union', [
-            $all ? 'ALL' : '',
-            $query
-        ]);
-    }
+        $this->bind('union', [$all ? 'ALL' : '', $query]);
 
+        $unionBindings = $this->pickUpThePieces($this->getBindings());
+
+        $this->resetBindingsToDefault();
+
+        $this->bind('union', [$unionBindings]);
+
+        $this->renameBinding('union', 'evasive');
+    }
 
     private function pickUpThePieces(array $bindings): string
     {
@@ -1221,9 +1225,11 @@ class QueryBuilder
         foreach ($bindings as $bindingName => $binding) {
             if (!empty($binding)) {
                 if (is_string($bindingName)) {
-                    $bindingName = implode(' ', preg_split('/(?=[A-Z])/', $bindingName));
+                    if ($bindingName !== 'evasive') {
+                        $bindingName = implode(' ', preg_split('/(?=[A-Z])/', $bindingName));
 
-                    $query .= strtoupper($bindingName);
+                        $query .= strtoupper($bindingName);
+                    }
                 }
 
                 if (is_array($binding)) {
