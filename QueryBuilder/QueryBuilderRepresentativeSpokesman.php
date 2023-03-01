@@ -4,6 +4,7 @@ namespace Moarai\QueryBuilder;
 
 use Moarai\Drivers\AvailableDbmsDrivers;
 use ReflectionClass;
+use Exception;
 
 class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 {
@@ -400,5 +401,23 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         $this->unionClauseBinder($query, $all);
 
         return $this;
+    }
+
+    public function increment(string $column, int|float|string $amount = 1)
+    {
+        $this->throwExceptionIfArgumentNotNumeric($amount);
+
+        $this->updateClauseBinder([$column => $this->wrapColumnInPita($column) . ' + ' . $amount], true);
+
+        // TODO return update value
+    }
+
+    public function decrement(string $column, int|float|string $amount = 1)
+    {
+        $this->throwExceptionIfArgumentNotNumeric($amount);
+
+        $this->updateClauseBinder([$column => $this->wrapColumnInPita($column) . ' - ' . $amount], true);
+
+        // TODO return update value
     }
 }

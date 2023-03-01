@@ -1127,7 +1127,7 @@ class QueryBuilder
     }
 
 
-    protected function updateClauseBinder(array $columnsWithValues)
+    protected function updateClauseBinder(array $columnsWithValues, bool $operationIsUsed = false)
     {
         $this->throwExceptionIfArrayIsNotAssociative($columnsWithValues);
 
@@ -1138,9 +1138,11 @@ class QueryBuilder
         $expressionForUpdate = [];
 
         foreach ($columnsWithValues as $column => $value) {
-            $expressionForUpdate[] = $this->wrapColumnInPita($column)
-                . ' = '
-                . $this->wrapStringInPita($value);
+            $expression = $this->wrapColumnInPita($column) . ' = ';
+
+            $expression .= !$operationIsUsed ? $this->wrapStringInPita($value) : $value;
+
+            $expressionForUpdate[] = $expression;
         }
 
         $this->bind('update', [
@@ -1148,7 +1150,9 @@ class QueryBuilder
             implode(', ', $expressionForUpdate),
         ]);
 
-        $this->bind('where', [$whereExpression]);
+        if (!empty($whereExpression)) {
+            $this->bind('where', [$whereExpression]);
+        }
 
         return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
@@ -1217,6 +1221,8 @@ class QueryBuilder
 
         $this->renameBinding('union', 'evasive');
     }
+
+
 
     private function pickUpThePieces(array $bindings): string
     {

@@ -267,14 +267,14 @@ trait ClauseBindersToolkit
     }
 
 
-    protected function throwExceptionIfMisplacedArray(mixed $subject): void
+    protected function throwExceptionIfMisplacedArray(mixed $suspect): void
     {
-        if (is_array($subject)) {
+        if (is_array($suspect)) {
             throw new Exception('Invalid value specified. The value cannot be an array.');
         }
     }
 
-    protected function throwExceptionIfArrayAssociative(array $array, string|null $message = null)
+    protected function throwExceptionIfArrayAssociative(array $array, string|null $message = null): void
     {
         if ($this->isAssociative($array)) {
             throw new Exception(
@@ -283,7 +283,7 @@ trait ClauseBindersToolkit
         }
     }
 
-    protected function throwExceptionIfArrayIsNotAssociative(array $array, string|null $message = null)
+    protected function throwExceptionIfArrayIsNotAssociative(array $array, string|null $message = null): void
     {
         if (!$this->isAssociative($array)) {
             throw new Exception(
@@ -293,7 +293,7 @@ trait ClauseBindersToolkit
     }
 
 
-    protected function throwExceptionIfOperatorIsInvalid(string $operator)
+    protected function throwExceptionIfOperatorIsInvalid(string $operator): void
     {
         if (!$this->checkMatching($operator, $this->operators)) {
             throw new Exception(
@@ -302,7 +302,7 @@ trait ClauseBindersToolkit
         }
     }
 
-    protected function throwExceptionIfDirectionIsInvalid(string|array $direction)
+    protected function throwExceptionIfDirectionIsInvalid(string|array $direction): void
     {
         if (!$this->checkMatching($direction, $this->orderDirections)) {
             throw new Exception(
@@ -311,7 +311,7 @@ trait ClauseBindersToolkit
         }
     }
 
-    protected function throwExceptionIfFtsModifierIsInvalid(string $modifier)
+    protected function throwExceptionIfFtsModifierIsInvalid(string $modifier): void
     {
         $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);
 
@@ -319,6 +319,13 @@ trait ClauseBindersToolkit
             throw new Exception(
                 '"' . $modifier . '" is not a modifier.'
             );
+        }
+    }
+
+    protected function throwExceptionIfArgumentNotNumeric(mixed $suspect): void
+    {
+        if (!is_numeric($suspect)) {
+            throw new Exception('"' . $suspect . '" is not a number or a numeric string.');
         }
     }
 }
