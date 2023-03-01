@@ -1157,6 +1157,29 @@ class QueryBuilder
         return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 
+    protected function unaryOperatorsClauseBinder(string|array $columns,
+                                                  int|float|string|null $amount = null,
+                                                  string $operator = '+')
+    {
+        $preparedColumns = [];
+
+        if (is_array($columns)) {
+            $this->throwExceptionIfArrayIsNotAssociative($columns);
+
+            foreach ($columns as $column => $amount) {
+                $this->throwExceptionIfArgumentNotNumeric($amount);
+
+                $preparedColumns[$column] = $this->wrapColumnInPita($column) . ' ' . $operator . ' ' . $amount;
+            }
+        } else {
+            $this->throwExceptionIfArgumentNotNumeric($amount);
+
+            $preparedColumns[$columns] = $this->wrapColumnInPita($columns) . ' ' . $operator . ' ' . $amount;
+        }
+
+        $this->updateClauseBinder($preparedColumns, true);
+    }
+
 
     public function joinClauseBinder(string|array $table,
                                      string $firstColumn,

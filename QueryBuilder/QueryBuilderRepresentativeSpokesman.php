@@ -405,18 +405,28 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     public function increment(string $column, int|float|string $amount = 1)
     {
-        $this->throwExceptionIfArgumentNotNumeric($amount);
+        $this->unaryOperatorsClauseBinder($column, $amount);
 
-        $this->updateClauseBinder([$column => $this->wrapColumnInPita($column) . ' + ' . $amount], true);
+        // TODO return update value
+    }
+
+    public function incrementEach(array $columns)
+    {
+        $this->unaryOperatorsClauseBinder($columns);
 
         // TODO return update value
     }
 
     public function decrement(string $column, int|float|string $amount = 1)
     {
-        $this->throwExceptionIfArgumentNotNumeric($amount);
+        $this->unaryOperatorsClauseBinder($column, $amount, '-');
 
-        $this->updateClauseBinder([$column => $this->wrapColumnInPita($column) . ' - ' . $amount], true);
+        // TODO return update value
+    }
+
+    public function decrementEach(array $columns)
+    {
+        $this->unaryOperatorsClauseBinder($columns, 1, '-');
 
         // TODO return update value
     }
