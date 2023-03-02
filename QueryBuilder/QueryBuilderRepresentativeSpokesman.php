@@ -36,12 +36,75 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    public function chunk(int|string $count, callable $callback): self
+    public function chunk(int|string $count, callable $callback): bool
     {
-        $this->chunkClauseBinder($count, $callback);
+        return $this->chunkClauseBinder($count, $callback);
+    }
+
+
+
+
+
+
+
+    public function max(string $column): self
+    {
+        $this->selectClauseBinder(
+            false,
+            'max' . $this->concludeBrackets($this->wrapColumnInPita($column))
+        );
 
         return $this;
     }
+
+    public function min(string $column): self
+    {
+        $this->selectClauseBinder(
+            false,
+            'min' . $this->concludeBrackets($this->wrapColumnInPita($column))
+        );
+
+        return $this;
+    }
+
+    public function avg(string $column): self
+    {
+        $this->selectClauseBinder(
+            false,
+            'avg' . $this->concludeBrackets($this->wrapColumnInPita($column))
+        );
+
+        return $this;
+    }
+
+    public function count(string $column = '*'): self
+    {
+        if ($column !== '*') {
+            $column = $this->wrapColumnInPita($column);
+        }
+
+        $this->selectClauseBinder(
+            false,
+            'count'. $this->concludeBrackets($column)
+        );
+
+        return $this;
+    }
+
+    public function sum(string $column): self
+    {
+        $this->selectClauseBinder(
+            false,
+            'sum' . $this->concludeBrackets($this->wrapColumnInPita($column))
+        );
+
+        return $this;
+    }
+
+
+
+
+
 
     public function from(string $table): self
     {
