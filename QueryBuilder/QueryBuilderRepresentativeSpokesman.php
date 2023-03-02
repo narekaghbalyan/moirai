@@ -22,6 +22,20 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    public function pluck(array|string ...$columns): self
+    {
+        $this->selectClauseBinder(false, $columns);
+
+        return $this;
+    }
+
+    public function getColumn(array|string ...$columns): self
+    {
+        $this->selectClauseBinder(false, $columns);
+
+        return $this;
+    }
+
     public function from(string $table): self
     {
         $this->fromClauseBinder($table);

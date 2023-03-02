@@ -45,10 +45,10 @@ class QueryBuilder
 
     protected function selectClauseBinder(bool $distinct = false, array|string ...$columns): void
     {
-        $flattenedColumns = $this->wrapColumnInPita($columns);
-
-        if (empty($flattenedColumns)) {
+        if (empty($columns[array_key_first($columns)])) {
             $flattenedColumns = '*';
+        } else {
+            $flattenedColumns = implode(', ', $this->wrapColumnInPita($columns));
         }
 
         $this->bind('select', [
