@@ -36,6 +36,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    public function chunk(int|string $count, callable $callback): self
+    {
+        $this->chunkClauseBinder($count, $callback);
+
+        return $this;
+    }
+
     public function from(string $table): self
     {
         $this->fromClauseBinder($table);
@@ -45,7 +52,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     public function table(string $table): self
     {
-        $this->from($table);
+        $this->fromClauseBinder($table);
 
         return $this;
     }

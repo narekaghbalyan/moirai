@@ -57,6 +57,34 @@ class QueryBuilder
         ]);
     }
 
+    // TODO change the return type of the sql query in loop
+    protected function chunkClauseBinder(int|string $count, callable $callback): bool
+    {
+        $this->throwExceptionIfArgumentNotNumeric($count);
+
+        $this->limitClauseBinder($count, false);
+
+        $page = 1;
+
+        do {
+            $stepData = $this->executeQuery($this->pickUpThePieces($this->getBindings()));
+
+            $stepDataCount = count($stepData);
+
+            if ($stepDataCount === 0) {
+                break;
+            }
+
+           if ($callback($stepData, $page) === false) {
+               return false;
+           }
+
+            $page++;
+        } while ($stepDataCount === $count);
+
+        return true;
+    }
+
     protected function fromClauseBinder(string $table): void
     {
         $this->bind('from', [$this->wrapColumnInPita($table)]);
@@ -779,6 +807,7 @@ class QueryBuilder
         ]);
     }
 
+    // TODO integrate pgsql
     protected function offsetClauseBinder(int $count)
     {
         if ($this->getDriver() === AvailableDbmsDrivers::ORACLE) {
@@ -1309,6 +1338,8 @@ class QueryBuilder
     {
         dd($statement);
 
-        return 0;
+//        return $statement;
+
+//        return 0;
     }
 }
