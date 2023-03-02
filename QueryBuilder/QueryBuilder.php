@@ -1154,7 +1154,7 @@ class QueryBuilder
             $this->bind('where', [$whereExpression]);
         }
 
-        return $this->executeQuery($this->pickUpThePieces($this->bindings));
+        return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
 
     protected function unaryOperatorsClauseBinder(string|array $columns,
@@ -1243,6 +1243,33 @@ class QueryBuilder
         $this->bind('union', [$unionBindings]);
 
         $this->renameBinding('union', 'evasive');
+    }
+
+    protected function deleteClauseBinder(string|null $uniqueValue, string $uniqueColumn)
+    {
+        $whereBinding = $this->getBinding('where');
+
+        if (!empty($uniqueValue)) {
+            $uniqueValue = $this->wrapStringInPita($uniqueValue);
+
+            $uniqueColumn = $this->wrapColumnInPita($uniqueColumn);
+
+            $table = $this->getTableBinding();
+
+            if (!empty($whereBinding)) {
+                $whereBinding[] = 'AND';
+            }
+
+            $whereBinding[] = $table . '.' . $uniqueColumn . ' = ' . $uniqueValue;
+        }
+
+        $this->changeQueryTypeToDelete();
+
+        if (!empty($whereBinding)) {
+            $this->bind('where', [$whereBinding]);
+        }
+
+        return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
 
 

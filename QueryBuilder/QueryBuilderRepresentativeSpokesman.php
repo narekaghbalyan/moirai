@@ -430,4 +430,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         // TODO return update value
     }
+
+    public function delete(string|null $uniqueValue = null, string $uniqueColumn = 'id')
+    {
+        $this->deleteClauseBinder($uniqueValue, $uniqueColumn);
+
+        // TODO return delete response value
+    }
 }
