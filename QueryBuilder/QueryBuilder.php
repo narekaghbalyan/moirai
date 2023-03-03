@@ -85,6 +85,15 @@ class QueryBuilder
         return true;
     }
 
+    protected function aggregateFunctionsClauseBinder(string $aggregateFunction, string $column): void
+    {
+        if ($column !== '*') {
+            $column = $this->wrapColumnInPita($column);
+        }
+
+        $this->bind('select', [$aggregateFunction . $this->concludeBrackets($column)]);
+    }
+
     protected function fromClauseBinder(string $table): void
     {
         $this->bind('from', [$this->wrapColumnInPita($table)]);

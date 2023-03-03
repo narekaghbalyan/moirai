@@ -45,61 +45,42 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
 
 
+    public function min(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
 
+        return $this;
+    }
 
     public function max(string $column): self
     {
-        $this->selectClauseBinder(
-            false,
-            'max' . $this->concludeBrackets($this->wrapColumnInPita($column))
-        );
-
-        return $this;
-    }
-
-    public function min(string $column): self
-    {
-        $this->selectClauseBinder(
-            false,
-            'min' . $this->concludeBrackets($this->wrapColumnInPita($column))
-        );
-
-        return $this;
-    }
-
-    public function avg(string $column): self
-    {
-        $this->selectClauseBinder(
-            false,
-            'avg' . $this->concludeBrackets($this->wrapColumnInPita($column))
-        );
-
-        return $this;
-    }
-
-    public function count(string $column = '*'): self
-    {
-        if ($column !== '*') {
-            $column = $this->wrapColumnInPita($column);
-        }
-
-        $this->selectClauseBinder(
-            false,
-            'count'. $this->concludeBrackets($column)
-        );
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
 
         return $this;
     }
 
     public function sum(string $column): self
     {
-        $this->selectClauseBinder(
-            false,
-            'sum' . $this->concludeBrackets($this->wrapColumnInPita($column))
-        );
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
 
         return $this;
     }
+
+    public function avg(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function count(string $column = '*'): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+
 
 
 
