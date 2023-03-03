@@ -85,7 +85,9 @@ class QueryBuilder
         return true;
     }
 
-    protected function aggregateFunctionsClauseBinder(string $aggregateFunction, string $column, bool $distinct = false): void
+    protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
+                                                      string|array $column,
+                                                      bool $distinct = false): void
     {
         $aggregateFunction = strtoupper($aggregateFunction);
 
@@ -95,8 +97,12 @@ class QueryBuilder
             $preparedColumn .= 'DISTINCT ';
         }
 
-        if ($column !== '*') {
-            $preparedColumn .= $this->wrapColumnInPita($column);
+        if (is_string($column)) {
+            if ($column !== '*') {
+                $preparedColumn .= $this->wrapColumnInPita($column);
+            }
+        } elseif (is_array($column)) {
+            $preparedColumn .= implode(', ', $this->wrapColumnInPita($column));
         }
 
         if (!empty($this->getBinding('select'))) {

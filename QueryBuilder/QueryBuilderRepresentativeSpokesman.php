@@ -80,20 +80,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    public function variance(string $column): self
-    {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
-
-        return $this;
-    }
-
-    public function varianceDistinct(string $column): self
-    {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
-
-        return $this;
-    }
-
     public function bitAnd(string $column): self
     {
         $this->aggregateFunctionsClauseBinder('bit_and', $column);
@@ -111,6 +97,83 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     public function bitXor(string $column): self
     {
         $this->aggregateFunctionsClauseBinder('bit_xor', $column);
+
+        return $this;
+    }
+
+    public function groupConcat(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('group_concat', $column);
+
+        return $this;
+    }
+
+    public function jsonArrayagg(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('json_arrayagg', $column);
+
+        return $this;
+    }
+
+    public function jsonObjectagg(string $keyColumn, string $valueColumn): self
+    {
+        $this->aggregateFunctionsClauseBinder('json_objectagg', [$keyColumn, $valueColumn]);
+
+        return $this;
+    }
+
+    public function std(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function stdDev(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function stdDevPop(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('stddev_pop', $column);
+
+        return $this;
+    }
+
+    public function stdDevSamp(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('stddev_samp', $column);
+
+        return $this;
+    }
+
+    public function varPop(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('var_pop', $column);
+
+        return $this;
+    }
+
+    public function varSamp(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('var_samp', $column);
+
+        return $this;
+    }
+
+    public function variance(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function varianceDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
 
         return $this;
     }
