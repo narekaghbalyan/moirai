@@ -94,6 +94,27 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    public function bitAnd(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('bit_and', $column);
+
+        return $this;
+    }
+
+    public function bitOr(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('bit_or', $column);
+
+        return $this;
+    }
+
+    public function bitXor(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('bit_xor', $column);
+
+        return $this;
+    }
+
 
 
 
