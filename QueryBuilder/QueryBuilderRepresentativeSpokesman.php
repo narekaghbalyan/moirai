@@ -80,6 +80,20 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    public function variance(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function varianceDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
+
+        return $this;
+    }
+
 
 
 

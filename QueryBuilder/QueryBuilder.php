@@ -85,23 +85,27 @@ class QueryBuilder
         return true;
     }
 
-    protected function aggregateFunctionsClauseBinder(string $aggregateFunction, string $column): void
+    protected function aggregateFunctionsClauseBinder(string $aggregateFunction, string $column, bool $distinct = false): void
     {
+        $aggregateFunction = strtoupper($aggregateFunction);
+
+        $preparedColumn = '';
+
+        if ($distinct) {
+            $preparedColumn .= 'DISTINCT ';
+        }
+
         if ($column !== '*') {
-            $column = $this->wrapColumnInPita($column);
+            $preparedColumn .= $this->wrapColumnInPita($column);
         }
 
         if (!empty($this->getBinding('select'))) {
-            $this->bindings['select'][
-                array_key_last($this->bindings['select'])
-            ][
-                array_key_last(
-                    $this->bindings['select'][array_key_last($this->bindings['select'])]
-                )
-            ] .= ',';
+            $this->bindings['select'][array_key_last($this->bindings['select'])][array_key_last(
+                $this->bindings['select'][array_key_last($this->bindings['select'])]
+            )] .= ',';
         }
 
-        $this->bind('select', [$aggregateFunction . $this->concludeBrackets($column)]);
+        $this->bind('select', [$aggregateFunction . $this->concludeBrackets($preparedColumn)]);
     }
 
     protected function fromClauseBinder(string $table): void
