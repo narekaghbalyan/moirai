@@ -75,9 +75,9 @@ class QueryBuilder
                 break;
             }
 
-           if ($callback($stepData, $page) === false) {
-               return false;
-           }
+            if ($callback($stepData, $page) === false) {
+                return false;
+            }
 
             $page++;
         } while ($stepDataCount === $count);
@@ -89,6 +89,16 @@ class QueryBuilder
     {
         if ($column !== '*') {
             $column = $this->wrapColumnInPita($column);
+        }
+
+        if (!empty($this->getBinding('select'))) {
+            $this->bindings['select'][
+                array_key_last($this->bindings['select'])
+            ][
+                array_key_last(
+                    $this->bindings['select'][array_key_last($this->bindings['select'])]
+                )
+            ] .= ',';
         }
 
         $this->bind('select', [$aggregateFunction . $this->concludeBrackets($column)]);
@@ -1309,7 +1319,6 @@ class QueryBuilder
 
         return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
-
 
 
     private function pickUpThePieces(array $bindings): string
