@@ -4,6 +4,8 @@ namespace Moarai\Drivers;
 
 abstract class Driver
 {
+    protected $grammar;
+
     protected array $pitaForColumns = [];
 
     protected array $pitaForStrings = [];
@@ -43,13 +45,26 @@ abstract class Driver
     public function initializeDriver(): void
     {
         $this->initializeDriverLexicalStructure();
+
+        $this->initializeDriverGrammaticalStructure();
     }
 
     abstract function initializeDriverLexicalStructure(): void;
 
+    public function initializeDriverGrammaticalStructure(): void
+    {
+        $grammarsNamespace = __NAMESPACE__ . '\\' . 'Grammars';
+
+        $grammarName = $this->getCleanDbmsName() . 'Grammar';
+
+        $grammarPath = $grammarsNamespace . '\\' . $grammarName;
+
+        $this->grammar = new $grammarPath();
+    }
+
     public function getDriverName(): string
     {
-        $driver = str_replace([__NAMESPACE__, '/', '\\', 'Driver'], '', get_called_class());
+        $driver = $this->getCleanDbmsName();
 
         $driver = strtoupper($driver);
 
@@ -59,5 +74,10 @@ abstract class Driver
     public function getAdditionalAccessories(): array|null
     {
         return $this->additionalAccessories ?? null;
+    }
+
+    private function getCleanDbmsName(): string
+    {
+        return str_replace([__NAMESPACE__, '/', '\\', 'Driver'], '', get_called_class());
     }
 }

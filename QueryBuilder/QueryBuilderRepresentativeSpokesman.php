@@ -94,6 +94,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    // MySql,
     public function bitXor(string $column): self
     {
         $this->aggregateFunctionsClauseBinder('bit_xor', $column);
@@ -101,6 +102,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    // MySql, 
     public function groupConcat(string $column): self
     {
         $this->aggregateFunctionsClauseBinder('group_concat', $column);
