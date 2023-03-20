@@ -42,8 +42,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
 
-
-
     public function max(string $column): self
     {
         $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
@@ -53,7 +51,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     public function maxDistinct(string $column): self
     {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
+        $this->aggregateFunctionsClauseBinder('max', $column, true);
 
         return $this;
     }
@@ -67,20 +65,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     public function minDistinct(string $column): self
     {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
+        $this->aggregateFunctionsClauseBinder('min', $column, true);
 
         return $this;
     }
 
-
-
-
-
-
-
     public function sum(string $column): self
     {
         $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function sumDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('sum', $column, true);
 
         return $this;
     }
@@ -92,6 +91,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    public function avgDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('avg', $column, true);
+
+        return $this;
+    }
+
     public function count(string $column = '*'): self
     {
         $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
@@ -99,26 +105,56 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    public function bitAnd(string $column): self
+    public function countDistinct(string $column = '*'): self
     {
-        $this->aggregateFunctionsClauseBinder('bit_and', $column);
+        $this->aggregateFunctionsClauseBinder('count', $column, true);
 
         return $this;
     }
 
-    public function bitOr(string $column): self
+
+    // dont use distinct
+    // - sqlite
+    // -
+    // -
+    // -
+    // -
+    // -
+    public function bitAnd(string|int $column): self
+    {
+        $driver = $this->getDriver();
+
+        $aggregateFunction = match ($driver) {
+            AvailableDbmsDrivers::MSSQLSERVER,
+            AvailableDbmsDrivers::POSTGRESQL,
+            AvailableDbmsDrivers::MARIADB,
+            AvailableDbmsDrivers::MYSQL => 'BIT_AND',
+            AvailableDbmsDrivers::ORACLE => 'BITAND'
+        };
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+
+        return $this;
+    }
+
+    // dont use distinct
+    public function bitOr(string|int $column): self
     {
         $this->aggregateFunctionsClauseBinder('bit_or', $column);
 
         return $this;
     }
 
-    public function bitXor(string $column): self
+    public function bitXor(string|int $column): self
     {
         $this->aggregateFunctionsClauseBinder('bit_xor', $column);
 
         return $this;
     }
+
+
+
+
 
 
 
@@ -139,12 +175,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
-
-
-
-
-
-
 
 
 
