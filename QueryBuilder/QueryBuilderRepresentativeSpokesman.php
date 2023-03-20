@@ -42,12 +42,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
 
-    public function min(string $column): self
-    {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
 
-        return $this;
-    }
 
     public function max(string $column): self
     {
@@ -55,6 +50,33 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    public function maxDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
+
+        return $this;
+    }
+
+    public function min(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
+
+        return $this;
+    }
+
+    public function minDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
+
+        return $this;
+    }
+
+
+
+
+
+
 
     public function sum(string $column): self
     {
@@ -105,39 +127,29 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     public function groupConcat(string $column, string $separator = ','): self
     {
-        $driver = $this->getDriver();
-
-        $aggregateFunction = match ($driver) {
-            AvailableDbmsDrivers::SQLITE,
-            AvailableDbmsDrivers::MARIADB,
-            AvailableDbmsDrivers::MYSQL => 'GROUP_CONCAT',
-            AvailableDbmsDrivers::MSSQLSERVER,
-            AvailableDbmsDrivers::POSTGRESQL => 'STRING_AGG',
-            AvailableDbmsDrivers::ORACLE => 'LISTAGG'
-        };
-
-        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
-            $column = $this->wrapColumnInPita($column) . ' SEPARATOR ' . $this->wrapStringInPita($separator);
-        } else {
-            $column = $this->wrapColumnInPita($column) . ', ' . $this->wrapStringInPita($separator);
-        }
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column, false, false);
+        $this->groupConcatAggregateFunctionClauseBinder($column, $separator);
 
         return $this;
     }
 
 
-
-
-
-
-    public function groupConcatDistinct(string $column): self
+    public function groupConcatDistinct(string $column, string $separator = ','): self
     {
-        $this->aggregateFunctionsClauseBinder('group_concat', $column, true);
+        $this->groupConcatAggregateFunctionClauseBinder($column, $separator, true);
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
+
 
 
     public function jsonArrayagg(string $column): self

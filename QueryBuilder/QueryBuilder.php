@@ -85,6 +85,30 @@ class QueryBuilder
         return true;
     }
 
+    protected function groupConcatAggregateFunctionClauseBinder(string $column,
+                                                                string $separator = ',',
+                                                                bool $distinct = false): void
+    {
+        $driver = $this->getDriver();
+
+        $aggregateFunction = match ($driver) {
+            AvailableDbmsDrivers::SQLITE,
+            AvailableDbmsDrivers::MARIADB,
+            AvailableDbmsDrivers::MYSQL => 'GROUP_CONCAT',
+            AvailableDbmsDrivers::MSSQLSERVER,
+            AvailableDbmsDrivers::POSTGRESQL => 'STRING_AGG',
+            AvailableDbmsDrivers::ORACLE => 'LISTAGG'
+        };
+
+        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
+            $column = $this->wrapColumnInPita($column) . ' SEPARATOR ' . $this->wrapStringInPita($separator);
+        } else {
+            $column = $this->wrapColumnInPita($column) . ', ' . $this->wrapStringInPita($separator);
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column, $distinct, false);
+    }
+
     protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
                                                       string|array $column,
                                                       bool $distinct = false,
