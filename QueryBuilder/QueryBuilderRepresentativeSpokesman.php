@@ -42,9 +42,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
 
-
-
-
     public function min(string $column): self
     {
         $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
@@ -94,7 +91,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    // MySql,
     public function bitXor(string $column): self
     {
         $this->aggregateFunctionsClauseBinder('bit_xor', $column);
@@ -102,13 +98,47 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    // MySql, 
-    public function groupConcat(string $column): self
+
+
+
+
+
+    public function groupConcat(string $column, string $separator = ','): self
     {
-        $this->aggregateFunctionsClauseBinder('group_concat', $column);
+        $driver = $this->getDriver();
+
+        $aggregateFunction = match ($driver) {
+            AvailableDbmsDrivers::SQLITE,
+            AvailableDbmsDrivers::MARIADB,
+            AvailableDbmsDrivers::MYSQL => 'GROUP_CONCAT',
+            AvailableDbmsDrivers::MSSQLSERVER,
+            AvailableDbmsDrivers::POSTGRESQL => 'STRING_AGG',
+            AvailableDbmsDrivers::ORACLE => 'LISTAGG'
+        };
+
+        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
+            $column = $this->wrapColumnInPita($column) . ' SEPARATOR ' . $this->wrapStringInPita($separator);
+        } else {
+            $column = $this->wrapColumnInPita($column) . ', ' . $this->wrapStringInPita($separator);
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column, false, false);
 
         return $this;
     }
+
+
+
+
+
+
+    public function groupConcatDistinct(string $column): self
+    {
+        $this->aggregateFunctionsClauseBinder('group_concat', $column, true);
+
+        return $this;
+    }
+
 
     public function jsonArrayagg(string $column): self
     {
@@ -179,12 +209,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
-
-
-
-
-
-
 
 
     public function from(string $table): self
@@ -348,7 +372,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
                                   bool|array $highlighting = false,
                                   string|array|null $rankingColumn = null,
                                   string|int|array $normalizationBitmask = 32
-                                  ): self
+    ): self
     {
         if ($this->getDriver() !== AvailableDbmsDrivers::MYSQL) {
             $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);

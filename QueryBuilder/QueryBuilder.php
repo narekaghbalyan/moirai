@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = new PostgreSqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -87,7 +87,8 @@ class QueryBuilder
 
     protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
                                                       string|array $column,
-                                                      bool $distinct = false): void
+                                                      bool $distinct = false,
+                                                      bool $useColumnPita = true): void
     {
         $aggregateFunction = strtoupper($aggregateFunction);
 
@@ -97,12 +98,16 @@ class QueryBuilder
             $preparedColumn .= 'DISTINCT ';
         }
 
-        if (is_string($column)) {
-            if ($column !== '*') {
-                $preparedColumn .= $this->wrapColumnInPita($column);
+        if ($useColumnPita) {
+            if (is_string($column)) {
+                if ($column !== '*') {
+                    $preparedColumn .= $this->wrapColumnInPita($column);
+                }
+            } elseif (is_array($column)) {
+                $preparedColumn .= implode(', ', $this->wrapColumnInPita($column));
             }
-        } elseif (is_array($column)) {
-            $preparedColumn .= implode(', ', $this->wrapColumnInPita($column));
+        } else {
+            $preparedColumn = $column;
         }
 
         if (!empty($this->getBinding('select'))) {
