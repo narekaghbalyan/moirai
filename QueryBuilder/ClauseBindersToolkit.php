@@ -129,7 +129,6 @@ trait ClauseBindersToolkit
         $this->changeQueryType('delete', false, true);
     }
 
-
     protected function changeQueryType(string $bindingName, bool $useInto = true, bool $useFrom = false): void
     {
         $table = $this->getBinding('from');
@@ -145,7 +144,6 @@ trait ClauseBindersToolkit
         }
     }
 
-
     protected function getTableBinding(): string
     {
         $fromBinding = $this->getBinding('from');
@@ -158,7 +156,6 @@ trait ClauseBindersToolkit
 
         return $table;
     }
-
 
     protected function checkMatching(string|int|float|array $suspect, array $dataFromWhichToCheck): bool
     {
@@ -175,14 +172,12 @@ trait ClauseBindersToolkit
         return in_array($suspect, $dataFromWhichToCheck);
     }
 
-
     protected function isAssociative(array $array): bool
     {
         $supposedKeys = range(0, count($array) - 1);
 
         return array_keys($array) !== $supposedKeys;
     }
-
 
     protected function wrapColumnInPita(string|array $subject): string|array
     {
@@ -197,7 +192,6 @@ trait ClauseBindersToolkit
 
         return $this->concludeEntities($subject, $pitaForStrings['opening'], $pitaForStrings['closing']);
     }
-
 
     protected function concludeSingleQuotes(string|array $subject): string|array
     {
@@ -250,7 +244,6 @@ trait ClauseBindersToolkit
         return $direction;
     }
 
-
     protected function runCallback(string $bindingName, string $whereLogicalType, callable $callback): void
     {
         $this->bind($bindingName, [$whereLogicalType]);
@@ -274,7 +267,6 @@ trait ClauseBindersToolkit
 
         $this->bind($bindingName, [')']);
     }
-
 
     protected function throwExceptionIfMisplacedArray(mixed $suspect): void
     {
@@ -336,5 +328,10 @@ trait ClauseBindersToolkit
         if (!is_numeric($suspect)) {
             throw new Exception('"' . $suspect . '" is not a number or a numeric string.');
         }
+    }
+
+    protected function throwExceptionIfDriverNotSupportFunction(): void
+    {
+        throw new Exception('Driver ' . $this->getDriver() . ' does not support this function');
     }
 }

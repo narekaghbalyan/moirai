@@ -112,54 +112,26 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-    // dont use distinct
-    // - sqlite
-    // -
-    // -
-    // -
-    // -
-    // -
     public function bitAnd(string|int $column): self
     {
-        $driver = $this->getDriver();
-
-        $aggregateFunction = match ($driver) {
-            AvailableDbmsDrivers::MSSQLSERVER,
-            AvailableDbmsDrivers::POSTGRESQL,
-            AvailableDbmsDrivers::MARIADB,
-            AvailableDbmsDrivers::MYSQL => 'BIT_AND',
-            AvailableDbmsDrivers::ORACLE => 'BITAND'
-        };
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+        $this->bitAggregateFunctionClauseBinder('BIT_AND', $column);
 
         return $this;
     }
 
-    // dont use distinct
     public function bitOr(string|int $column): self
     {
-        $this->aggregateFunctionsClauseBinder('bit_or', $column);
+        $this->bitAggregateFunctionClauseBinder('BIT_OR', $column);
 
         return $this;
     }
 
     public function bitXor(string|int $column): self
     {
-        $this->aggregateFunctionsClauseBinder('bit_xor', $column);
+        $this->bitAggregateFunctionClauseBinder('BIT_XOR', $column);
 
         return $this;
     }
-
-
-
-
-
-
-
-
-
 
     public function groupConcat(string $column, string $separator = ','): self
     {
@@ -167,7 +139,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
-
 
     public function groupConcatDistinct(string $column, string $separator = ','): self
     {
@@ -182,6 +153,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
 
 
+
+
+
+
+    
     public function jsonArrayagg(string $column): self
     {
         $this->aggregateFunctionsClauseBinder('json_arrayagg', $column);

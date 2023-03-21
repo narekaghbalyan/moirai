@@ -109,6 +109,19 @@ class QueryBuilder
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column, $distinct, false);
     }
 
+    protected function bitAggregateFunctionClauseBinder(string $aggregateFunction, string|int $column): void
+    {
+        $this->throwExceptionIfArgumentNotNumeric($column);
+
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE || $driver === AvailableDbmsDrivers::ORACLE) {
+            $this->throwExceptionIfDriverNotSupportFunction();
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+    }
+
     protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
                                                       string|array $column,
                                                       bool $distinct = false,
