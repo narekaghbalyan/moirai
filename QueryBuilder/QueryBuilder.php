@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new PostgreSqlDriver();
+        $this->driver = new MySqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -107,7 +107,11 @@ class QueryBuilder
                 $preparedColumn .= implode(', ', $this->wrapColumnInPita($column));
             }
         } else {
-            $preparedColumn = $column;
+            if (is_string($column)) {
+                $preparedColumn = $column;
+            } elseif (is_array($column)) {
+                $preparedColumn .= implode(', ', $column);
+            }
         }
 
         if (!empty($this->getBinding('select'))) {
@@ -152,17 +156,6 @@ class QueryBuilder
         if ($driver === AvailableDbmsDrivers::SQLITE || $driver === AvailableDbmsDrivers::ORACLE) {
             $this->throwExceptionIfDriverNotSupportFunction();
         }
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
-    }
-
-    protected function jsonAggregateFunctionClauseBinder(string $aggregateFunction, string|int $column)
-    {
-        $aggregateFunction = match ($this->getDriver()) {
-            AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
-            AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
-            AvailableDbmsDrivers::MSSQLSERVER => 'JSON_ARRAY'
-        };
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
     }

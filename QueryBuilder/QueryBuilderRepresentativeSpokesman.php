@@ -147,36 +147,59 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-    public function jsonArrayagg(string $column): self
+    public function jsonArrayAgg(string $column): self
     {
-        $this->jsonAggregateFunctionClauseBinder('JSON_ARRAYAGG', $column);
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
+            AvailableDbmsDrivers::MSSQLSERVER => 'JSON_ARRAY',
+            default => 'JSON_ARRAYAGG'
+        };
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+
+        return $this;
+    }
+
+    public function jsonObjectAgg(string $keyColumn, string ...$valueColumn): self
+    {
+        $driver = $this->getDriver();
+
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_OBJECT_AGG',
+            AvailableDbmsDrivers::SQLITE,
+            AvailableDbmsDrivers::MSSQLSERVER => 'JSON_OBJECT',
+            default => 'JSON_OBJECTAGG'
+        };
+
+        // If the Microsoft SQL Server driver is used, the keyColumn argument
+        // is also treated as an element of the valueColumn argument.
+        if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+            array_unshift($valueColumn, $keyColumn);
+
+            foreach ($valueColumn as $key => $value) {
+                $valueColumn[$key] = $this->wrapStringInPita($value) . ':' . $value;
+            }
+
+            $this->aggregateFunctionsClauseBinder($aggregateFunction, $valueColumn, false, false);
+        } else {
+            if (count($valueColumn) > 1) {
+                throw new Exception(
+                    'When using all drivers except Microsoft SQL Server, the second argument to the 
+                    jsonObjectAgg method must be provided with no more than one element.'
+                );
+            }
+
+            $valueColumn = $valueColumn[array_key_first($valueColumn)];
+
+            $this->aggregateFunctionsClauseBinder($aggregateFunction, [$keyColumn, $valueColumn]);
+        }
 
         return $this;
     }
 
 
 
-
-
-
-
-    public function jsonObjectagg(string $keyColumn, string $valueColumn): self
-    {
-        $this->aggregateFunctionsClauseBinder('json_objectagg', [$keyColumn, $valueColumn]);
-
-        return $this;
-    }
 
 
 
