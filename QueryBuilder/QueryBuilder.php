@@ -85,6 +85,40 @@ class QueryBuilder
         return true;
     }
 
+    protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
+                                                      string|array $column,
+                                                      bool $distinct = false,
+                                                      bool $useColumnPita = true): void
+    {
+        $aggregateFunction = strtoupper($aggregateFunction);
+
+        $preparedColumn = '';
+
+        if ($distinct) {
+            $preparedColumn .= 'DISTINCT ';
+        }
+
+        if ($useColumnPita) {
+            if (is_string($column)) {
+                if ($column !== '*') {
+                    $preparedColumn .= $this->wrapColumnInPita($column);
+                }
+            } elseif (is_array($column)) {
+                $preparedColumn .= implode(', ', $this->wrapColumnInPita($column));
+            }
+        } else {
+            $preparedColumn = $column;
+        }
+
+        if (!empty($this->getBinding('select'))) {
+            $this->bindings['select'][array_key_last($this->bindings['select'])][array_key_last(
+                $this->bindings['select'][array_key_last($this->bindings['select'])]
+            )] .= ',';
+        }
+
+        $this->bind('select', [$aggregateFunction . $this->concludeBrackets($preparedColumn)]);
+    }
+
     protected function groupConcatAggregateFunctionClauseBinder(string $column,
                                                                 string $separator = ',',
                                                                 bool $distinct = false): void
@@ -122,38 +156,15 @@ class QueryBuilder
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
     }
 
-    protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
-                                                      string|array $column,
-                                                      bool $distinct = false,
-                                                      bool $useColumnPita = true): void
+    protected function jsonAggregateFunctionClauseBinder(string $aggregateFunction, string|int $column)
     {
-        $aggregateFunction = strtoupper($aggregateFunction);
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
+            AvailableDbmsDrivers::MSSQLSERVER => 'JSON_ARRAY'
+        };
 
-        $preparedColumn = '';
-
-        if ($distinct) {
-            $preparedColumn .= 'DISTINCT ';
-        }
-
-        if ($useColumnPita) {
-            if (is_string($column)) {
-                if ($column !== '*') {
-                    $preparedColumn .= $this->wrapColumnInPita($column);
-                }
-            } elseif (is_array($column)) {
-                $preparedColumn .= implode(', ', $this->wrapColumnInPita($column));
-            }
-        } else {
-            $preparedColumn = $column;
-        }
-
-        if (!empty($this->getBinding('select'))) {
-            $this->bindings['select'][array_key_last($this->bindings['select'])][array_key_last(
-                $this->bindings['select'][array_key_last($this->bindings['select'])]
-            )] .= ',';
-        }
-
-        $this->bind('select', [$aggregateFunction . $this->concludeBrackets($preparedColumn)]);
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
     }
 
     protected function fromClauseBinder(string $table): void

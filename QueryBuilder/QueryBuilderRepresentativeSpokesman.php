@@ -157,13 +157,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
 
 
-    
+
     public function jsonArrayagg(string $column): self
     {
-        $this->aggregateFunctionsClauseBinder('json_arrayagg', $column);
+        $this->jsonAggregateFunctionClauseBinder('JSON_ARRAYAGG', $column);
 
         return $this;
     }
+
+
+
+
+
+
 
     public function jsonObjectagg(string $keyColumn, string $valueColumn): self
     {
@@ -171,6 +177,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+
+
+
+
+
+
 
     public function std(string $column): self
     {
