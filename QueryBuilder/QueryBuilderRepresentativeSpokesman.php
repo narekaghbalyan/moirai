@@ -198,6 +198,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    /*
+     * STDEV - is used when the group of numbers being evaluated are only a partial sampling of the whole
+     * population. The denominator for dividing the sum of squared deviations is N-1, where N is the number of
+     * observations ( a count of items in the data set ). Technically, subtracting the 1 is referred to
+     * as "non-biased."
+     * STDEVP is used when the group of numbers being evaluated is complete - it's the entire population of
+     * values. In this case, the 1 is NOT subtracted and the denominator for dividing the sum of squared
+     * deviations is simply N itself, the number of observations ( a count of items in the data set ).
+     * Technically, this is referred to as "biased." Remembering that the P in STDEVP stands for "population"
+     * may be helpful. Since the data set is not a mere sample, but constituted of ALL the actual values,
+     * this standard deviation function can return a more precise result.
+     */
     public function stdDev(string $column, bool $biased = false): self
     {
         $driver = $this->getDriver();
@@ -207,27 +219,28 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
                 'Sqlite driver does not support this feature.'
             );
         } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
-            /*
-             * STDEV - is used when the group of numbers being evaluated are only a partial sampling of the whole
-             * population. The denominator for dividing the sum of squared deviations is N-1, where N is the number of
-             * observations ( a count of items in the data set ). Technically, subtracting the 1 is referred to
-             * as "non-biased."
-             * STDEVP is used when the group of numbers being evaluated is complete - it's the entire population of
-             * values. In this case, the 1 is NOT subtracted and the denominator for dividing the sum of squared
-             * deviations is simply N itself, the number of observations ( a count of items in the data set ).
-             * Technically, this is referred to as "biased." Remembering that the P in STDEVP stands for "population"
-             * may be helpful. Since the data set is not a mere sample, but constituted of ALL the actual values,
-             * this standard deviation function can return a more precise result.
-             */
-            $aggregateFunction = $biased ? 'STDEVP' : 'STDEV';
+            $aggregateFunction = 'STDEVP';
         } else {
-            if ($biased) {
-                throw new Exception(
-                    'The argument to can only be used if the Microsoft SQL Server driver is used.'
-                );
-            }
+            $aggregateFunction = 'STDDEV_POP';
+        }
 
-            $aggregateFunction = 'STDDEV';
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+
+        return $this;
+    }
+
+    public function stdDevSamp(string $column): self
+    {
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE) {
+            throw new Exception(
+                'Sqlite driver does not support this feature.'
+            );
+        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+            $aggregateFunction = 'STDEV';
+        } else {
+            $aggregateFunction = 'STDDEV_SAMP';
         }
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
@@ -279,21 +292,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
 
 
-//    public function stdDevSamp(string $column): self
-//    {
-//        $this->aggregateFunctionsClauseBinder('stddev_samp', $column);
-//
-//        return $this;
-//    }
-//
-//
-//
-//
-//
-//
-//
-//
-//
+
 
 
 
