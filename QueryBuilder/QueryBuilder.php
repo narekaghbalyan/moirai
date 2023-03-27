@@ -160,6 +160,7 @@ class QueryBuilder
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
     }
 
+
     protected function fromClauseBinder(string $table): void
     {
         $this->bind('from', [$this->wrapColumnInPita($table)]);

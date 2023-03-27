@@ -235,51 +235,69 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-    public function stdDevSamp(string $column): self
-    {
-        $this->aggregateFunctionsClauseBinder('stddev_samp', $column);
-
-        return $this;
-    }
-
     public function varPop(string $column): self
     {
-        $this->aggregateFunctionsClauseBinder('var_pop', $column);
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE) {
+            throw new Exception(
+                'Sqlite driver does not support this feature.'
+            );
+        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+            $aggregateFunction = 'VARP';
+        } else {
+            $aggregateFunction = 'VAR_POP';
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
 
         return $this;
     }
 
     public function varSamp(string $column): self
     {
-        $this->aggregateFunctionsClauseBinder('var_samp', $column);
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE) {
+            throw new Exception(
+                'Sqlite driver does not support this feature.'
+            );
+        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+            $aggregateFunction = 'VAR';
+        } else {
+            $aggregateFunction = 'VAR_SAMP';
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
 
         return $this;
     }
 
-    public function variance(string $column): self
-    {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column);
 
-        return $this;
-    }
 
-    public function varianceDistinct(string $column): self
-    {
-        $this->aggregateFunctionsClauseBinder(__FUNCTION__, $column, true);
 
-        return $this;
-    }
+
+
+
+//    public function stdDevSamp(string $column): self
+//    {
+//        $this->aggregateFunctionsClauseBinder('stddev_samp', $column);
+//
+//        return $this;
+//    }
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+
+
+
 
 
     public function from(string $table): self
