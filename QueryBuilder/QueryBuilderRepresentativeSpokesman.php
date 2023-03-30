@@ -30,6 +30,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    // TODO
+    public function find(int $id)
+    {}
+
     /**
      * @param string|mixed ...$columns
      * @return $this
@@ -170,6 +174,22 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         $this->aggregateFunctionsClauseBinder('count', $column, true);
 
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function exists(): bool
+    {
+        return $this->existsClauseBinder();
+    }
+
+    /**
+     * @return bool
+     */
+    public function doesntExists(): bool
+    {
+        return !$this->existsClauseBinder();
     }
 
     /**

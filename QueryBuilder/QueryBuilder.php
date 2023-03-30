@@ -160,6 +160,16 @@ class QueryBuilder
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
     }
 
+    protected function existsClauseBinder()
+    {
+        $query = $this->pickUpThePieces($this->bindings);
+
+        $this->changeQueryType('select', false);
+
+        $this->replaceBind('select', ['EXISTS' . $this->concludeBrackets($query)]);
+
+        return $this->getClause();
+    }
 
     protected function fromClauseBinder(string $table): void
     {
@@ -933,7 +943,6 @@ class QueryBuilder
     // <-- SqLite (PostgreSQL, MySQL ?) - UPSERT не вмешивается в случае сбоя NOT NULL или ограничений
     // внешнего ключа или ограничений, реализованных с помощью триггеров.
     // В настоящее время UPSERT не работает с виртуальными столами. -->
-
     protected function insertClauseBinder(array $columnsWithValues,
                                           mixed $query = null,
                                           bool $ignore = false,
@@ -1230,7 +1239,6 @@ class QueryBuilder
 
         return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
-
 
     protected function updateClauseBinder(array $columnsWithValues, bool $operationIsUsed = false)
     {
