@@ -199,6 +199,7 @@ class QueryBuilder
 
             if ($this->isAssociative($column)) {
                 $keys = array_keys($column);
+
                 $columnFirstElementKey = $keys[0];
 
                 if (count($column) === 1) {
@@ -208,30 +209,33 @@ class QueryBuilder
 
                     $this->throwExceptionIfMisplacedArray($column);
 
-                    $this->bind($conditionType, [
+                    $this->bindInWhereBeforeCheckingForThePresenceOfJson(
+                        $conditionType,
                         $whereLogicalType,
-                        $this->wrapColumnInPita($column),
+                        $column,
                         '=',
                         $value
-                    ]);
+                    );
                 } elseif (count($column) > 1) {
                     foreach ($column as $columnName => $columnValue) {
                         $this->throwExceptionIfMisplacedArray($columnValue);
 
                         if ($columnName === $columnFirstElementKey) {
-                            $this->bind($conditionType, [
+                            $this->bindInWhereBeforeCheckingForThePresenceOfJson(
+                                $conditionType,
                                 $whereLogicalType,
-                                $this->wrapColumnInPita($columnName),
+                                $columnName,
                                 '=',
                                 $columnValue
-                            ]);
+                            );
                         } else {
-                            $this->bind($conditionType, [
+                            $this->bindInWhereBeforeCheckingForThePresenceOfJson(
+                                $conditionType,
                                 'AND',
-                                $this->wrapColumnInPita($columnName),
+                                $columnName,
                                 '=',
                                 $columnValue
-                            ]);
+                            );
                         }
                     }
                 }
@@ -243,12 +247,13 @@ class QueryBuilder
 
                     $this->throwExceptionIfOperatorIsInvalid($column[1]);
 
-                    $this->bind($conditionType, [
+                    $this->bindInWhereBeforeCheckingForThePresenceOfJson(
+                        $conditionType,
                         $whereLogicalType,
-                        $this->wrapColumnInPita($column[0]),
+                        $column[0],
                         $column[1],
                         $column[2]
-                    ]);
+                    );
                 } else {
                     throw new Exception(
                         'Invalid data for "' . $conditionType . '" clause.'
@@ -259,6 +264,7 @@ class QueryBuilder
             if (empty($value)) {
                 if (!$this->checkMatching($operator, $this->operators)) {
                     $value = $operator;
+
                     $operator = '=';
                 } else {
                     throw new Exception(
@@ -269,12 +275,13 @@ class QueryBuilder
                 $this->throwExceptionIfOperatorIsInvalid($operator);
             }
 
-            $this->bind($conditionType, [
+            $this->bindInWhereBeforeCheckingForThePresenceOfJson(
+                $conditionType,
                 $whereLogicalType,
-                $this->wrapColumnInPita($column),
+                $column,
                 $operator,
                 $value
-            ]);
+            );
         } elseif (is_callable($column)) {
             if (is_null($operator) || empty($value)) {
                 throw new Exception(

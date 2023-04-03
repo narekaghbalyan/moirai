@@ -801,7 +801,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     /**
      * @return $this
      */
-    public function get()
+    public function get(): self
     {
         $this->getClause();
 

@@ -54,6 +54,58 @@ trait ClauseBindersToolkit
         $this->bindings[$bindingName][] = $binding;
     }
 
+    protected function bindInWhereBeforeCheckingForThePresenceOfJson(string $conditionType,
+                                                                     string $whereLogicalType,
+                                                                     string $column,
+                                                                     string $operator,
+                                                                     string $value): void
+    {
+        if (stristr($column, '->')) {
+            $fields = explode('->', $column);
+
+            $column = $fields[0];
+
+            unset($fields[0]);
+
+            $expression = match ($this->getDriver()) {
+                AvailableDbmsDrivers::MYSQL => 'JSON_UNQUOTE' . $this->concludeBrackets(
+                        'JSON_EXTRACT'
+                        . $this->concludeBrackets(
+                            $this->wrapColumnInPita($column)
+                            . ', '
+                            . $this->wrapStringInPita(
+                                '$.'
+                                . implode('.', $this->concludeDoubleQuotes($fields))
+                            )
+                        )
+                    ),
+                AvailableDbmsDrivers::POSTGRESQL => $this->wrapColumnInPita($column)
+                    . '->'
+                    . implode('->>', $this->wrapStringInPita($fields)),
+                AvailableDbmsDrivers::ORACLE,
+                AvailableDbmsDrivers::MSSQLSERVER => 'JSON_VALUE'
+                    . $this->concludeBrackets(
+                        $this->wrapColumnInPita($column)
+                        . ', '
+                        . $this->wrapStringInPita(
+                            '$.'
+                            . implode('.', $this->wrapColumnInPita($fields))
+                        )
+                    )
+                // TODO sqlite
+            };
+        } else {
+            $expression = $this->wrapColumnInPita($column);
+        }
+
+        $this->bind($conditionType, [
+            $whereLogicalType,
+            $expression,
+            $operator,
+            $value
+        ]);
+    }
+
     protected function replaceBind(string $bindingName, array $binding): void
     {
         $this->bindings[$bindingName] = $binding;
