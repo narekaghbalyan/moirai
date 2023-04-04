@@ -91,8 +91,16 @@ trait ClauseBindersToolkit
                             '$.'
                             . implode('.', $this->wrapColumnInPita($fields))
                         )
+                    ),
+                // Sqlite > 3.38.0
+                AvailableDbmsDrivers::SQLITE => 'JSON_EXTRACT' . $this->concludeBrackets(
+                        $this->wrapColumnInPita($column)
+                        . ', '
+                        . $this->wrapStringInPita(
+                            '$.'
+                            . implode('.', $this->concludeDoubleQuotes($fields))
+                        )
                     )
-                // TODO sqlite
             };
         } else {
             $expression = $this->wrapColumnInPita($column);
