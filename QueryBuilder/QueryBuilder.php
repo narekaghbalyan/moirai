@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = new MsSqlServerDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -840,6 +840,46 @@ class QueryBuilder
                 $column
             );
         }
+    }
+
+    protected function whereJsonContainsClauseBinder(string $column, string $value)
+    {
+        $sequence = explode('->', $column);
+
+        $column = $sequence[0];
+
+        unset($sequence[0]);
+
+        $driver = $this->getDriver();
+
+        if (count($sequence) > 1) {
+            $subsequence = match ($driver) {
+                AvailableDbmsDrivers::POSTGRESQL => '->' . implode('->', $this->wrapStringInPita($sequence)),
+                default => ', ' . $this->wrapStringInPita(
+                        '$.' . implode('.', $this->concludeDoubleQuotes($sequence))
+                    )
+            };
+        } else {
+            $subsequence = '';
+        }
+
+        $expression = match ($driver) {
+            AvailableDbmsDrivers::MYSQL => 'JSON_CONTAINS' . $this->concludeBrackets(
+                    $this->wrapColumnInPita($column)
+                    . ', '
+                    . $this->concludeDoubleQuotes($value)
+                    . $subsequence
+                ),
+            AvailableDbmsDrivers::POSTGRESQL => $this->concludeBrackets(
+                    $this->wrapColumnInPita($column) . $subsequence
+                ) . '::jsonb @> ' . $this->wrapColumnInPita($value),
+            AvailableDbmsDrivers::MSSQLSERVER => $value . ' IN ' . $this->concludeBrackets(
+                    'SELECT [VALUE] FROM OPENJSON'
+                    . $this->concludeBrackets($this->wrapColumnInPita($column) . $subsequence)
+                )
+        };
+
+        dd($expression);
     }
 
     protected function orderByClauseBinder(string|array $column, string $direction, bool $inRandomOrder = false)

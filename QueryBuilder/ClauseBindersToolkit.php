@@ -68,6 +68,7 @@ trait ClauseBindersToolkit
             unset($fields[0]);
 
             $expression = match ($this->getDriver()) {
+                AvailableDbmsDrivers::MARIADB,
                 AvailableDbmsDrivers::MYSQL => 'JSON_UNQUOTE' . $this->concludeBrackets(
                         'JSON_EXTRACT'
                         . $this->concludeBrackets(
