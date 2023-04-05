@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MsSqlServerDriver();
+        $this->driver = new MySqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -842,15 +842,19 @@ class QueryBuilder
         }
     }
 
-    protected function whereJsonContainsClauseBinder(string $column, string $value)
+    protected function whereJsonContainsClauseBinder(string $whereLogicalType, string $column, string $value)
     {
+        $driver = $this->getDriver();
+
+        if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
+            $this->throwExceptionIfDriverNotSupportFunction();
+        }
+
         $sequence = explode('->', $column);
 
         $column = $sequence[0];
 
         unset($sequence[0]);
-
-        $driver = $this->getDriver();
 
         if (count($sequence) > 1) {
             $subsequence = match ($driver) {
@@ -864,6 +868,7 @@ class QueryBuilder
         }
 
         $expression = match ($driver) {
+            AvailableDbmsDrivers::MARIADB,
             AvailableDbmsDrivers::MYSQL => 'JSON_CONTAINS' . $this->concludeBrackets(
                     $this->wrapColumnInPita($column)
                     . ', '
@@ -876,10 +881,13 @@ class QueryBuilder
             AvailableDbmsDrivers::MSSQLSERVER => $value . ' IN ' . $this->concludeBrackets(
                     'SELECT [VALUE] FROM OPENJSON'
                     . $this->concludeBrackets($this->wrapColumnInPita($column) . $subsequence)
-                )
+                ),
         };
 
-        dd($expression);
+        $this->bind('where', [
+            $whereLogicalType,
+            $expression
+        ]);
     }
 
     protected function orderByClauseBinder(string|array $column, string $direction, bool $inRandomOrder = false)
