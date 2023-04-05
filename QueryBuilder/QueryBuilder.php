@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = new MsSqlServerDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -842,12 +842,32 @@ class QueryBuilder
         }
     }
 
-    protected function whereJsonContainsClauseBinder(string $whereLogicalType, string $column, string $value)
+    protected function whereJsonContainsClauseBinder(string $whereLogicalType, string $column, string|array $value)
     {
         $driver = $this->getDriver();
 
         if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
+        }
+
+        if (in_array($driver, [
+            AvailableDbmsDrivers::MYSQL,
+            AvailableDbmsDrivers::MARIADB,
+            AvailableDbmsDrivers::POSTGRESQL
+        ])) {
+            if (is_array($value)) {
+                if (count($value) > 1) {
+                    $value = '[' . implode(', ', $this->concludeDoubleQuotes($value)) . ']';
+                } else {
+                    $value = $value[0];
+                }
+            } else {
+                $value = $this->concludeDoubleQuotes($value);
+            }
+        } else {
+            if (is_array($value)) {
+                $value = $value[0];
+            }
         }
 
         $sequence = explode('->', $column);
@@ -872,12 +892,12 @@ class QueryBuilder
             AvailableDbmsDrivers::MYSQL => 'JSON_CONTAINS' . $this->concludeBrackets(
                     $this->wrapColumnInPita($column)
                     . ', '
-                    . $this->concludeDoubleQuotes($value)
+                    . $value
                     . $subsequence
                 ),
             AvailableDbmsDrivers::POSTGRESQL => $this->concludeBrackets(
                     $this->wrapColumnInPita($column) . $subsequence
-                ) . '::jsonb @> ' . $this->wrapColumnInPita($value),
+                ) . '::jsonb @> ' . $value,
             AvailableDbmsDrivers::MSSQLSERVER => $value . ' IN ' . $this->concludeBrackets(
                     'SELECT [VALUE] FROM OPENJSON'
                     . $this->concludeBrackets($this->wrapColumnInPita($column) . $subsequence)
