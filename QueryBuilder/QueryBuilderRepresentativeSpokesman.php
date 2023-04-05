@@ -655,9 +655,16 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    public function whereJsonContains(string $column, string|array $value)
+    public function whereJsonContains(string $column, string|array $value): self
     {
         $this->whereJsonContainsClauseBinder('', $column, $value);
+
+        return $this;
+    }
+
+    public function whereJsonLength(string $column, string $operator, string|int|null $value = null): self
+    {
+        $this->whereJsonLengthClauseBinder('', $column, $operator, $value);
 
         return $this;
     }

@@ -33,7 +33,7 @@ class QueryBuilder
 
     public function __construct()
     {
-        $this->driver = new MsSqlServerDriver();
+        $this->driver = new MySqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -870,22 +870,11 @@ class QueryBuilder
             }
         }
 
-        $sequence = explode('->', $column);
+        $subsequenceWithColumn = $this->devideSubsequenceFromSequence($column);
 
-        $column = $sequence[0];
+        $column = $subsequenceWithColumn['column'];
 
-        unset($sequence[0]);
-
-        if (count($sequence) > 1) {
-            $subsequence = match ($driver) {
-                AvailableDbmsDrivers::POSTGRESQL => '->' . implode('->', $this->wrapStringInPita($sequence)),
-                default => ', ' . $this->wrapStringInPita(
-                        '$.' . implode('.', $this->concludeDoubleQuotes($sequence))
-                    )
-            };
-        } else {
-            $subsequence = '';
-        }
+        $subsequence = $subsequenceWithColumn['subsequence'];
 
         $expression = match ($driver) {
             AvailableDbmsDrivers::MARIADB,
@@ -903,6 +892,59 @@ class QueryBuilder
                     . $this->concludeBrackets($this->wrapColumnInPita($column) . $subsequence)
                 ),
         };
+
+        $this->bind('where', [
+            $whereLogicalType,
+            $expression
+        ]);
+    }
+
+    protected function whereJsonLengthClauseBinder(string $whereLogicalType,
+                                                   string $column,
+                                                   string $operator,
+                                                   string|int|null $value)
+    {
+        $driver = $this->getDriver();
+
+        if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
+            $this->throwExceptionIfDriverNotSupportFunction();
+        }
+
+        if (is_null($value)) {
+            if (!$this->checkMatching($operator, $this->operators)) {
+                $value = $operator;
+
+                $operator = '=';
+            } else {
+                throw new Exception(
+                    'Argument value is required if an operator is specified. If a value is specified instead 
+                    of an operator argument, then the function uses the operator "=".'
+                );
+            }
+        } else {
+            $this->throwExceptionIfOperatorIsInvalid($operator);
+        }
+
+        $subsequenceWithColumn = $this->devideSubsequenceFromSequence($column);
+
+        $column = $subsequenceWithColumn['column'];
+
+        $subsequence = $subsequenceWithColumn['subsequence'];
+
+        $subsequence = $this->wrapColumnInPita($column) . $subsequence;
+
+        $expression = match ($driver) {
+            AvailableDbmsDrivers::MARIADB,
+            AvailableDbmsDrivers::MYSQL => 'JSON_LENGTH' . $this->concludeBrackets($subsequence),
+            AvailableDbmsDrivers::POSTGRESQL => 'JSONB_ARRAY_LENGTH' . $this->concludeBrackets(
+                    $this->concludeBrackets($subsequence) . '::jsonb'
+                ),
+            AvailableDbmsDrivers::MSSQLSERVER => $this->concludeBrackets(
+                'SELECT COUNT(*) FROM OPENJSON' . $this->concludeBrackets($subsequence)
+            )
+        };
+
+        $expression .= ' ' . $operator . ' ' . $value;
 
         $this->bind('where', [
             $whereLogicalType,

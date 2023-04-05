@@ -115,6 +115,30 @@ trait ClauseBindersToolkit
         ]);
     }
 
+    protected function devideSubsequenceFromSequence(string $column): array
+    {
+        $driver = $this->getDriver();
+
+        $sequence = explode('->', $column);
+
+        $column = $sequence[0];
+
+        unset($sequence[0]);
+
+        if (count($sequence) > 1) {
+            $subsequence = match ($driver) {
+                AvailableDbmsDrivers::POSTGRESQL => '->' . implode('->', $this->wrapStringInPita($sequence)),
+                default => ', ' . $this->wrapStringInPita(
+                        '$.' . implode('.', $this->concludeDoubleQuotes($sequence))
+                    )
+            };
+        } else {
+            $subsequence = '';
+        }
+
+        return compact('subsequence', 'column');
+    }
+
     protected function replaceBind(string $bindingName, array $binding): void
     {
         $this->bindings[$bindingName] = $binding;
