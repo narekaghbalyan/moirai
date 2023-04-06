@@ -870,7 +870,7 @@ class QueryBuilder
             }
         }
 
-        $subsequenceWithColumn = $this->devideSubsequenceFromSequence($column);
+        $subsequenceWithColumn = $this->divideSubsequenceFromSequence($column);
 
         $column = $subsequenceWithColumn['column'];
 
@@ -1367,10 +1367,52 @@ class QueryBuilder
 
         $expressionForUpdate = [];
 
-        foreach ($columnsWithValues as $column => $value) {
-            $expression = $this->wrapColumnInPita($column) . ' = ';
+        $driver = $this->getDriver();
 
-            $expression .= !$operationIsUsed ? $this->wrapStringInPita($value) : $value;
+        foreach ($columnsWithValues as $column => $value) {
+            $lockThisIteration = false;
+
+            if (stristr($column, '->')) {
+                if ($driver === AvailableDbmsDrivers::ORACLE) {
+                    throw new Exception('Driver "Oracle" does not support updating json column values.');
+                }
+
+                if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+                    $lockThisIteration = true;
+                }
+
+                $subsequence = $this->divideSubsequenceFromSequence($column, true);
+
+                $column = $subsequence['column'];
+
+                $expression = match ($driver) {
+                    AvailableDbmsDrivers::SQLITE,
+                    AvailableDbmsDrivers::MARIADB,
+                    AvailableDbmsDrivers::MYSQL => 'JSON_SET' . $this->concludeBrackets(
+                            $this->wrapColumnInPita($column)
+                            . $subsequence['subsequence']
+                            . ', '
+                            . $this->wrapStringInPita($value)
+                        ),
+                    AvailableDbmsDrivers::POSTGRESQL => 'JSONB_SET' . $this->concludeBrackets(
+                            $this->wrapColumnInPita($column)
+                            . '::jsonb'
+                            . $subsequence['subsequence']
+                            . ', '
+                            . $this->wrapStringInPita($value)
+                        ),
+                    AvailableDbmsDrivers::MSSQLSERVER => 'JSON_VALUE' . $this->concludeBrackets(
+                            $this->wrapColumnInPita($column)
+                            . $subsequence['subsequence']
+                        ) . ' = ' . $this->wrapStringInPita($value)
+                };
+            } else {
+                $expression = !$operationIsUsed ? $this->wrapStringInPita($value) : $value;
+            }
+
+            if (!$lockThisIteration) {
+                $expression = $this->wrapColumnInPita($column) . ' = ' . $expression;
+            }
 
             $expressionForUpdate[] = $expression;
         }

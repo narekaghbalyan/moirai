@@ -115,19 +115,21 @@ trait ClauseBindersToolkit
         ]);
     }
 
-    protected function devideSubsequenceFromSequence(string $column): array
+    protected function divideSubsequenceFromSequence(string $column, bool $forUpdate = false): array
     {
-        $driver = $this->getDriver();
-
         $sequence = explode('->', $column);
 
         $column = $sequence[0];
 
         unset($sequence[0]);
 
-        if (count($sequence) > 1) {
-            $subsequence = match ($driver) {
-                AvailableDbmsDrivers::POSTGRESQL => '->' . implode('->', $this->wrapStringInPita($sequence)),
+        if (count($sequence) >= 1) {
+            $subsequence = match ($this->getDriver()) {
+                AvailableDbmsDrivers::POSTGRESQL => !$forUpdate
+                    ? '->' . implode('->', $this->wrapStringInPita($sequence))
+                    : ', ' . $this->wrapStringInPita(
+                        '{' . implode(', ', $this->wrapColumnInPita($sequence)) . '}'
+                    ),
                 default => ', ' . $this->wrapStringInPita(
                         '$.' . implode('.', $this->concludeDoubleQuotes($sequence))
                     )
