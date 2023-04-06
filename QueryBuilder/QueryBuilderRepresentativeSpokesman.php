@@ -32,7 +32,8 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     // TODO
     public function find(int $id)
-    {}
+    {
+    }
 
     /**
      * @param string|mixed ...$columns
@@ -900,6 +901,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         $this->updateClauseBinder($columnsWithValues);
 
         // TODO return value
+    }
+
+    /**
+     * @param array $condition
+     * @param array $forUpdate
+     * @return bool|void
+     * @throws Exception
+     */
+    public function updateOrInsert(array $condition, array $forUpdate)
+    {
+        if (!$this->where($condition)->exists()) {
+            return $this->insert(array_merge($condition, $forUpdate));
+        }
+
+        return (bool)$this->where($condition)->update($forUpdate);
     }
 
     /**
