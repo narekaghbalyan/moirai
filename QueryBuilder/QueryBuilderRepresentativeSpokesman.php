@@ -1063,4 +1063,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     {
         return $this->truncateClauseBinder();
     }
+
+    public function sharedLock(): self
+    {
+        $this->lockClauseBinder();
+
+        return $this;
+    }
+
+    public function lockForUpdate(): self
+    {
+        $this->lockClauseBinder(false);
+
+        return $this;
+    }
 }

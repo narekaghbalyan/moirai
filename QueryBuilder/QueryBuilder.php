@@ -1567,7 +1567,7 @@ class QueryBuilder
 
             $this->bind('from', ['SQLITE_SEQUENCE']);
 
-            $this->bind('where',[
+            $this->bind('where', [
                 $this->wrapColumnInPita('name') . ' = ' . $this->wrapStringInPita(trim($table, '"'))
             ]);
 
@@ -1575,6 +1575,40 @@ class QueryBuilder
         }
 
         return $response;
+    }
+
+    protected function lockClauseBinder($isSharedLock = true): void
+    {
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE) {
+            $this->throwExceptionIfDriverNotSupportFunction();
+        }
+
+        if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+            $lockingExpression = 'WITH(rowlock, %s holdlock)';
+
+            $plug = '';
+
+            if (!$isSharedLock) {
+                $plug = 'updlock,';
+            }
+
+            $this->bind('from', [sprintf($lockingExpression, $plug)]);
+        } else {
+            if ($isSharedLock) {
+                $lockingExpression = match ($driver) {
+                    AvailableDbmsDrivers::MARIADB,
+                    AvailableDbmsDrivers::MYSQL => 'LOCK IN SHARE MODE',
+                    AvailableDbmsDrivers::POSTGRESQL => 'FOR SHARE',
+                    AvailableDbmsDrivers::ORACLE => 'IN ROW SHARE MODE'
+                };
+            } else {
+                $lockingExpression = 'FOR UPDATE';
+            }
+
+            $this->bindings[] = [$lockingExpression];
+        }
     }
 
     private function pickUpThePieces(array $bindings): string
