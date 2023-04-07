@@ -1544,6 +1544,38 @@ class QueryBuilder
         return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
 
+    protected function truncateClauseBinder()
+    {
+        $driver = $this->getDriver();
+
+        if ($driver !== AvailableDbmsDrivers::SQLITE) {
+            $this->changeQueryTypeToTruncate();
+
+            if ($driver === AvailableDbmsDrivers::POSTGRESQL) {
+                $this->bind('truncate', ['RESTART IDENTITY CASCADE']);
+            }
+
+            $response = $this->executeQuery($this->pickUpThePieces($this->getBindings()));
+        } else {
+            $table = $this->getTableBinding();
+
+            $this->changeQueryTypeToDelete();
+
+            $response = $this->executeQuery($this->pickUpThePieces($this->getBindings()));
+
+            $this->devastateBindings();
+
+            $this->bind('from', ['SQLITE_SEQUENCE']);
+
+            $this->bind('where',[
+                $this->wrapColumnInPita('name') . ' = ' . $this->wrapStringInPita(trim($table, '"'))
+            ]);
+
+            $this->updateClauseBinder(['SEQ' => 0]);
+        }
+
+        return $response;
+    }
 
     private function pickUpThePieces(array $bindings): string
     {

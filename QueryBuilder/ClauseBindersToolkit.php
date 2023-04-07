@@ -216,18 +216,30 @@ trait ClauseBindersToolkit
         $this->changeQueryType('delete', false, true);
     }
 
-    protected function changeQueryType(string $bindingName, bool $useInto = true, bool $useFrom = false): void
+    protected function changeQueryTypeToTruncate(): void
+    {
+        $this->changeQueryType('truncate', false, false, true);
+    }
+
+    protected function changeQueryType(string $bindingName,
+                                       bool $useInto = true,
+                                       bool $useFrom = false,
+                                       bool $useTable = false): void
     {
         $table = $this->getBinding('from');
 
         $this->bindings = [$bindingName => $table];
 
         if ($useFrom) {
-            array_unshift($this->bindings[$bindingName], 'from');
+            array_unshift($this->bindings[$bindingName], 'FROM');
         }
 
         if ($useInto) {
-            array_unshift($this->bindings[$bindingName], 'into');
+            array_unshift($this->bindings[$bindingName], 'INTO');
+        }
+
+        if ($useTable) {
+            array_unshift($this->bindings[$bindingName], 'TABLE');
         }
     }
 

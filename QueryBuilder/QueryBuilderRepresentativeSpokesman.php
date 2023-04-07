@@ -1058,4 +1058,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         // TODO return delete response value
     }
+
+    public function truncate()
+    {
+        return $this->truncateClauseBinder();
+    }
 }
