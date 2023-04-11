@@ -2,6 +2,8 @@
 
 namespace Moarai\Drivers;
 
+use Exception;
+
 abstract class Driver
 {
     protected $grammar;
@@ -11,6 +13,15 @@ abstract class Driver
     protected array $pitaForStrings = [];
 
     protected array $dataTypes = [];
+
+    public function getDataType(string $dataTypeKey): string
+    {
+        if (!isset($this->dataTypes[$dataTypeKey])) {
+            throw new Exception('This data type is not supported by this driver.');
+        }
+
+        return $this->dataTypes[$dataTypeKey];
+    }
 
     public function getPitaForColumns(): array
     {
