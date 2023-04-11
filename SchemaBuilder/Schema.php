@@ -8,7 +8,8 @@ class Schema extends SchemaBuilder
 {
     public static function create(string $table, Closure $callback)
     {
-        dump($callback);
-        dd($table);
+        $blueprint = new Blueprint($table, $callback);
+
+        dd($blueprint);
     }
 }

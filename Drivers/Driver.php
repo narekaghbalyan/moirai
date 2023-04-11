@@ -10,6 +10,8 @@ abstract class Driver
 
     protected array $pitaForStrings = [];
 
+    protected array $dataTypes = [];
+
     public function getPitaForColumns(): array
     {
         return $this->pitaForColumns;
@@ -47,9 +49,13 @@ abstract class Driver
         $this->initializeDriverLexicalStructure();
 
         $this->initializeDriverGrammaticalStructure();
+
+        $this->initializeDriverDataTypes();
     }
 
     abstract function initializeDriverLexicalStructure(): void;
+
+    abstract function initializeDriverDataTypes(): void;
 
     public function initializeDriverGrammaticalStructure(): void
     {
