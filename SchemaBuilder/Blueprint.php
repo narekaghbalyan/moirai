@@ -25,10 +25,53 @@ class Blueprint
             $callback($this);
         }
 
-        // pick up
+        $this->sewDefinedColumns();
     }
 
-   
+    private function sewDefinedColumns(): string
+    {
+        if (empty($this->columns)) {
+            return '';
+        }
+
+        $sewedColumns = [];
+
+        foreach ($this->columns as $column => $parameters) {
+            $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
+        }
+
+        dd(implode(', ', $sewedColumns));
+    }
+
+    private function resolveAutoIncrementAndUnsignedParametersUsing(bool $autoIncrement, bool $unsigned): array
+    {
+        $parameters = [];
+
+        if ($unsigned) {
+            $parameters[] = 'UNSIGNED';
+        }
+
+        if ($autoIncrement) {
+            $parameters[] = 'AUTO_INCREMENT';
+        }
+
+        return $parameters;
+    }
+
+    public function floatBaseBinder(string $dataType,
+                                    string $column,
+                                    int|null $total = null,
+                                    int|null $places = null,
+                                    bool $unsigned = false): void
+    {
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing(false, $unsigned);
+
+        if (!is_null($total) && !is_null($places)) {
+            $parameters[] = '(' . $total . ', ' . $places . ')';
+        }
+
+        $this->bindColumn($column, $this->driver->getDataType($dataType), $parameters);
+    }
 
     private function bindColumn(string $column, string $dataType, array $parameters = [])
     {
@@ -67,21 +110,6 @@ class Blueprint
     public function longText(string $column)
     {
         $this->bindColumn($column, $this->driver->getDataType('longText'));
-    }
-
-    private function resolveAutoIncrementAndUnsignedParametersUsing(bool $autoIncrement, bool $unsigned): array
-    {
-        $parameters = [];
-
-        if ($unsigned) {
-            $parameters[] = 'UNSIGNED';
-        }
-
-        if ($autoIncrement) {
-            $parameters[] = 'AUTO_INCREMENT';
-        }
-
-        return $parameters;
     }
 
     public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false)
@@ -152,21 +180,6 @@ class Blueprint
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
         $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
-    }
-
-    public function floatBaseBinder(string $dataType,
-                                    string $column,
-                                    int|null $total = null,
-                                    int|null $places = null,
-                                    bool $unsigned = false): void
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing(false, $unsigned);
-
-        if (!is_null($total) && !is_null($places)) {
-            $parameters[] = '(' . $total . ', ' . $places . ')';
-        }
-
-        $this->bindColumn($column, $this->driver->getDataType($dataType), $parameters);
     }
 
     public function float(string $column, int $total = 8, int $places = 2, bool $unsigned = false)
