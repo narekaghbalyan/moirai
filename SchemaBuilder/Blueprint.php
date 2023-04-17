@@ -11,7 +11,7 @@ class Blueprint
 
     protected string $table;
 
-    protected array $columns = [];
+    public array $columns = [];
 
     private int $defaultStringLength = 255;
 
@@ -43,6 +43,15 @@ class Blueprint
         dd(implode(', ', $sewedColumns));
     }
 
+    private function bindColumn(string $column, string $dataType, array $parameters = []): DefinedColumnAccessories
+    {
+        $this->columns[$column] = array_merge(compact('dataType'), $parameters);
+
+        $this->columns[$column]['value'] = 'NOT NULL';
+
+        return new DefinedColumnAccessories($column, $this);
+    }
+
     private function resolveAutoIncrementAndUnsignedParametersUsing(bool $autoIncrement, bool $unsigned): array
     {
         $parameters = [];
@@ -64,26 +73,53 @@ class Blueprint
                                     int|null $places = null,
                                     bool $unsigned = false): void
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing(false, $unsigned);
+        $parameters = [];
 
         if (!is_null($total) && !is_null($places)) {
             $parameters[] = '(' . $total . ', ' . $places . ')';
         }
 
+        $parameters = array_merge(
+            $parameters,
+            $this->resolveAutoIncrementAndUnsignedParametersUsing(false, $unsigned)
+        );
+
         $this->bindColumn($column, $this->driver->getDataType($dataType), $parameters);
     }
 
-    private function bindColumn(string $column, string $dataType, array $parameters = [])
-    {
-        $this->columns[$column] = array_merge(compact('dataType'), $parameters);
-    }
+
+
+
+
+
+
+
 
     public function char(string $column, string|int|null $length = null)
     {
         $length = $length ?: $this->defaultStringLength;
 
-        $this->bindColumn($column, $this->driver->getDataType('char'), compact('length'));
+        return $this->bindColumn($column, $this->driver->getDataType('char'), compact('length'));
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public function string(string $column, string|int|null $length = null)
     {
@@ -117,6 +153,8 @@ class Blueprint
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
         $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
+
+        return $this;
     }
 
     public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false)
