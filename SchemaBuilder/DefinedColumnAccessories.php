@@ -145,5 +145,23 @@ class DefinedColumnAccessories
         return $this;
     }
 
-    
+    /**
+     * @return $this
+     */
+    public function invisible(): self
+    {
+        $this->bindAccessory('INVISIBLE');
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function primary(): self
+    {
+        $this->bindAccessory('PRIMARY KEY');
+
+        return $this;
+    }
 }
