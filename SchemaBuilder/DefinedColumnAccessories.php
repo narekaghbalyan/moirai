@@ -2,6 +2,8 @@
 
 namespace Moarai\SchemaBuilder;
 
+use Exception;
+
 class DefinedColumnAccessories
 {
     protected string $column;
@@ -17,28 +19,107 @@ class DefinedColumnAccessories
 
     public function bindAccessory(string $accessory, string $accessoryKey = null): void
     {
-        $this->blueprintInstance->columns[$this->column][
-            !is_null($accessory) ? $accessoryKey : ''
-        ] = $accessory;
+        if (!is_null($accessoryKey)) {
+            $this->blueprintInstance->columns[$this->column][$accessoryKey] = $accessory;
+        } else {
+            $this->blueprintInstance->columns[$this->column][] = $accessory;
+        }
+
     }
 
-    public function nullable()
+    public function checkAccessoryExistence(string $accessoryKey): bool
+    {
+        return !empty($this->blueprintInstance->columns[$this->column][$accessoryKey]);
+    }
+
+    public function getAccessory(string $accessoryKey): string|array
+    {
+        return $this->blueprintInstance->columns[$this->column][$accessoryKey];
+    }
+
+    /**
+     * @return $this
+     */
+    public function nullable(): self
     {
         $this->bindAccessory('NULL', 'value');
 
         return $this;
     }
 
-    public function default(mixed $value)
+    /**
+     * @param mixed $value
+     * @return $this
+     */
+    public function default(mixed $value): self
     {
-        $this->bindAccessory('DEFAULT' . ' ' . $value);
+        $this->bindAccessory('DEFAULT ' . $value);
 
         return $this;
     }
 
-    public function unique()
+    // TODO
+    public function unique(): self
     {
-        $this->bindAccessory('UNIQUE');
+        $uniqueConstraints = $this->getAccessory('unique');
+
+        $accessory = 'CONSTRAINT unique_constraints UNIQUE (' .
+
+            $this->bindAccessory('UNIQUE', 'unique');
+
+        return $this;
+    }
+
+    /**
+     * @param string $collation
+     * @return $this
+     */
+    public function collation(string $collation): self
+    {
+        $this->bindAccessory('COLLATE ' . $collation);
+
+        return $this;
+    }
+
+    /**
+     * @param string $charset
+     * @return $this
+     */
+    public function charset(string $charset): self
+    {
+        $this->bindAccessory('CHARACTER SET ' . $charset);
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function first(): self
+    {
+        $this->bindAccessory('FIRST ');
+
+        return $this;
+    }
+
+    /**
+     * @param string $column
+     * @return $this
+     */
+    public function after(string $column): self
+    {
+        $this->bindAccessory('AFTER ' . $column);
+
+        return $this;
+    }
+
+    /**
+     * @param string $comment
+     * @return $this
+     */
+    public function comment(string $comment): self
+    {
+        $this->bindAccessory('COMMENT ' . $comment);
 
         return $this;
     }
