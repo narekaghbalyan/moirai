@@ -17,14 +17,26 @@ class DefinedColumnAccessories
         $this->blueprintInstance = $blueprintInstance;
     }
 
-    public function bindAccessory(string $accessory, string $accessoryKey = null): void
+    public function getAccessory(string $accessoryKey): string|array
     {
-        if (!is_null($accessoryKey)) {
-            $this->blueprintInstance->columns[$this->column][$accessoryKey] = $accessory;
-        } else {
-            $this->blueprintInstance->columns[$this->column][] = $accessory;
-        }
+        return $this->blueprintInstance->columns[$this->column][$accessoryKey];
+    }
 
+    public function bindAccessory(string $accessory, string $accessoryKey = null, bool $isTableAccessory = false): void
+    {
+        if (!$isTableAccessory) {
+            if (!is_null($accessoryKey)) {
+                $this->blueprintInstance->columns[$this->column][$accessoryKey] = $accessory;
+            } else {
+                $this->blueprintInstance->columns[$this->column][] = $accessory;
+            }
+        } else {
+            if (!is_null($accessoryKey)) {
+                $this->blueprintInstance->columns[$accessoryKey] = $accessory;
+            } else {
+                $this->blueprintInstance->columns[] = $accessory;
+            }
+        }
     }
 
     public function checkAccessoryExistence(string $accessoryKey): bool
@@ -32,10 +44,6 @@ class DefinedColumnAccessories
         return !empty($this->blueprintInstance->columns[$this->column][$accessoryKey]);
     }
 
-    public function getAccessory(string $accessoryKey): string|array
-    {
-        return $this->blueprintInstance->columns[$this->column][$accessoryKey];
-    }
 
     /**
      * @return $this
@@ -130,6 +138,16 @@ class DefinedColumnAccessories
     public function autoIncrement(): self
     {
         $this->bindAccessory('AUTO_INCREMENT');
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function unsigned(): self
+    {
+        $this->bindAccessory('UNSIGNED');
 
         return $this;
     }
