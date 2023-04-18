@@ -123,4 +123,27 @@ class DefinedColumnAccessories
 
         return $this;
     }
+
+    /**
+     * @return $this
+     */
+    public function autoIncrement(): self
+    {
+        $this->bindAccessory('AUTO_INCREMENT');
+
+        return $this;
+    }
+
+    /**
+     * TODO
+     * @return $this
+     */
+    public function index(string $indexName): self
+    {
+        $this->bindAccessory('INDEX ' . $indexName);
+
+        return $this;
+    }
+
+    
 }
