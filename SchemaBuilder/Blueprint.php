@@ -36,8 +36,13 @@ class Blueprint
 
         $sewedColumns = [];
 
+        // TODO
         foreach ($this->columns as $column => $parameters) {
-            $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
+            if ($column === 'table_accessories') {
+                $sewedColumns[] = implode(' ', $parameters);
+            } else {
+                $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
+            }
         }
 
         dd(implode(', ', $sewedColumns));

@@ -2,8 +2,6 @@
 
 namespace Moarai\SchemaBuilder;
 
-use Exception;
-
 class DefinedColumnAccessories
 {
     protected string $column;
@@ -22,6 +20,11 @@ class DefinedColumnAccessories
         return $this->blueprintInstance->columns[$this->column][$accessoryKey];
     }
 
+    public function getTableAccessory(string $accessoryKey): string|array
+    {
+        return $this->blueprintInstance->columns[$accessoryKey];
+    }
+
     public function bindAccessory(string $accessory, string $accessoryKey = null, bool $isTableAccessory = false): void
     {
         if (!$isTableAccessory) {
@@ -32,9 +35,9 @@ class DefinedColumnAccessories
             }
         } else {
             if (!is_null($accessoryKey)) {
-                $this->blueprintInstance->columns[$accessoryKey] = $accessory;
+                $this->blueprintInstance->columns['table_accessories'][$accessoryKey] = $accessory;
             } else {
-                $this->blueprintInstance->columns[] = $accessory;
+                $this->blueprintInstance->columns['table_accessories'][] = $accessory;
             }
         }
     }
