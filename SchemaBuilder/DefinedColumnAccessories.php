@@ -4,10 +4,22 @@ namespace Moarai\SchemaBuilder;
 
 class DefinedColumnAccessories
 {
+    /**
+     * @var string
+     */
     protected string $column;
 
+    /**
+     * @var Blueprint
+     */
     protected Blueprint $blueprintInstance;
 
+    /**
+     * DefinedColumnAccessories constructor.
+     *
+     * @param string $column
+     * @param Blueprint $blueprintInstance
+     */
     public function __construct(string $column, Blueprint $blueprintInstance)
     {
         $this->column = $column;
@@ -15,16 +27,29 @@ class DefinedColumnAccessories
         $this->blueprintInstance = $blueprintInstance;
     }
 
+    /**
+     * @param string $accessoryKey
+     * @return string|array
+     */
     public function getAccessory(string $accessoryKey): string|array
     {
         return $this->blueprintInstance->columns[$this->column][$accessoryKey];
     }
 
+    /**
+     * @param string $accessoryKey
+     * @return string|array
+     */
     public function getTableAccessory(string $accessoryKey): string|array
     {
         return $this->blueprintInstance->tableAccessories[$accessoryKey];
     }
 
+    /**
+     * @param string $accessory
+     * @param string|null $accessoryKey
+     * @param bool $isTableAccessory
+     */
     public function bindAccessory(string $accessory, string $accessoryKey = null, bool $isTableAccessory = false): void
     {
         if (!$isTableAccessory) {
@@ -42,21 +67,41 @@ class DefinedColumnAccessories
         }
     }
 
+    /**
+     * @param string $accessoryKey
+     * @param bool $isTableAccessory
+     */
+    public function deleteAccessory(string $accessoryKey, bool $isTableAccessory = false): void
+    {
+        if (!$isTableAccessory) {
+            unset($this->blueprintInstance->columns[$this->column][$accessoryKey]);
+        } else {
+            unset($this->blueprintInstance->tableAccessories[$accessoryKey]);
+        }
+    }
+
+    /**
+     * @param string $accessoryKey
+     * @return bool
+     */
     public function checkAccessoryExistence(string $accessoryKey): bool
     {
         return !empty($this->blueprintInstance->columns[$this->column][$accessoryKey]);
     }
-
 
     /**
      * @return $this
      */
     public function nullable(): self
     {
-        $this->bindAccessory('NULL', 'value');
+        $this->deleteAccessory('value');
 
         return $this;
     }
+
+
+
+
 
     /**
      * @param mixed $value

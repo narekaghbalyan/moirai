@@ -38,13 +38,8 @@ class Blueprint
 
         $sewedColumns = [];
 
-        // TODO
         foreach ($this->columns as $column => $parameters) {
-            if ($column === 'table_accessories') {
-                $sewedColumns[] = implode(' ', $parameters);
-            } else {
-                $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
-            }
+            $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
         }
 
         dd(implode(', ', $sewedColumns));
@@ -95,37 +90,12 @@ class Blueprint
     }
 
 
-
-
-
-
-
-
-
     public function char(string $column, string|int|null $length = null)
     {
         $length = $length ?: $this->defaultStringLength;
 
         return $this->bindColumn($column, $this->driver->getDataType('char'), compact('length'));
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     public function string(string $column, string|int|null $length = null)
