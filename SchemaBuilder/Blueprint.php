@@ -13,6 +13,8 @@ class Blueprint
 
     public array $columns = [];
 
+    public array $tableAccessories = [];
+
     private int $defaultStringLength = 255;
 
     public function __construct(string $table, Closure|null $callback = null)

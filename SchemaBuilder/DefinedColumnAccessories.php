@@ -22,7 +22,7 @@ class DefinedColumnAccessories
 
     public function getTableAccessory(string $accessoryKey): string|array
     {
-        return $this->blueprintInstance->columns[$accessoryKey];
+        return $this->blueprintInstance->tableAccessories[$accessoryKey];
     }
 
     public function bindAccessory(string $accessory, string $accessoryKey = null, bool $isTableAccessory = false): void
@@ -35,9 +35,9 @@ class DefinedColumnAccessories
             }
         } else {
             if (!is_null($accessoryKey)) {
-                $this->blueprintInstance->columns['table_accessories'][$accessoryKey] = $accessory;
+                $this->blueprintInstance->tableAccessories[$accessoryKey] = $accessory;
             } else {
-                $this->blueprintInstance->columns['table_accessories'][] = $accessory;
+                $this->blueprintInstance->tableAccessories[] = $accessory;
             }
         }
     }
