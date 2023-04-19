@@ -49,18 +49,30 @@ class DefinedColumnAccessories
      * @param string $accessory
      * @param string|null $accessoryKey
      * @param bool $isTableAccessory
+     * @param bool $append
      */
-    public function bindAccessory(string $accessory, string $accessoryKey = null, bool $isTableAccessory = false): void
+    public function bindAccessory(string $accessory,
+                                  string $accessoryKey = null,
+                                  bool $isTableAccessory = false,
+                                  bool $append = false): void
     {
         if (!$isTableAccessory) {
             if (!is_null($accessoryKey)) {
-                $this->blueprintInstance->columns[$this->column][$accessoryKey] = $accessory;
+                if (!$append) {
+                    $this->blueprintInstance->columns[$this->column][$accessoryKey] = $accessory;
+                } else {
+                    $this->blueprintInstance->columns[$this->column][$accessoryKey][] = $accessory;
+                }
             } else {
                 $this->blueprintInstance->columns[$this->column][] = $accessory;
             }
         } else {
             if (!is_null($accessoryKey)) {
-                $this->blueprintInstance->tableAccessories[$accessoryKey] = $accessory;
+                if (!$append) {
+                    $this->blueprintInstance->tableAccessories[$accessoryKey] = $accessory;
+                } else {
+                    $this->blueprintInstance->tableAccessories[$accessoryKey][] = $accessory;
+                }
             } else {
                 $this->blueprintInstance->tableAccessories[] = $accessory;
             }
@@ -82,11 +94,16 @@ class DefinedColumnAccessories
 
     /**
      * @param string $accessoryKey
+     * @param bool $isTableAccessory
      * @return bool
      */
-    public function checkAccessoryExistence(string $accessoryKey): bool
+    public function checkAccessoryExistence(string $accessoryKey, bool $isTableAccessory = false): bool
     {
-        return !empty($this->blueprintInstance->columns[$this->column][$accessoryKey]);
+        if (!$isTableAccessory) {
+            return !empty($this->blueprintInstance->columns[$this->column][$accessoryKey]);
+        }
+
+        return !empty($this->blueprintInstance->tableAccessories[$accessoryKey]);
     }
 
     /**
@@ -99,10 +116,6 @@ class DefinedColumnAccessories
         return $this;
     }
 
-
-
-
-
     /**
      * @param mixed $value
      * @return $this
@@ -114,17 +127,22 @@ class DefinedColumnAccessories
         return $this;
     }
 
-    // TODO
+    /**
+     * @return $this
+     */
     public function unique(): self
     {
-        $uniqueConstraints = $this->getAccessory('unique');
+        if (!empty($this->checkAccessoryExistence('unique', true))) {
+            $this->blueprintInstance->tableAccessories['unique']['prefix'] = 'CONSTRAINT unique_constraints UNIQUE';
+        }
 
-        $accessory = 'CONSTRAINT unique_constraints UNIQUE (' .
+        $this->blueprintInstance->tableAccessories['unique']['columns'][] = $this->column;
 
-            $this->bindAccessory('UNIQUE', 'unique');
+        // $this->bindAccessory($this->column, 'unique', true, true);
 
         return $this;
     }
+
 
     /**
      * @param string $collation

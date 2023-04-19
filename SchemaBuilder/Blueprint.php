@@ -13,7 +13,12 @@ class Blueprint
 
     public array $columns = [];
 
-    public array $tableAccessories = [];
+    public array $tableAccessories = [
+        'unique' => [
+            'prefix' => 'UNIQUE',
+            'columns' => []
+        ]
+    ];
 
     private int $defaultStringLength = 255;
 
@@ -41,6 +46,26 @@ class Blueprint
         foreach ($this->columns as $column => $parameters) {
             $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
         }
+
+        $tableSewedAccessories = [];
+
+        foreach ($this->tableAccessories as $parameters) {
+            $accessoryExpression = $parameters;
+
+            if (is_array($parameters)) {
+                if (!empty($parameters['prefix'])) {
+                    $accessoryExpression = $parameters['prefix'];
+                }
+
+                if (!empty($parameters['columns'])) {
+                    $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
+                }
+            }
+
+            $tableSewedAccessories[] = $accessoryExpression;
+        }
+
+        $sewedColumns[] = implode(', ', $tableSewedAccessories);
 
         dd(implode(', ', $sewedColumns));
     }
