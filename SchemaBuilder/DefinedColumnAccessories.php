@@ -162,29 +162,29 @@ class DefinedColumnAccessories
         return $this;
     }
 
-
-
-
-
-
-
-
-
-
-
-
     /**
      * @param string $charset
      * @return $this
+     * @throws Exception
      */
     public function charset(string $charset): self
     {
-        $this->bindAccessory('CHARACTER SET ' . $charset);
+        $driver = $this->blueprintInstance->getDriver();
+
+        if (!in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
+            throw new Exception('Driver ' . $driver . ' does not support this function.');
+        }
+
+        $prefix = 'CHARACTER SET ';
+
+        if ($driver === AvailableDbmsDrivers::MARIADB) {
+            $prefix .= '= ';
+        }
+
+        $this->bindAccessory($prefix . $charset);
 
         return $this;
     }
-
-
 
 
 
