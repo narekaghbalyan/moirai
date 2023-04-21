@@ -132,16 +132,18 @@ class DefinedColumnAccessories
      */
     public function unique(): self
     {
-        if (!empty($this->checkAccessoryExistence('unique', true))) {
+        if (!empty($this->blueprintInstance->tableAccessories['unique']['columns'])) {
             $this->blueprintInstance->tableAccessories['unique']['prefix'] = 'CONSTRAINT unique_constraints UNIQUE';
         }
 
         $this->blueprintInstance->tableAccessories['unique']['columns'][] = $this->column;
 
-        // $this->bindAccessory($this->column, 'unique', true, true);
-
         return $this;
     }
+
+
+
+
 
 
     /**

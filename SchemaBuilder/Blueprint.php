@@ -53,12 +53,14 @@ class Blueprint
             $accessoryExpression = $parameters;
 
             if (is_array($parameters)) {
-                if (!empty($parameters['prefix'])) {
-                    $accessoryExpression = $parameters['prefix'];
-                }
-
                 if (!empty($parameters['columns'])) {
+                    if (!empty($parameters['prefix'])) {
+                        $accessoryExpression = $parameters['prefix'];
+                    }
+
                     $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
+                } else {
+                    continue;
                 }
             }
 
