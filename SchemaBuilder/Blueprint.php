@@ -35,6 +35,11 @@ class Blueprint
         $this->sewDefinedColumns();
     }
 
+    public function getDriver()
+    {
+        return $this->driver->getDriverName();
+    }
+
     private function sewDefinedColumns(): string
     {
         if (empty($this->columns)) {

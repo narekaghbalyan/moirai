@@ -2,6 +2,9 @@
 
 namespace Moarai\SchemaBuilder;
 
+use Exception;
+use Moarai\Drivers\AvailableDbmsDrivers;
+
 class DefinedColumnAccessories
 {
     /**
@@ -141,21 +144,34 @@ class DefinedColumnAccessories
         return $this;
     }
 
-
-
-
-
-
     /**
      * @param string $collation
      * @return $this
+     * @throws Exception
      */
     public function collation(string $collation): self
     {
+        $driver = $this->blueprintInstance->getDriver();
+
+        if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
+            throw new Exception('Driver ' . $driver . ' does not support this function.');
+        }
+
         $this->bindAccessory('COLLATE ' . $collation);
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string $charset
@@ -167,6 +183,16 @@ class DefinedColumnAccessories
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @return $this
