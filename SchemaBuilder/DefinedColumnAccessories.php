@@ -186,23 +186,28 @@ class DefinedColumnAccessories
         return $this;
     }
 
-
-
-
-
-
-
-
-
     /**
      * @return $this
+     * @throws Exception
      */
     public function first(): self
     {
+        $driver = $this->blueprintInstance->getDriver();
+
+        if ($driver !== AvailableDbmsDrivers::MYSQL) {
+            throw new Exception('Driver ' . $driver . ' does not support this function.');
+        }
+
         $this->bindAccessory('FIRST ');
 
         return $this;
     }
+
+
+
+
+
+
 
     /**
      * @param string $column
