@@ -194,7 +194,7 @@ class DefinedColumnAccessories
     {
         $driver = $this->blueprintInstance->getDriver();
 
-        if ($driver !== AvailableDbmsDrivers::MYSQL) {
+        if (!in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
             throw new Exception('Driver ' . $driver . ' does not support this function.');
         }
 
@@ -202,7 +202,7 @@ class DefinedColumnAccessories
 
         return $this;
     }
-    
+
     /**
      * @param string $column
      * @return $this
@@ -212,7 +212,7 @@ class DefinedColumnAccessories
     {
         $driver = $this->blueprintInstance->getDriver();
 
-        if ($driver !== AvailableDbmsDrivers::MYSQL) {
+        if (!in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
             throw new Exception('Driver ' . $driver . ' does not support this function.');
         }
 
@@ -224,6 +224,8 @@ class DefinedColumnAccessories
 
 
 
+
+    
 
 
 
