@@ -4,12 +4,13 @@ namespace Moarai\SchemaBuilder;
 
 use Closure;
 use Moarai\Drivers\MySqlDriver;
+use Moarai\Drivers\PostgreSqlDriver;
 
 class Blueprint
 {
     protected $driver;
 
-    protected string $table;
+    public string $table;
 
     public array $columns = [];
 
@@ -20,11 +21,13 @@ class Blueprint
         ]
     ];
 
+    public array $afterTableDefinition  = [];
+
     private int $defaultStringLength = 255;
 
     public function __construct(string $table, Closure|null $callback = null)
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = new PostgreSqlDriver();
 
         $this->table = $table;
 

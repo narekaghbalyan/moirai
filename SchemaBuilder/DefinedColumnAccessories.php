@@ -221,24 +221,39 @@ class DefinedColumnAccessories
         return $this;
     }
 
-
-
-
-
-    
-
-
-
     /**
      * @param string $comment
      * @return $this
+     * @throws Exception
      */
     public function comment(string $comment): self
     {
-        $this->bindAccessory('COMMENT ' . $comment);
+        $driver = $this->blueprintInstance->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
+            $this->bindAccessory('COMMENT ' . $comment);
+        } elseif ($driver === AvailableDbmsDrivers::POSTGRESQL) {
+            $this->blueprintInstance->afterTableDefinition[] = 'COMMENT ON COLUMN '
+                . $this->blueprintInstance->table
+                . '.'
+                . $this->column
+                . ' is '
+                . $comment;
+        } else {
+            throw new Exception('Driver ' . $driver . ' does not support this function.');
+        }
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * @return $this
