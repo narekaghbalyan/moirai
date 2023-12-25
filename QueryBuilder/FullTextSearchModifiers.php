@@ -1,6 +1,6 @@
 <?php
 
-namespace Moarai\QueryBuilder;
+namespace Moirai\QueryBuilder;
 
 final class FullTextSearchModifiers
 {

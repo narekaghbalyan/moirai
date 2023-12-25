@@ -1,9 +1,9 @@
 <?php
 
-namespace Moarai\QueryBuilder;
+namespace Moirai\QueryBuilder;
 
 use Exception;
-use Moarai\Drivers\AvailableDbmsDrivers;
+use Moirai\Drivers\AvailableDbmsDrivers;
 use ReflectionClass;
 
 trait ClauseBindersToolkit

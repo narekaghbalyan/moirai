@@ -1,15 +1,15 @@
 <?php
 
-namespace Moarai\QueryBuilder;
+namespace Moirai\QueryBuilder;
 
 use Exception;
-use Moarai\Drivers\AvailableDbmsDrivers;
-use Moarai\Drivers\MariaDbDriver;
-use Moarai\Drivers\MsSqlServerDriver;
-use Moarai\Drivers\MySqlDriver;
-use Moarai\Drivers\OracleDriver;
-use Moarai\Drivers\PostgreSqlDriver;
-use Moarai\Drivers\SqliteDriver;
+use Moirai\Drivers\AvailableDbmsDrivers;
+use Moirai\Drivers\MariaDbDriver;
+use Moirai\Drivers\MsSqlServerDriver;
+use Moirai\Drivers\MySqlDriver;
+use Moirai\Drivers\OracleDriver;
+use Moirai\Drivers\PostgreSqlDriver;
+use Moirai\Drivers\SqliteDriver;
 
 class QueryBuilder
 {

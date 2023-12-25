@@ -1,6 +1,6 @@
 <?php
 
-namespace Moarai\SchemaBuilder;
+namespace Moirai\SchemaBuilder;
 
 use Closure;
 
@@ -10,6 +10,8 @@ class Schema extends SchemaBuilder
     {
         $blueprint = new Blueprint($table, $callback);
 
-        dd($blueprint);
+//        $ddlExpression = 'CREATE TABLE (' . $blueprint . ')';
+//
+//        dd($ddlExpression);
     }
 }

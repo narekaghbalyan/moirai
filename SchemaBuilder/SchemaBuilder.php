@@ -1,6 +1,6 @@
 <?php
 
-namespace Moarai\SchemaBuilder;
+namespace Moirai\SchemaBuilder;
 
 class SchemaBuilder
 {

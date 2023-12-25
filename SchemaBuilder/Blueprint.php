@@ -1,10 +1,10 @@
 <?php
 
-namespace Moarai\SchemaBuilder;
+namespace Moirai\SchemaBuilder;
 
 use Closure;
-use Moarai\Drivers\MySqlDriver;
-use Moarai\Drivers\PostgreSqlDriver;
+use Moirai\Drivers\MySqlDriver;
+use Moirai\Drivers\PostgreSqlDriver;
 
 class Blueprint
 {

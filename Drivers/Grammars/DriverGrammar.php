@@ -1,6 +1,6 @@
 <?php
 
-namespace Moarai\Drivers\Grammars;
+namespace Moirai\Drivers\Grammars;
 
 abstract class DriverGrammar
 {}

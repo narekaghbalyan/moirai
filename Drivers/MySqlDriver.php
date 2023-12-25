@@ -1,6 +1,6 @@
 <?php
 
-namespace Moarai\Drivers;
+namespace Moirai\Drivers;
 
 class MySqlDriver extends Driver
 {

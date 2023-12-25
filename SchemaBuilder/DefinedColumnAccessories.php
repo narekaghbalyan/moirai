@@ -1,9 +1,9 @@
 <?php
 
-namespace Moarai\SchemaBuilder;
+namespace Moirai\SchemaBuilder;
 
 use Exception;
-use Moarai\Drivers\AvailableDbmsDrivers;
+use Moirai\Drivers\AvailableDbmsDrivers;
 
 class DefinedColumnAccessories
 {
