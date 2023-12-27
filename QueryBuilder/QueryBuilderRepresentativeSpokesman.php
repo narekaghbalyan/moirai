@@ -61,6 +61,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param int|string $count
      * @param callable $callback
      * @return bool
+     * @throws \Exception
      */
     public function chunk(int|string $count, callable $callback): bool
     {
@@ -196,6 +197,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     /**
      * @param string|int $column
      * @return $this
+     * @throws \Exception
      */
     public function bitAnd(string|int $column): self
     {
@@ -204,6 +206,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    /**
+     * @param string|int $column
+     * @return $this
+     * @throws \Exception
+     */
     public function bitOr(string|int $column): self
     {
         $this->bitAggregateFunctionClauseBinder('BIT_OR', $column);
@@ -214,6 +221,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     /**
      * @param string|int $column
      * @return $this
+     * @throws \Exception
      */
     public function bitXor(string|int $column): self
     {
@@ -255,7 +263,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         $aggregateFunction = match ($this->getDriver()) {
             AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
             AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
-            AvailableDbmsDrivers::MSSQLSERVER => 'JSON_ARRAY',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_ARRAY',
             default => 'JSON_ARRAYAGG'
         };
 
@@ -277,13 +285,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         $aggregateFunction = match ($this->getDriver()) {
             AvailableDbmsDrivers::POSTGRESQL => 'JSON_OBJECT_AGG',
             AvailableDbmsDrivers::SQLITE,
-            AvailableDbmsDrivers::MSSQLSERVER => 'JSON_OBJECT',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_OBJECT',
             default => 'JSON_OBJECTAGG'
         };
 
         // If the Microsoft SQL Server driver is used, the keyColumn argument
         // is also treated as an element of the valueColumn argument.
-        if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+        if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
             array_unshift($valueColumn, $keyColumn);
 
             foreach ($valueColumn as $key => $value) {

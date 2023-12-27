@@ -15,8 +15,14 @@ class QueryBuilder
 {
     use ClauseBindersToolkit;
 
+    /**
+     * @var \Moirai\Drivers\MySqlDriver
+     */
     protected $driver;
 
+    /**
+     * @var array|array[]
+     */
     protected array $bindings = [
         'select' => [],
         'from' => [],
@@ -31,6 +37,9 @@ class QueryBuilder
         'offset' => []
     ];
 
+    /**
+     * QueryBuilder constructor.
+     */
     public function __construct()
     {
         $this->driver = new MySqlDriver();
@@ -38,16 +47,23 @@ class QueryBuilder
         $this->useAdditionalAccessories();
     }
 
+    /**
+     * @return string
+     */
     public function getDriver(): string
     {
         return $this->driver->getDriverName();
     }
 
+    /**
+     * @param bool $distinct
+     * @param string|mixed ...$columns
+     */
     protected function selectClauseBinder(bool $distinct = false, array|string ...$columns): void
     {
-        if (empty($columns[array_key_first($columns)])) {
-            $flattenedColumns = '*';
-        } else {
+        $flattenedColumns = '*';
+
+        if (!empty($columns[array_key_first($columns)])) {
             $flattenedColumns = implode(', ', $this->wrapColumnInPita($columns));
         }
 
@@ -57,7 +73,13 @@ class QueryBuilder
         ]);
     }
 
-    // TODO change the return type of the sql query in loop
+    /**
+     * @param int|string $count
+     * @param callable $callback
+     * @return bool
+     * @throws \Exception
+     * TODO: change the return type of the sql query in loop
+     */
     protected function chunkClauseBinder(int|string $count, callable $callback): bool
     {
         $this->throwExceptionIfArgumentNotNumeric($count);
@@ -85,6 +107,12 @@ class QueryBuilder
         return true;
     }
 
+    /**
+     * @param string $aggregateFunction
+     * @param string|array $column
+     * @param bool $distinct
+     * @param bool $useColumnPita
+     */
     protected function aggregateFunctionsClauseBinder(string $aggregateFunction,
                                                       string|array $column,
                                                       bool $distinct = false,
@@ -123,6 +151,11 @@ class QueryBuilder
         $this->bind('select', [$aggregateFunction . $this->concludeBrackets($preparedColumn)]);
     }
 
+    /**
+     * @param string $column
+     * @param string $separator
+     * @param bool $distinct
+     */
     protected function groupConcatAggregateFunctionClauseBinder(string $column,
                                                                 string $separator = ',',
                                                                 bool $distinct = false): void
@@ -133,12 +166,12 @@ class QueryBuilder
             AvailableDbmsDrivers::SQLITE,
             AvailableDbmsDrivers::MARIADB,
             AvailableDbmsDrivers::MYSQL => 'GROUP_CONCAT',
-            AvailableDbmsDrivers::MSSQLSERVER,
+            AvailableDbmsDrivers::MS_SQL_SERVER,
             AvailableDbmsDrivers::POSTGRESQL => 'STRING_AGG',
             AvailableDbmsDrivers::ORACLE => 'LISTAGG'
         };
 
-        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
+        if (in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
             $column = $this->wrapColumnInPita($column) . ' SEPARATOR ' . $this->wrapStringInPita($separator);
         } else {
             $column = $this->wrapColumnInPita($column) . ', ' . $this->wrapStringInPita($separator);
@@ -147,18 +180,22 @@ class QueryBuilder
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column, $distinct, false);
     }
 
+    /**
+     * @param string $aggregateFunction
+     * @param string|int $column
+     * @throws \Exception
+     */
     protected function bitAggregateFunctionClauseBinder(string $aggregateFunction, string|int $column): void
     {
         $this->throwExceptionIfArgumentNotNumeric($column);
 
-        $driver = $this->getDriver();
-
-        if ($driver === AvailableDbmsDrivers::SQLITE || $driver === AvailableDbmsDrivers::ORACLE) {
+        if (in_array($this->getDriver(), [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
         }
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
     }
+
 
     protected function existsClauseBinder()
     {
@@ -171,12 +208,21 @@ class QueryBuilder
         return $this->getClause();
     }
 
+    /**
+     * @param string $table
+     */
     protected function fromClauseBinder(string $table): void
     {
         $this->bind('from', [$this->wrapColumnInPita($table)]);
     }
 
-    /*
+    /**
+     * @param string $whereLogicalType
+     * @param string $conditionType
+     * @param string|array|callable $column
+     * @param string|null $operator
+     * @param string $value
+     * @throws \Exception
      * where('column', '=', 'value') -> where column = value
      * where(['column', '=', 'value']) -> where column = value
      * where(['column' => 'value']) -> where column = value
@@ -300,6 +346,15 @@ class QueryBuilder
         }
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string|callable $column
+     * @param array|string|int|float $range
+     * @param string|int|float $endOfRange
+     * @param bool $isNotCondition
+     * @param bool $betweenColumns
+     * @throws \Exception
+     */
     protected function whereBetweenClauseBinder(string $whereLogicalType,
                                                 string|callable $column,
                                                 array|string|int|float $range,
@@ -359,6 +414,14 @@ class QueryBuilder
         }
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string|array $firstColumn
+     * @param string|null $operator
+     * @param string|null $secondColumn
+     * @param bool $isNotCondition
+     * @throws \Exception
+     */
     protected function whereColumnClauseBinder(string $whereLogicalType,
                                                string|array $firstColumn,
                                                string|null $operator,
@@ -406,6 +469,11 @@ class QueryBuilder
         ]);
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param callable $callback
+     * @param bool $isNotCondition
+     */
     protected function whereExistsClauseBinder(string $whereLogicalType,
                                                callable $callback,
                                                bool $isNotCondition = false)
@@ -422,6 +490,17 @@ class QueryBuilder
         );
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string|array $column
+     * @param string $value
+     * @param string $searchModifier
+     * @param string|array|null $rankingColumn
+     * @param string|int|array $normalizationBitmask
+     * @param bool|array $highlighting
+     * @param bool $isNotCondition
+     * @throws \Exception
+     */
     protected function whereFullTextClauseBinder(string $whereLogicalType,
                                                  string|array $column,
                                                  string $value,
@@ -790,6 +869,13 @@ class QueryBuilder
         }
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string|callable $column
+     * @param array $setOfSupposedVariables
+     * @param bool $isNotCondition
+     * @throws \Exception
+     */
     protected function whereInClauseBinder(string $whereLogicalType,
                                            string|callable $column,
                                            array $setOfSupposedVariables,
@@ -821,6 +907,11 @@ class QueryBuilder
         }
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string|callable $column
+     * @param bool $isNotCondition
+     */
     protected function whereNullClauseBinder(string $whereLogicalType,
                                              string|callable $column,
                                              bool $isNotCondition = false)
@@ -842,6 +933,12 @@ class QueryBuilder
         }
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string $column
+     * @param string|array $value
+     * @throws \Exception
+     */
     protected function whereJsonContainsClauseBinder(string $whereLogicalType, string $column, string|array $value)
     {
         $driver = $this->getDriver();
@@ -899,6 +996,13 @@ class QueryBuilder
         ]);
     }
 
+    /**
+     * @param string $whereLogicalType
+     * @param string $column
+     * @param string $operator
+     * @param string|int|null $value
+     * @throws \Exception
+     */
     protected function whereJsonLengthClauseBinder(string $whereLogicalType,
                                                    string $column,
                                                    string $operator,
