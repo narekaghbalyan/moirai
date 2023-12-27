@@ -4,11 +4,81 @@ namespace Moirai\Drivers;
 
 class PostgreSqlDriver extends Driver
 {
-    protected array $normalizationBitmasks = [0, 1, 2, 4, 8, 16, 32];
+    /**
+     * @var array
+     */
+    protected array $pitaForColumns = [
+        'opening' => '"',
+        'closing' => '"'
+    ];
 
-    protected array $weights = ['A', 'B', 'C', 'D'];
+    /**
+     * @var array
+     */
+    protected array $pitaForStrings = [
+        'opening' => '\'',
+        'closing' => '\''
+    ];
 
-    protected array $highlightingArguments = [
+    /**
+     * @var array|string[]
+     */
+    protected array $dataTypes = [
+        'char'               => 'CHAR',
+        'string'             => 'VARCHAR',
+        'tinyText'           => 'TINYTEXT',
+        'text'               => 'TEXT',
+        'mediumText'         => 'MEDIUMTEXT',
+        'longText'           => 'LONGTEXT',
+        'tinyblob'           => 'TINYBLOB',
+        'blob'               => 'BLOB',
+        'mediumBlob'         => 'MEDIUMBLOB',
+        'longBlob'           => 'LONGBLOB',
+        'bit'                => 'BIT',
+        'integer'            => 'INT',
+        'tinyInteger'        => 'TINYINT',
+        'smallInteger'       => 'SMALLINT',
+        'mediumInteger'      => 'MEDIUMINT',
+        'bigInteger'         => 'BIGINT',
+        'float'              => 'FLOAT',
+        'double'             => 'DOUBLE',
+        'decimal'            => 'DECIMAL',
+        'boolean'            => 'BOOLEAN',
+        'enum'               => 'ENUM',
+        'set'                => 'SET',
+        'json'               => 'JSON',
+        'jsonb'              => 'JSONB',
+        'date'               => 'DATE',
+        'dateTime'           => 'DATETIME',
+        'time'               => 'TIME',
+        'timestamp'          => 'TIMESTAMP',
+        'year'               => 'YEAR',
+        'binary'             => 'BINARY',
+        'varbinary'          => 'VARBINARY',
+        'geometry'           => 'GEOMETRY',
+        'point'              => 'POINT',
+        'lineString'         => 'LINESTRING',
+        'polygon'            => 'POLYGON',
+        'multipoint'         => 'MULTIPOINT',
+        'multiLineString'    => 'MULTILINESTRING',
+        'multiPolygon'       => 'MULTIPOLYGON',
+        'geometryCollection' => 'GEOMETRYCOLLECTION'
+    ];
+
+    /**
+     * @var array|int[]
+     */
+    private array $normalizationBitmasks = [0, 1, 2, 4, 8, 16, 32];
+
+    /**
+     * @var array|string[]
+     */
+    private array $weights = ['A', 'B', 'C', 'D'];
+
+    /**
+     * @var array|string[]
+     */
+    private array $highlightingArguments = [
         'Tag',
         'MaxWords',
         'MinWords',
@@ -18,79 +88,42 @@ class PostgreSqlDriver extends Driver
         'FragmentDelimiter'
     ];
 
+    /**
+     * @var array|\string[][]
+     */
     protected array $additionalAccessories = [
         'orderDirections' => ['nulls last', 'nulls first']
     ];
 
+    /**
+     * PostgreSqlDriver constructor.
+     */
     public function __construct()
     {
-        $this->initializeDriver();
+        $this->initializeDriverGrammaticalStructure();
     }
 
-    public function initializeDriverLexicalStructure(): void
-    {
-        $this->setPitaForColumns('"');
-
-        $this->setPitaForStrings('\'');
-    }
-
+    /**
+     * @return array
+     */
     public function getWeights(): array
     {
         return $this->weights;
     }
 
+    /**
+     * @return array
+     */
     public function getNormalizationBitmasks(): array
     {
         return $this->normalizationBitmasks;
     }
 
+    /**
+     * @return array
+     */
     public function getHighlightingArguments(): array
     {
         return $this->highlightingArguments;
-    }
-
-    public function initializeDriverDataTypes(): void
-    {
-        $this->dataTypes = [
-            'char' => 'CHAR',
-            'string' => 'VARCHAR',
-            'tinyText' => 'TINYTEXT',
-            'text' => 'TEXT',
-            'mediumText' => 'MEDIUMTEXT',
-            'longText' => 'LONGTEXT',
-            'tinyblob' => 'TINYBLOB',
-            'blob' => 'BLOB',
-            'mediumBlob' => 'MEDIUMBLOB',
-            'longBlob' => 'LONGBLOB',
-            'bit' => 'BIT',
-            'integer' => 'INT',
-            'tinyInteger' => 'TINYINT',
-            'smallInteger' => 'SMALLINT',
-            'mediumInteger' => 'MEDIUMINT',
-            'bigInteger' => 'BIGINT',
-            'float' => 'FLOAT',
-            'double' => 'DOUBLE',
-            'decimal' => 'DECIMAL',
-            'boolean' => 'BOOLEAN',
-            'enum' => 'ENUM',
-            'set' => 'SET',
-            'json' => 'JSON',
-            'jsonb' => 'JSONB',
-            'date' => 'DATE',
-            'dateTime' => 'DATETIME',
-            'time' => 'TIME',
-            'timestamp' => 'TIMESTAMP',
-            'year' => 'YEAR',
-            'binary' => 'BINARY',
-            'varbinary' => 'VARBINARY',
-            'geometry' => 'GEOMETRY',
-            'point' => 'POINT',
-            'lineString' => 'LINESTRING',
-            'polygon' => 'POLYGON',
-            'multipoint' => 'MULTIPOINT',
-            'multiLineString' => 'MULTILINESTRING',
-            'multiPolygon' => 'MULTIPOLYGON',
-            'geometryCollection' => 'GEOMETRYCOLLECTION'
-        ];
     }
 }

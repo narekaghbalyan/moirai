@@ -1374,7 +1374,7 @@ class QueryBuilder
 
             if (stristr($column, '->')) {
                 if ($driver === AvailableDbmsDrivers::ORACLE) {
-                    throw new Exception('Driver "Oracle" does not support updating json column values.');
+                    throw new Exception('DriverInterface "Oracle" does not support updating json column values.');
                 }
 
                 if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {

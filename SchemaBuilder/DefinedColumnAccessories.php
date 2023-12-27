@@ -154,7 +154,7 @@ class DefinedColumnAccessories
         $driver = $this->blueprintInstance->getDriver();
 
         if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
-            throw new Exception('Driver ' . $driver . ' does not support this function.');
+            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
         }
 
         $this->bindAccessory('COLLATE ' . $collation);
@@ -172,7 +172,7 @@ class DefinedColumnAccessories
         $driver = $this->blueprintInstance->getDriver();
 
         if (!in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
-            throw new Exception('Driver ' . $driver . ' does not support this function.');
+            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
         }
 
         $prefix = 'CHARACTER SET ';
@@ -195,7 +195,7 @@ class DefinedColumnAccessories
         $driver = $this->blueprintInstance->getDriver();
 
         if (!in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
-            throw new Exception('Driver ' . $driver . ' does not support this function.');
+            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
         }
 
         $this->bindAccessory('FIRST ');
@@ -213,7 +213,7 @@ class DefinedColumnAccessories
         $driver = $this->blueprintInstance->getDriver();
 
         if (!in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
-            throw new Exception('Driver ' . $driver . ' does not support this function.');
+            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
         }
 
         $this->bindAccessory('AFTER ' . $column);
@@ -240,7 +240,7 @@ class DefinedColumnAccessories
                 . ' is '
                 . $comment;
         } else {
-            throw new Exception('Driver ' . $driver . ' does not support this function.');
+            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
         }
 
         return $this;

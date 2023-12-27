@@ -3,17 +3,67 @@
 namespace Moirai\Drivers;
 
 use Exception;
+use Moirai\Drivers\Grammars\DriverGrammar;
 
 abstract class Driver
 {
-    protected $grammar;
+    /**
+     * @var DriverGrammar
+     */
+    protected DriverGrammar $grammar;
 
-    protected array $pitaForColumns = [];
+    /**
+     * @var array
+     */
+    protected array $pitaForColumns;
 
-    protected array $pitaForStrings = [];
+    /**
+     * @var array
+     */
+    protected array $pitaForStrings;
 
-    protected array $dataTypes = [];
+    /**
+     * @var array
+     */
+    protected array $dataTypes;
 
+    /**
+     * @return array
+     */
+    public function getPitaForColumns(): array
+    {
+        return $this->pitaForColumns;
+    }
+
+    /**
+     * @return array
+     */
+    public function getPitaForStrings(): array
+    {
+        return $this->pitaForStrings;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDataTypes(): array
+    {
+        return $this->dataTypes;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getAdditionalAccessories(): array|null
+    {
+        return $this->additionalAccessories ?? null;
+    }
+
+    /**
+     * @param string $dataTypeKey
+     * @return string
+     * @throws Exception
+     */
     public function getDataType(string $dataTypeKey): string
     {
         if (!isset($this->dataTypes[$dataTypeKey])) {
@@ -23,78 +73,26 @@ abstract class Driver
         return $this->dataTypes[$dataTypeKey];
     }
 
-    public function getPitaForColumns(): array
+    /**
+     * @return string
+     */
+    public function getDriverName(): string
     {
-        return $this->pitaForColumns;
+        return AvailableDbmsDrivers::getDrivers()[strtoupper($this->getCleanDbmsName())];
     }
 
-    public function getPitaForStrings(): array
+    protected function initializeDriverGrammaticalStructure(): void
     {
-        return $this->pitaForStrings;
-    }
-
-    public function setPitaForColumns(string $pita, string|null $closingPita = null): void
-    {
-        $this->setPita($pita, $closingPita, $this->pitaForColumns);
-    }
-
-    public function setPitaForStrings(string $pita, string|null $closingPita = null): void
-    {
-        $this->setPita($pita, $closingPita, $this->pitaForStrings);
-    }
-
-    private function setPita(string $pita, string|null $closingPita, array &$pitaContainer): void
-    {
-        if (empty($closingPita)) {
-            $closingPita = $pita;
-        }
-
-        $pitaContainer = [
-            'opening' => $pita,
-            'closing' => $closingPita
-        ];
-    }
-
-    public function initializeDriver(): void
-    {
-        $this->initializeDriverLexicalStructure();
-
-        $this->initializeDriverGrammaticalStructure();
-
-        $this->initializeDriverDataTypes();
-    }
-
-    abstract function initializeDriverLexicalStructure(): void;
-
-    abstract function initializeDriverDataTypes(): void;
-
-    public function initializeDriverGrammaticalStructure(): void
-    {
-        $grammarsNamespace = __NAMESPACE__ . '\\' . 'Grammars';
-
-        $grammarName = $this->getCleanDbmsName() . 'Grammar';
-
-        $grammarPath = $grammarsNamespace . '\\' . $grammarName;
+        $grammarPath = __NAMESPACE__ . '\\' . 'Grammars' . '\\' . $this->getCleanDbmsName() . 'Grammar';
 
         $this->grammar = new $grammarPath();
     }
 
-    public function getDriverName(): string
-    {
-        $driver = $this->getCleanDbmsName();
-
-        $driver = strtoupper($driver);
-
-        return AvailableDbmsDrivers::getDrivers()[$driver];
-    }
-
-    public function getAdditionalAccessories(): array|null
-    {
-        return $this->additionalAccessories ?? null;
-    }
-
+    /**
+     * @return string
+     */
     private function getCleanDbmsName(): string
     {
-        return str_replace([__NAMESPACE__, '/', '\\', 'Driver'], '', get_called_class());
+        return str_replace([__NAMESPACE__, '/', '\\', 'DriverInterface'], '', get_called_class());
     }
 }

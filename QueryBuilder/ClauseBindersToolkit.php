@@ -431,6 +431,6 @@ trait ClauseBindersToolkit
 
     protected function throwExceptionIfDriverNotSupportFunction(): void
     {
-        throw new Exception('Driver ' . $this->getDriver() . ' does not support this function.');
+        throw new Exception('DriverInterface ' . $this->getDriver() . ' does not support this function.');
     }
 }
