@@ -1,4 +1,4 @@
 /vendor/
 /.idea/
-test.php
+index.php
 helpers.php

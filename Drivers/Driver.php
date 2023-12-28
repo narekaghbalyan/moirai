@@ -93,6 +93,6 @@ abstract class Driver
      */
     private function getCleanDbmsName(): string
     {
-        return str_replace([__NAMESPACE__, '/', '\\', 'DriverInterface'], '', get_called_class());
+        return str_replace([__NAMESPACE__, '/', '\\', 'Driver'], '', get_called_class());
     }
 }

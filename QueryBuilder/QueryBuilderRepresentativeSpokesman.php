@@ -9,6 +9,19 @@ use Exception;
 class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 {
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to select from database table                                   |
+     * | ------------------------------ Use cases ------------------------------|
+     * | select() - selects all columns from a table. In SQL: SELECT * ...      |
+     * |                                                                        |
+     * | -- The below variations select the listed columns from the table --    |
+     * | | select('column1', 'column2', ..., 'columnN')                    |    |
+     * | | select(['column1', 'column2', ..., 'columnN'])                  |    |
+     * | | select(['column1', 'column2'], ['column3', ..., 'columnN'])     |    |
+     * | | In SQL: SELECT column1, column2, columnN, ...                   |    |
+     * | ------------------------------------------------------------------|    |
+     * |                                                                        |
+     * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
      */
@@ -821,14 +834,12 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    /**
-     * @return $this
-     */
-    public function get(): self
-    {
-        $this->getClause();
 
-        return $this;
+    public function get()
+    {
+        return $this->getClause();
+
+//        return $this;
     }
 
     // not multiple rows

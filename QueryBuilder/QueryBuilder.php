@@ -1155,7 +1155,7 @@ class QueryBuilder
 
     protected function getClause()
     {
-        $this->executeQuery($this->pickUpThePieces($this->bindings));
+        return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 
     // ODKU -> on duplicate key update
@@ -1748,9 +1748,9 @@ class QueryBuilder
 
     private function executeQuery(string $statement)
     {
-        dd($statement);
+//        dd($statement);
 
-//        return $statement;
+        return $statement;
 
 //        return 0;
     }
