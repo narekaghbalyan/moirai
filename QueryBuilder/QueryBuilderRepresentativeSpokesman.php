@@ -12,14 +12,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause to select from database table                                   |
      * | ------------------------------ Use cases ------------------------------|
-     * | select() - selects all columns from a table. In SQL: SELECT * ...      |
+     * | select() - selects all columns from a table.                           |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | select('column1', 'column2', ..., 'columnN')                    |    |
      * | | select(['column1', 'column2', ..., 'columnN'])                  |    |
      * | | select(['column1', 'column2'], ['column3', ..., 'columnN'])     |    |
-     * | | In SQL: SELECT column1, column2, columnN, ...                   |    |
-     * | ------------------------------------------------------------------|    |
+     * | -------------------------------------------------------------------    |
      * |                                                                        |
      * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
@@ -33,6 +32,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for select different (unique) values in columns                 |
+     * | ------------------------------ Use cases ------------------------------|
+     * | distinct() - selects all columns with different(unique) values from a  |
+     * | table.                                                                 |
+     * |                                                                        |
+     * | -- The below variations select the listed columns from the table --    |
+     * | | distinct('column1', 'column2', ..., 'columnN')                  |    |
+     * | | distinct(['column1', 'column2', ..., 'columnN'])                |    |
+     * | | distinct(['column1', 'column2'], ['column3', ..., 'columnN'])   |    |
+     * | -------------------------------------------------------------------    |
+     * |                                                                        |
+     * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
      */
