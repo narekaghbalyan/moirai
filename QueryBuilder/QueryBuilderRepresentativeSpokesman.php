@@ -111,6 +111,14 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for fragmentary processing of many records from a table         |
+     * | ------------------------------ Use cases ------------------------------|
+     * | chunk(100, function () {                                               |
+     * |     // Process the records...                                          |
+     * | }) - selects all columns from a table.                                 |
+     * |                                                                        |
+     * --------------------------------------------------------------------------
      * @param int|string $count
      * @param callable $callback
      * @return bool
