@@ -12,7 +12,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause to select from database table                                   |
      * | ------------------------------ Use cases ------------------------------|
-     * | select() - selects all columns from a table.                           |
+     * | select() - selects all columns from a table                            |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | select('column1', 'column2', ..., 'columnN')                    |    |
@@ -36,7 +36,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for select different (unique) values in columns                 |
      * | ------------------------------ Use cases ------------------------------|
      * | distinct() - selects all columns with different(unique) values from a  |
-     * | table.                                                                 |
+     * | table                                                                  |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | distinct('column1', 'column2', ..., 'columnN')                  |    |
@@ -65,7 +65,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause to select from database table                                   |
      * | ------------------------------ Use cases ------------------------------|
-     * | pluck() - selects all columns from a table.                            |
+     * | pluck() - selects all columns from a table                             |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | pluck('column1', 'column2', ..., 'columnN')                     |    |
@@ -89,7 +89,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause to select from database table                                   |
      * | ------------------------------ Use cases ------------------------------|
-     * | getColumn() - selects all columns from a table.                        |
+     * | getColumn() - selects all columns from a table                         |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | getColumn('column1', 'column2', ..., 'columnN')                 |    |
@@ -116,7 +116,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ------------------------------ Use cases ------------------------------|
      * | chunk(100, function () {                                               |
      * |     // Process the records...                                          |
-     * | }) - selects all columns from a table.                                 |
+     * | }) - selects all columns from a table                                  |
      * |                                                                        |
      * --------------------------------------------------------------------------
      * @param int|string $count
@@ -130,6 +130,12 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the maximum value from a specific   |
+     * | column.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | max('column') - returns the maximum value of column "column".          |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -141,6 +147,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the maximum value from a specific   |
+     * | column.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | maxDistinct('column') - returns the maximum value of column "column".  |
+     * | ---------------------------------------------------------------------- |
+     * | The same as "max". Since the operation of comparing and finding the    |
+     * | maximum value always occurs using different values since SQL           |
+     * | internally converts max('column') to max('column') using the DISTINCT  |
+     * | keyword. That is, even when using "max" functions, SQL will convert    |
+     * | the expression to "maxDistinct". This means that with or without the   |
+     * | word distinct, the max() function returns the maximum value of the     |
+     * | distinct values. This means that DISTINCT has no effect on the max()   |
+     * | function.                                                              |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
