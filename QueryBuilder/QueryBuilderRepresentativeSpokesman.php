@@ -86,6 +86,20 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to select from database table                                   |
+     * | ------------------------------ Use cases ------------------------------|
+     * | getColumn() - selects all columns from a table.                        |
+     * |                                                                        |
+     * | -- The below variations select the listed columns from the table --    |
+     * | | getColumn('column1', 'column2', ..., 'columnN')                 |    |
+     * | | getColumn(['column1', 'column2', ..., 'columnN'])               |    |
+     * | | getColumn(['column1', 'column2'], ['column3', ..., 'columnN'])  |    |
+     * | -------------------------------------------------------------------    |
+     * |                                                                        |
+     * | Same as "select"                                                       |
+     * |                                                                        |
+     * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
      */
