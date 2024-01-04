@@ -173,6 +173,12 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the minimum value from a specific   |
+     * | column.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | min('column') - returns the minimum value of column "column".          |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -184,6 +190,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the minimum value from a specific   |
+     * | column.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | min('column') - returns the minimum value of column "column".          |
+     * | ---------------------------------------------------------------------- |
+     * | The same as "min". Since the operation of comparing and finding the    |
+     * | minimum value always occurs using different values since SQL           |
+     * | internally converts min('column') to min('column') using the DISTINCT  |
+     * | keyword. That is, even when using "min" functions, SQL will convert    |
+     * | the expression to "minDistinct". This means that with or without the   |
+     * | word distinct, the min() function returns the minimum value of the     |
+     * | distinct values. This means that DISTINCT has no effect on the min()   |
+     * | function.                                                              |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
