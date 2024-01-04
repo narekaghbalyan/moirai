@@ -47,6 +47,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
+     * TODO: [change] change docs
      */
     public function distinct(array|string ...$columns): self
     {
@@ -55,14 +56,27 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    // TODO
+    // TODO: [implement] implement function
     public function find(int $id)
     {
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to select from database table                                   |
+     * | ------------------------------ Use cases ------------------------------|
+     * | pluck() - selects all columns from a table.                            |
+     * |                                                                        |
+     * | -- The below variations select the listed columns from the table --    |
+     * | | pluck('column1', 'column2', ..., 'columnN')                     |    |
+     * | | pluck(['column1', 'column2', ..., 'columnN'])                   |    |
+     * | | pluck(['column1', 'column2'], ['column3', ..., 'columnN'])      |    |
+     * | -------------------------------------------------------------------    |
+     * |                                                                        |
+     * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
+     * TODO: [change] to figure out "pluck" and "select" difference
      */
     public function pluck(array|string ...$columns): self
     {
