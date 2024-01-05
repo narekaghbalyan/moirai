@@ -216,6 +216,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that calculates and returns the sum of a set of  |
+     * | values for a specific column.                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | sum('column') - calculates and returns the sum of a set of values in   |
+     * | column `column`.                                                       |
+     * | ---------------------------------------------------------------------- |
+     * | null values are ignored                                                |
+     * | If you use the "sum" function in a select statement that does not      |
+     * | return any rows, the "sum" function returns null rather than zero.     |
+     * | That is, if the set of input numbers is empty or all values in the set |
+     * | are null, the "sum" function returns null.                             |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -227,6 +240,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that calculates and returns the sum of unique    |
+     * | value for a specific column.                                           |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | sumDistinct('column') - calculates and returns the sum of the set of   |
+     * | unique values in the column "column".                                  |
+     * | ---------------------------------------------------------------------- |
+     * | null values are ignored                                                |
+     * | If you use the "sumDistinct" function in a select statement that does  |
+     * | not return any rows, the "sumDistinct" function returns null rather    |
+     * | than zero. That is, if the set of input numbers is empty or all values |
+     * | in the set are null, the "sumDistinct" function returns null.          |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
