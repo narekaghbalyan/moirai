@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\QueryBuilder;
+namespace Moirai\DML;
 
 use Moirai\Drivers\AvailableDbmsDrivers;
 use ReflectionClass;
@@ -10,16 +10,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 {
     /**
      * --------------------------------------------------------------------------
-     * | Clause to select from database table                                   |
+     * | Clause to select from database table.                                  |
      * | ------------------------------ Use cases ------------------------------|
-     * | select() - selects all columns from a table                            |
+     * | select() - selects all columns from a table.                           |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | select('column1', 'column2', ..., 'columnN')                    |    |
      * | | select(['column1', 'column2', ..., 'columnN'])                  |    |
      * | | select(['column1', 'column2'], ['column3', ..., 'columnN'])     |    |
      * | -------------------------------------------------------------------    |
-     * |                                                                        |
      * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
@@ -33,21 +32,22 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause for select different (unique) values in columns                 |
+     * | Clause for select different (unique) values in columns.                |
      * | ------------------------------ Use cases ------------------------------|
-     * | distinct() - selects all columns with different(unique) values from a  |
-     * | table                                                                  |
+     * | distinct() - selects only different (unique) values from all columns.  |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | distinct('column1', 'column2', ..., 'columnN')                  |    |
      * | | distinct(['column1', 'column2', ..., 'columnN'])                |    |
      * | | distinct(['column1', 'column2'], ['column3', ..., 'columnN'])   |    |
      * | -------------------------------------------------------------------    |
-     * |                                                                        |
+     * | ---------------------------------------------------------------------- |
+     * | "distinct" works the same as "select" with the difference that.        |
+     * | "select" selects all values of a column while "distinct" only selects  |
+     * | the unique values of a column.                                         |
      * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
-     * TODO: [change] change docs
      */
     public function distinct(array|string ...$columns): self
     {
@@ -63,42 +63,17 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to select from database table                                   |
+     * | Clause to select from database table.                                  |
      * | ------------------------------ Use cases ------------------------------|
-     * | pluck() - selects all columns from a table                             |
-     * |                                                                        |
-     * | -- The below variations select the listed columns from the table --    |
-     * | | pluck('column1', 'column2', ..., 'columnN')                     |    |
-     * | | pluck(['column1', 'column2', ..., 'columnN'])                   |    |
-     * | | pluck(['column1', 'column2'], ['column3', ..., 'columnN'])      |    |
-     * | -------------------------------------------------------------------    |
-     * |                                                                        |
-     * --------------------------------------------------------------------------
-     * @param string|mixed ...$columns
-     * @return $this
-     * TODO: [change] to figure out "pluck" and "select" difference
-     */
-    public function pluck(array|string ...$columns): self
-    {
-        $this->selectClauseBinder(false, $columns);
-
-        return $this;
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to select from database table                                   |
-     * | ------------------------------ Use cases ------------------------------|
-     * | getColumn() - selects all columns from a table                         |
+     * | getColumn() - selects all columns from a table.                        |
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | getColumn('column1', 'column2', ..., 'columnN')                 |    |
      * | | getColumn(['column1', 'column2', ..., 'columnN'])               |    |
      * | | getColumn(['column1', 'column2'], ['column3', ..., 'columnN'])  |    |
      * | -------------------------------------------------------------------    |
-     * |                                                                        |
-     * | Same as "select"                                                       |
-     * |                                                                        |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "select".                                                      |
      * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
@@ -112,12 +87,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause for fragmentary processing of many records from a table         |
+     * | Clause for fragmentary processing of many records from a table.        |
      * | ------------------------------ Use cases ------------------------------|
      * | chunk(100, function () {                                               |
      * |     // Process the records...                                          |
      * | }) - selects all columns from a table                                  |
-     * |                                                                        |
      * --------------------------------------------------------------------------
      * @param int|string $count
      * @param callable $callback
@@ -128,6 +102,14 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     {
         return $this->chunkClauseBinder($count, $callback);
     }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | In database management, an aggregate function or aggregation function  |
+     * | is a function where multiple values are processed together to form a   |
+     * | single summary statistic.                                              |
+     * --------------------------------------------------------------------------
+     */
 
     /**
      * --------------------------------------------------------------------------
@@ -153,14 +135,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ------------------------------ Use cases ----------------------------- |
      * | maxDistinct('column') - returns the maximum value of column "column".  |
      * | ---------------------------------------------------------------------- |
-     * | The same as "max". Since the operation of comparing and finding the    |
-     * | maximum value always occurs using different values since SQL           |
-     * | internally converts max('column') to max('column') using the DISTINCT  |
-     * | keyword. That is, even when using "max" functions, SQL will convert    |
-     * | the expression to "maxDistinct". This means that with or without the   |
-     * | word distinct, the max() function returns the maximum value of the     |
-     * | distinct values. This means that DISTINCT has no effect on the max()   |
-     * | function.                                                              |
+     * | Since the operation of comparing and finding the maximum value always  |
+     * | occurs using different values since SQL internally converts            |
+     * | max('column') to max('column') using the DISTINCT keyword. That is,    |
+     * | even when using "max" functions, SQL will convert the expression to    |
+     * | "maxDistinct". This means that with or without the word distinct,      |
+     * | the max() function returns the maximum value of the distinct values.   |
+     * | This means that DISTINCT has no effect on the max() function.          |
+     * | ---------------------------------------------------------------------- |
+     * | The same as "max".                                                     |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
@@ -196,14 +179,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ------------------------------ Use cases ----------------------------- |
      * | min('column') - returns the minimum value of column "column".          |
      * | ---------------------------------------------------------------------- |
-     * | The same as "min". Since the operation of comparing and finding the    |
-     * | minimum value always occurs using different values since SQL           |
-     * | internally converts min('column') to min('column') using the DISTINCT  |
-     * | keyword. That is, even when using "min" functions, SQL will convert    |
-     * | the expression to "minDistinct". This means that with or without the   |
-     * | word distinct, the min() function returns the minimum value of the     |
-     * | distinct values. This means that DISTINCT has no effect on the min()   |
-     * | function.                                                              |
+     * | Since the operation of comparing and finding the minimum value always  |
+     * | occurs using different values since SQL internally converts            |
+     * | min('column') to min('column') using the DISTINCT keyword. That is,    |
+     * | even when using "min" functions, SQL will convert the expression to    |
+     * | "minDistinct". This means that with or without the word distinct,      |
+     * | the min() function returns the minimum value of the distinct values.   |
+     * | This means that DISTINCT has no effect on the min() function.          |
+     * | ---------------------------------------------------------------------- |
+     * | The same as "min".                                                     |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
@@ -223,11 +207,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | sum('column') - calculates and returns the sum of a set of values in   |
      * | column `column`.                                                       |
      * | ---------------------------------------------------------------------- |
-     * | null values are ignored                                                |
      * | If you use the "sum" function in a select statement that does not      |
      * | return any rows, the "sum" function returns null rather than zero.     |
      * | That is, if the set of input numbers is empty or all values in the set |
      * | are null, the "sum" function returns null.                             |
+     * | Null values are ignored.                                               |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
@@ -247,11 +231,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | sumDistinct('column') - calculates and returns the sum of the set of   |
      * | unique values in the column "column".                                  |
      * | ---------------------------------------------------------------------- |
-     * | null values are ignored                                                |
      * | If you use the "sumDistinct" function in a select statement that does  |
      * | not return any rows, the "sumDistinct" function returns null rather    |
      * | than zero. That is, if the set of input numbers is empty or all values |
      * | in the set are null, the "sumDistinct" function returns null.          |
+     * | Null values are ignored.                                               |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
@@ -264,6 +248,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that calculates and returns the average          |
+     * | (arithmetic mean) of a specified numeric column.                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | avg('column') - calculates and returns the average (arithmetic mean)
+     * | of the column "column".                                                |
+     * | ---------------------------------------------------------------------- |
+     * | If you use the "avg" function in a select statement that does not      |
+     * | return any rows, the "avg" function returns null rather than zero.     |
+     * | That is, if the set of input numbers is empty or all values in the set |
+     * | are zero, the "avg" function returns null. If the sum exceeds the      |
+     * | maximum value for the return value data type, "avg" will return an     |
+     * | error.                                                                 |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -275,6 +274,22 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that calculates and returns the average          |
+     * | (arithmetic mean) of the different (unique) values of a specified      |
+     * | numeric column.                                                        |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | avgDistinct('column') - calculates and returns the average             |
+     * | (arithmetic mean) of the different (unique) values of column "column". |                                              |
+     * | ---------------------------------------------------------------------- |
+     * | If you use the "avgDistinct" function in a select statement that does  |
+     * | not return any rows, the "avgDistinct" function returns null rather    |
+     * | than zero. That is, if the set of input numbers is empty or all values |
+     * | in the set are zero, the "avgDistinct" function returns null. If the   |
+     * | sum exceeds the maximum value for the return value data type,          |
+     * | "avgDistinct" will return an error.                                    |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -286,6 +301,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the number of records (rows) in a   |
+     * | column.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | count() - calculates and returns the number of records (rows) from all |
+     * | columns.                                                               |
+     * |                                                                        |
+     * | count('column') - calculates and returns the number of records (rows)  |
+     * | of column "column".                                                    |
+     * | ---------------------------------------------------------------------- |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -297,6 +324,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the number of distinct (unique)     |
+     * | records (rows) in a column.                                            |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | countDistinct() - calculates and returns the number of distinct        |
+     * | (unique) records (rows) from all columns.                              |
+     * |                                                                        |
+     * | countDistinct('column') - calculates and returns the number of         |
+     * | distinct (unique) records (rows) of column "column".                   |                                                   |
+     * | ---------------------------------------------------------------------- |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -308,22 +347,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
-     * @return bool
-     */
-    public function exists(): bool
-    {
-        return $this->existsClauseBinder();
-    }
-
-    /**
-     * @return bool
-     */
-    public function doesntExists(): bool
-    {
-        return !$this->existsClauseBinder();
-    }
-
-    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that performs a bitwise AND operation on all     |
+     * | input values.                                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | bitAnd('column') - performs a bitwise AND operation on all values in   |
+     * | column "column".                                                       |
+     * | ---------------------------------------------------------------------- |
+     * | The bitAnd function works by performing a bitwise AND operation on     |
+     * | each pair of corresponding bits in the binary representation of the    |
+     * | numbers. The result is a new binary number with a 1 in each position.  |
+     * | That bitAnd can be used with any integer data type.                    |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string|int $column
      * @return $this
      * @throws \Exception
@@ -336,6 +372,17 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that performs a bitwise OR operation on all      |
+     * | input values.                                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | bitOr('column') - performs a bitwise OR operation on all values in     |
+     * | column "column".                                                       |
+     * | ---------------------------------------------------------------------- |
+     * | It converts all decimal values to binary values and then performs a    |
+     * | bitwise OR operation on those binary values.                           |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string|int $column
      * @return $this
      * @throws \Exception
@@ -348,6 +395,17 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that performs a bitwise COR operation on all     |
+     * | input values.                                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | bitXor('column') - performs a bitwise XOR operation on all values in   |
+     * | column "column".                                                       |
+     * | ---------------------------------------------------------------------- |
+     * | It converts all decimal values to binary values and then performs a    |
+     * | bitwise XOR operation on those binary values.                          |
+     * | Null values are ignored.                                               |
+     * --------------------------------------------------------------------------
      * @param string|int $column
      * @return $this
      * @throws \Exception
@@ -360,6 +418,22 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a string with the combined value.      |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | groupConcat('column') - creates a string with a concatenated non-null  |
+     * | value. Groups separated by comma (,).                                  |
+     * | groupConcat('column', '|') - creates a string with a concatenated      |
+     * | non-null value. Groups are separated by a vertical line (|)            |
+     * | ---------------------------------------------------------------------- |
+     * | This is an aggregate function (GROUP BY) that returns a string value   |
+     * | if the group contains at least one non-null value. Otherwise it        |
+     * | returns null (returns null if there are no non-null values).           |
+     * | The separator is not added to the end of the line.                     |
+     * | Null values are ignored.                                               |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "stringAgg" or "listAgg".                                      |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param string $separator
      * @return $this
@@ -372,6 +446,25 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a string with the combined distinct    |
+     * | (unique) values.                                                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | groupConcatDistinct('column') - creates a string with a concatenated   |
+     * | non-null, distinct (unique) values. Groups separated by comma (,)      |
+     * | groupConcatDistinct('column', '|') - creates a string with a           |
+     * | concatenated non-null, distinct (unique) values. Groups are separated  |
+     * | by a vertical line (|).                                                |
+     * | ---------------------------------------------------------------------- |
+     * | This is an aggregate function (GROUP BY) that returns a string value   |
+     * | if the group contains at least one non-null, distinct (unique)         |
+     * | values. Otherwise it returns null (returns null if there are no        |
+     * | non-null values).                                                      |
+     * | The separator is not added to the end of the line.                     |
+     * | Null values are ignored.                                               |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "stringAggDistinct" or "listAggDistinct".                      |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param string $separator
      * @return $this
@@ -384,6 +477,139 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a string with the combined value.      |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | stringAgg('column') - creates a string with a concatenated non-null    |
+     * | value. Groups separated by comma (,).                                  |
+     * | stringAgg('column', '|') - creates a string with a concatenated        |
+     * | non-null value. Groups are separated by a vertical line (|)            |
+     * | ---------------------------------------------------------------------- |
+     * | This is an aggregate function (GROUP BY) that returns a string value   |
+     * | if the group contains at least one non-null value. Otherwise it        |
+     * | returns null (returns null if there are no non-null values).           |
+     * | The separator is not added to the end of the line.                     |
+     * | Null values are ignored.                                               |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "groupConcat" or "listAgg".                                    |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string $separator
+     * @return $this
+     */
+    public function stringAgg(string $column, string $separator = ','): self
+    {
+        $this->groupConcatAggregateFunctionClauseBinder($column, $separator);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a string with the combined distinct    |
+     * | (unique) values.                                                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | stringAggDistinct('column') - creates a string with a concatenated     |
+     * | non-null, distinct (unique) values. Groups separated by comma (,).     |
+     * | stringAggDistinct('column', '|') - creates a string with a             |
+     * | concatenated non-null, distinct (unique) values. Groups are separated  |
+     * | by a vertical line (|).                                                |
+     * | ---------------------------------------------------------------------- |
+     * | This is an aggregate function (GROUP BY) that returns a string value   |
+     * | if the group contains at least one non-null, distinct (unique)         |
+     * | values. Otherwise it returns null (returns null if there are no        |
+     * | non-null values).                                                      |
+     * | The separator is not added to the end of the line.                     |
+     * | Null values are ignored.                                               |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "groupConcatDistinct" or "listAggDistinct".                    |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string $separator
+     * @return $this
+     */
+    public function stringAggDistinct(string $column, string $separator = ','): self
+    {
+        $this->groupConcatAggregateFunctionClauseBinder($column, $separator, true);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a string with the combined value.      |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | listAgg('column') - creates a string with a concatenated non-null      |
+     * | value. Groups separated by comma (,).                                  |
+     * | listAgg('column', '|') - creates a string with a concatenated          |
+     * | non-null value. Groups are separated by a vertical line (|)            |
+     * | ---------------------------------------------------------------------- |
+     * | This is an aggregate function (GROUP BY) that returns a string value   |
+     * | if the group contains at least one non-null value. Otherwise it        |
+     * | returns null (returns null if there are no non-null values).           |
+     * | The separator is not added to the end of the line.                     |
+     * | Null values are ignored.                                               |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "groupConcat" or "stringAgg".                                  |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string $separator
+     * @return $this
+     */
+    public function listAgg(string $column, string $separator = ','): self
+    {
+        $this->groupConcatAggregateFunctionClauseBinder($column, $separator);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a string with the combined distinct    |
+     * | (unique) values.                                                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | listAggDistinct('column') - creates a string with a concatenated       |
+     * | non-null, distinct (unique) values. Groups separated by comma (,).     |
+     * | listAggDistinct('column', '|') - creates a string with a               |
+     * | concatenated non-null, distinct (unique) values. Groups are separated  |
+     * | by a vertical line (|).                                                |
+     * | ---------------------------------------------------------------------- |
+     * | This is an aggregate function (GROUP BY) that returns a string value   |
+     * | if the group contains at least one non-null, distinct (unique)         |
+     * | values. Otherwise it returns null (returns null if there are no        |
+     * | non-null values).                                                      |
+     * | The separator is not added to the end of the line.                     |
+     * | Null values are ignored.                                               |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "groupConcatDistinct" or "stringAggDistinct".                  |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string $separator
+     * @return $this
+     */
+    public function listAggDistinct(string $column, string $separator = ','): self
+    {
+        $this->groupConcatAggregateFunctionClauseBinder($column, $separator, true);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that aggregates a set of results into a single   |
+     * | JSON array, the elements of which consist of strings.                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | jsonArrayAgg('column') - aggregates a set of results as a single JSON  |
+     * | array whose elements consist of the values of column "column".         |
+     * | ---------------------------------------------------------------------- |
+     * | The order of the elements in this array is undefined.                  |
+     * | The function operates on a column or expression that results in a      |
+     * | single value. Returns null if the result contains no rows or if there  |
+     * | is an error. If column or expression is NULL, the function returns an  |
+     * | array of [null] JSON elements.                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "jsonGroupArray" or "jsonAgg" or "jsonArray".                  |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      */
@@ -400,6 +626,126 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that aggregates a set of results into a single   |
+     * | JSON array, the elements of which consist of strings.                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | jsonGroupArray('column') - aggregates a set of results as a single     |
+     * | JSON array whose elements consist of the values of column "column".    |
+     * | ---------------------------------------------------------------------- |
+     * | The order of the elements in this array is undefined.                  |
+     * | The function operates on a column or expression that results in a      |
+     * | single value. Returns null if the result contains no rows or if there  |
+     * | is an error. If column or expression is NULL, the function returns an  |
+     * | array of [null] JSON elements.                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "jsonArrayAgg" or "jsonAgg" or "jsonArray".                    |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     */
+    public function jsonGroupArray(string $column): self
+    {
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_ARRAY',
+            default => 'JSON_ARRAYAGG'
+        };
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that aggregates a set of results into a single   |
+     * | JSON array, the elements of which consist of strings.                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | jsonAgg('column') - aggregates a set of results as a single JSON array |
+     * | whose elements consist of the values of column "column".               |
+     * | ---------------------------------------------------------------------- |
+     * | The order of the elements in this array is undefined.                  |
+     * | The function operates on a column or expression that results in a      |
+     * | single value. Returns null if the result contains no rows or if there  |
+     * | is an error. If column or expression is NULL, the function returns an  |
+     * | array of [null] JSON elements.                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "jsonArrayAgg" or "jsonGroupArray" or "jsonArray".             |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     */
+    public function jsonAgg(string $column): self
+    {
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_ARRAY',
+            default => 'JSON_ARRAYAGG'
+        };
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that aggregates a set of results into a single   |
+     * | JSON array, the elements of which consist of strings.                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | jsonArray('column') - aggregates a set of results as a single JSON     |
+     * | array whose elements consist of the values of column "column".         |
+     * | ---------------------------------------------------------------------- |
+     * | The order of the elements in this array is undefined.                  |
+     * | The function operates on a column or expression that results in a      |
+     * | single value. Returns null if the result contains no rows or if there  |
+     * | is an error. If column or expression is NULL, the function returns an  |
+     * | array of [null] JSON elements.                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "jsonArrayAgg" or "jsonGroupArray" or "jsonAgg".               |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     */
+    public function jsonArray(string $column): self
+    {
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::SQLITE => 'JSON_GROUP_ARRAY',
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_AGG',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_ARRAY',
+            default => 'JSON_ARRAYAGG'
+        };
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+
+        return $this;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string $keyColumn
@@ -552,6 +898,55 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * --------------------------------------------------------------------------
+     * | A predicate is an expression that evaluates to true, false, or         |
+     * | unknown.                                                               |
+     * --------------------------------------------------------------------------
+     */
+
+    /**
+     * --------------------------------------------------------------------------
+     * | A predictive function that checks for the presence of a record         |
+     * | matching the requirements in a sub query.                              |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | exists() - checks whether a record exists that matches the             |
+     * | requirements of the query that was written before the exists call.     |
+     * --------------------------------------------------------------------------
+     * @return bool
+     */
+    public function exists(): bool
+    {
+        return $this->existsClauseBinder();
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | A predictive function that checks for the absence of a matching record |
+     * | in a sub query.                                                        |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | doesntExists() - checks whether the corresponding record is missing    |
+     * | requirements of the query that was written before calling              |
+     * | doesntExists.                                                          |
+     * --------------------------------------------------------------------------
+     * @return bool
+     */
+    public function doesntExists(): bool
+    {
+        return !$this->existsClauseBinder();
+    }
+
+
 
     /**
      * @param string $table

@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\QueryBuilder;
+namespace Moirai\DML;
 
 use Exception;
 use Moirai\Drivers\AvailableDbmsDrivers;
@@ -187,7 +187,8 @@ class QueryBuilder
      */
     protected function bitAggregateFunctionClauseBinder(string $aggregateFunction, string|int $column): void
     {
-        $this->throwExceptionIfArgumentNotNumeric($column);
+        // TODO: for what ? (remove below line)
+//        $this->throwExceptionIfArgumentNotNumeric($column);
 
         if (in_array($this->getDriver(), [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
@@ -1155,6 +1156,7 @@ class QueryBuilder
 
     protected function getClause()
     {
+        dd($this->pickUpThePieces($this->bindings));
         return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 

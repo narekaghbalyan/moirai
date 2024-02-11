@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\QueryBuilder;
+namespace Moirai\DML;
 
 use Exception;
 use Moirai\Drivers\AvailableDbmsDrivers;

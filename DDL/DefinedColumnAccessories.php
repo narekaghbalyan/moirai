@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\SchemaBuilder;
+namespace Moirai\DDL;
 
 use Exception;
 use Moirai\Drivers\AvailableDbmsDrivers;
