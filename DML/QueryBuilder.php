@@ -143,8 +143,10 @@ class QueryBuilder
         }
 
         if (!empty($this->getBinding('select'))) {
-            $this->bindings['select'][array_key_last($this->bindings['select'])][array_key_last(
-                $this->bindings['select'][array_key_last($this->bindings['select'])]
+            $selectBindingLastKey = array_key_last($this->bindings['select']);
+
+            $this->bindings['select'][$selectBindingLastKey][array_key_last(
+                $this->bindings['select'][$selectBindingLastKey]
             )] .= ',';
         }
 
@@ -192,6 +194,84 @@ class QueryBuilder
 
         if (in_array($this->getDriver(), [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+    }
+
+    /**
+     * @param string $keyColumn
+     * @param array $valueColumn
+     * @throws \Exception
+     */
+    protected function jsonObjectAggregateFunctionClauseBinder(string $keyColumn, array $valueColumn)
+    {
+        $driver = $this->getDriver();
+
+        $aggregateFunction = match ($this->getDriver()) {
+            AvailableDbmsDrivers::POSTGRESQL => 'JSON_OBJECT_AGG',
+            AvailableDbmsDrivers::SQLITE,
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_OBJECT',
+            default => 'JSON_OBJECTAGG'
+        };
+
+        /**
+         * If the Microsoft SQL Server driver is used, the keyColumn argument
+         * is also treated as an element of the valueColumn argument.
+         */
+        if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
+            array_unshift($valueColumn, $keyColumn);
+
+            foreach ($valueColumn as $key => $value) {
+                $value = explode(':', $value);
+
+                if (count($value) === 1) {
+                    throw new Exception(
+                        'When using MS SQL Server driver when you use function ' . __FUNCTION__
+                        . ' you must specify the arguments in this form: \'key1:valueColumn1\', \'key2:valueColumn2\', ...'
+                    );
+                }
+
+                $valueColumn[$key] = $this->wrapStringInPita($value[0]) . ':' . $value[1];
+            }
+
+            $this->aggregateFunctionsClauseBinder($aggregateFunction, $valueColumn, false, false);
+        } else {
+            if (empty($valueColumn)) {
+                throw new Exception(
+                    'When using all drivers except Microsoft SQL Server, when using function ' . __FUNCTION__
+                    . ', the second argument is required.'
+                );
+            } elseif (count($valueColumn) > 1) {
+                throw new Exception(
+                    'When using all drivers except Microsoft SQL Server, when using function ' . __FUNCTION__
+                    . ', the second argument must contain at most one element.'
+                );
+            }
+
+            $this->aggregateFunctionsClauseBinder(
+                $aggregateFunction, [$keyColumn, $valueColumn[array_key_first($valueColumn)]]
+            );
+        }
+    }
+
+    /**
+     * @param string $column
+     * @param bool $biased
+     * @throws \Exception
+     */
+    protected function standardDeviationAggregateFunctionClauseBinder(string $column, bool $biased)
+    {
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE) {
+            throw new Exception(
+                'Sqlite driver does not support this feature.'
+            );
+        } elseif ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
+            $aggregateFunction = !$biased ? 'STDEV' : 'STDEVP';
+        } else {
+            $aggregateFunction = !$biased ? 'STDDEV' : 'STDDEV_POP';
         }
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
@@ -1156,7 +1236,6 @@ class QueryBuilder
 
     protected function getClause()
     {
-        dd($this->pickUpThePieces($this->bindings));
         return $this->executeQuery($this->pickUpThePieces($this->bindings));
     }
 

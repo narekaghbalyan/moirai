@@ -66,6 +66,11 @@ class MsSqlServerDriver extends Driver
     ];
 
     /**
+     * @var bool
+     */
+    protected bool $useUnderscoreInDriverNameWhenSeparating = true;
+
+    /**
      * MsSqlServerDriver constructor.
      */
     public function __construct()

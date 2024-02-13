@@ -726,28 +726,32 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a JSON object containing key-value     |
+     * | pairs.                                                                 |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | jsonObjectAgg('keyColumn', 'valueColumn') - aggregates into a JSON     |
+     * | object containing key-value pairs. Value from keyColumn as key a value |
+     * | from valueColumn as value.                                             |
+     * |                                                                        |
+     * | -------------------- Use cases for MS SQL Server --------------------- |
+     * | jsonObjectAgg('key1:column1', 'key2:column1', 'key3:column1') -        |
+     * | aggregates into a JSON object containing key-value pairs.              |
+     * | ---------------------------------------------------------------------- |
+     * | Duplicate key processing. When the result of this function is          |
+     * | normalized, values that have duplicate keys are discarded. In          |
+     * | accordance with the database driver's JSON data type specification,    |
+     * | which does not allow duplicate keys, only the last encountered value   |
+     * | is used with this key in the returned object ("last duplicate key      |
+     * | wins"). This means that the result of using this function may depend   |
+     * | on the order in which the rows are returned, which is not guaranteed.  |
+     * | Returns null if the result contains no rows or if there is an error.   |
+     * | An error occurs if any key name is null or the number of arguments is  |
+     * | not equal to 2.                                                        |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "jsonObject".                                                  |
+     * --------------------------------------------------------------------------
      * @param string $keyColumn
      * @param string ...$valueColumn
      * @return $this
@@ -755,77 +759,120 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      */
     public function jsonObjectAgg(string $keyColumn, string ...$valueColumn): self
     {
-        $driver = $this->getDriver();
-
-        $aggregateFunction = match ($this->getDriver()) {
-            AvailableDbmsDrivers::POSTGRESQL => 'JSON_OBJECT_AGG',
-            AvailableDbmsDrivers::SQLITE,
-            AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_OBJECT',
-            default => 'JSON_OBJECTAGG'
-        };
-
-        // If the Microsoft SQL Server driver is used, the keyColumn argument
-        // is also treated as an element of the valueColumn argument.
-        if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
-            array_unshift($valueColumn, $keyColumn);
-
-            foreach ($valueColumn as $key => $value) {
-                $valueColumn[$key] = $this->wrapStringInPita($value) . ':' . $value;
-            }
-
-            $this->aggregateFunctionsClauseBinder($aggregateFunction, $valueColumn, false, false);
-        } else {
-            if (count($valueColumn) > 1) {
-                throw new Exception(
-                    'When using all drivers except Microsoft SQL Server, the second argument to the 
-                    jsonObjectAgg method must be provided with no more than one element.'
-                );
-            }
-
-            $valueColumn = $valueColumn[array_key_first($valueColumn)];
-
-            $this->aggregateFunctionsClauseBinder($aggregateFunction, [$keyColumn, $valueColumn]);
-        }
+        $this->jsonObjectAggregateFunctionClauseBinder($keyColumn, $valueColumn);
 
         return $this;
     }
 
     /**
-     * @param string $column
-     * @param bool $biased
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning a JSON object containing key-value     |
+     * | pairs.                                                                 |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | jsonObject('keyColumn', 'valueColumn') - aggregates into a JSON        |
+     * | object containing key-value pairs. Value from keyColumn as key a value |
+     * | from valueColumn as value.                                             |
+     * |                                                                        |
+     * | -------------------- Use cases for MS SQL Server --------------------- |
+     * | jsonObject('key1:column1', 'key2:column1', 'key3:column1') -           |
+     * | aggregates into a JSON object containing key-value pairs.              |
+     * | ---------------------------------------------------------------------- |
+     * | Duplicate key processing. When the result of this function is          |
+     * | normalized, values that have duplicate keys are discarded. In          |
+     * | accordance with the database driver's JSON data type specification,    |
+     * | which does not allow duplicate keys, only the last encountered value   |
+     * | is used with this key in the returned object ("last duplicate key      |
+     * | wins"). This means that the result of using this function may depend   |
+     * | on the order in which the rows are returned, which is not guaranteed.  |
+     * | Returns null if the result contains no rows or if there is an error.   |
+     * | An error occurs if any key name is null or the number of arguments is  |
+     * | not equal to 2.                                                        |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "jsonObjectAgg".                                               |
+     * --------------------------------------------------------------------------
+     * @param string $keyColumn
+     * @param string ...$valueColumn
      * @return $this
      * @throws Exception
      */
-    /*
-     * STDEV - is used when the group of numbers being evaluated are only a partial sampling of the whole
-     * population. The denominator for dividing the sum of squared deviations is N-1, where N is the number of
-     * observations ( a count of items in the data set ). Technically, subtracting the 1 is referred to
-     * as "non-biased."
-     * STDEVP is used when the group of numbers being evaluated is complete - it's the entire population of
-     * values. In this case, the 1 is NOT subtracted and the denominator for dividing the sum of squared
-     * deviations is simply N itself, the number of observations ( a count of items in the data set ).
-     * Technically, this is referred to as "biased." Remembering that the P in STDEVP stands for "population"
-     * may be helpful. Since the data set is not a mere sample, but constituted of ALL the actual values,
-     * this standard deviation function can return a more precise result.
-     */
-    public function stdDev(string $column, bool $biased = false): self
+    public function jsonObject(string $keyColumn, string ...$valueColumn): self
     {
-        $driver = $this->getDriver();
-
-        if ($driver === AvailableDbmsDrivers::SQLITE) {
-            throw new Exception(
-                'Sqlite driver does not support this feature.'
-            );
-        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
-            $aggregateFunction = 'STDEVP';
-        } else {
-            $aggregateFunction = 'STDDEV_POP';
-        }
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+        $this->jsonObjectAggregateFunctionClauseBinder($keyColumn, $valueColumn);
 
         return $this;
     }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning the standard deviation of a sample of  |
+     * | input values.                                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | stdDev('column') - standard deviation over a sample of input values.   |
+     * | ---------------------------------------------------------------------- |
+     * | The standard deviation shows how much deviation there is from the mean |
+     * | or mean. In other words, it is the square root of the variance.        |
+     * | stdDev is used when the group of numbers being evaluated are only a    |
+     * | partial sampling of the whole population. The denominator for dividing |
+     * | the sum of squared deviations is N-1, where N is the number of         |
+     * | observations ( a count of items in the data set ). Technically,        |
+     * | subtracting the 1 is referred to as "non-biased".                      |
+     * | The function only processes non-zero values. That is, zero values are  |
+     * | ignored by the function.                                               |
+     * | Sqlite driver does not support this feature.                           |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     * @throws Exception
+     */
+    public function stdDev(string $column): self
+    {
+        $this->standardDeviationAggregateFunctionClauseBinder($column, false);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning the standard deviation of a sample of  |
+     * | input values.                                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | stdDevPop('column') - standard deviation over a sample of input values.   |
+     * | ---------------------------------------------------------------------- |
+     * | The standard deviation shows how much deviation there is from the mean |
+     * | or mean. In other words, it is the square root of the variance.        |
+     * | stdDevPop is used when the group of numbers being evaluated is         |
+     * | complete - it's the entire population of values. In this case, the 1   |
+     * | is not subtracted and the denominator for dividing the sum of squared  |
+     * | deviations is simply N itself, the number of observations (a count of  |
+     * | items in the data set). Technically, this is referred to as "biased."  |
+     * | Remembering that the P in stdDevPop stands for "population" may be     |
+     * | helpful. Since the data set is not a mere sample, but constituted of   |
+     * | All the actual values, this standard deviation function can return a   |
+     * | more precise result.                                                   |
+     * | The function only processes non-zero values. That is, zero values are  |
+     * | ignored by the function.                                               |
+     * | Sqlite driver does not support this feature.                           |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     * @throws \Exception
+     */
+    public function stdDevPop(string $column): self
+    {
+        $this->standardDeviationAggregateFunctionClauseBinder($column, true);
+
+        return $this;
+    }
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string $column
@@ -850,6 +897,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string $column
@@ -945,7 +1005,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     {
         return !$this->existsClauseBinder();
     }
-
 
 
     /**

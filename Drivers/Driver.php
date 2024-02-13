@@ -28,6 +28,11 @@ abstract class Driver
     protected array $dataTypes;
 
     /**
+     * @var bool
+     */
+    protected bool $useUnderscoreInDriverNameWhenSeparating = false;
+
+    /**
      * @return array
      */
     public function getPitaForColumns(): array
@@ -78,7 +83,11 @@ abstract class Driver
      */
     public function getDriverName(): string
     {
-        return AvailableDbmsDrivers::getDrivers()[strtoupper($this->getCleanDbmsName())];
+        return AvailableDbmsDrivers::getDrivers()[strtoupper(
+            $this->useUnderscoreInDriverNameWhenSeparating
+                ? implode('_', array_filter(preg_split('/(?=[A-Z])/', $this->getCleanDbmsName())))
+                : $this->getCleanDbmsName()
+        )];
     }
 
     protected function initializeDriverGrammaticalStructure(): void
