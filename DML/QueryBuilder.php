@@ -268,10 +268,52 @@ class QueryBuilder
             throw new Exception(
                 'Sqlite driver does not support this feature.'
             );
-        } elseif ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
-            $aggregateFunction = !$biased ? 'STDEV' : 'STDEVP';
+        }
+
+        /**
+         * ---------------------- MySQL, Maria Db ----------------------
+         * | STD - population standard deviation                       |
+         * | STDDEV - population standard deviation                    |
+         * | STDDEV_POP - population standard deviation                |
+         * | STDDEV_SAMP - sample standard deviation                   |
+         * -------------------------------------------------------------
+         * ------------------------ Postgre SQL ------------------------
+         * | STDDEV - sample standard deviation of expression          |
+         * | STDDEV_POP - population standard deviation                |
+         * | STDDEV_SAMP -  sample standard deviation                  |
+         * -------------------------------------------------------------
+         * ----------------------- MS SQL Server -----------------------
+         * | STDEV - population standard deviation                     |
+         * | STDEV_POP - population standard deviation                 |
+         * -------------------------------------------------------------
+         * -------------------------- Oracle ---------------------------
+         * | STDDEV -  sample standard deviation. It differs from      |
+         * | STDDEV_SAMP in that STDDEV returns zero when              |
+         * | it has only 1 row of input, whereas STDDEV_SAMP returns   |
+         * | zero.                                                     |
+         * | STDDEV_POP - population standard deviation                |
+         * | STDDEV_SAMP - sample standard deviation                   |
+         * -------------------------------------------------------------
+         */
+
+        if (!$biased) {
+            // Population standard deviation
+            $aggregateFunction = match ($driver) {
+                AvailableDbmsDrivers::MYSQL,
+                AvailableDbmsDrivers::MARIADB => 'STDDEV',
+                AvailableDbmsDrivers::POSTGRESQL ,
+                AvailableDbmsDrivers::ORACLE => 'STDDEV_POP',
+                AvailableDbmsDrivers::MS_SQL_SERVER => 'STDEV',
+            };
         } else {
-            $aggregateFunction = !$biased ? 'STDDEV' : 'STDDEV_POP';
+            // Sample standard deviation
+            if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
+                throw new Exception(
+                    'Microsoft SQL Server driver does not support this feature.'
+                );
+            }
+
+            $aggregateFunction = 'STDDEV_SAMP';
         }
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);

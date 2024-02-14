@@ -804,10 +804,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | An aggregate function returning the standard deviation of a sample of  |
-     * | input values.                                                          |
+     * | An aggregate function returning the population standard deviation.     |
      * | ------------------------------ Use cases ----------------------------- |
-     * | stdDev('column') - standard deviation over a sample of input values.   |
+     * | stdDev('column') - population standard deviation of all input values.  |
      * | ---------------------------------------------------------------------- |
      * | The standard deviation shows how much deviation there is from the mean |
      * | or mean. In other words, it is the square root of the variance.        |
@@ -819,6 +818,8 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | The function only processes non-zero values. That is, zero values are  |
      * | ignored by the function.                                               |
      * | Sqlite driver does not support this feature.                           |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "stdDevPop".                                                   |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
@@ -833,31 +834,56 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | An aggregate function returning the standard deviation of a sample of  |
-     * | input values.                                                          |
+     * | An aggregate function returning the population standard deviation.     |
      * | ------------------------------ Use cases ----------------------------- |
-     * | stdDevPop('column') - standard deviation over a sample of input values.   |
+     * | stdDevPop('column') - population standard deviation of all input       |
+     * | values.                                                                |
      * | ---------------------------------------------------------------------- |
      * | The standard deviation shows how much deviation there is from the mean |
      * | or mean. In other words, it is the square root of the variance.        |
-     * | stdDevPop is used when the group of numbers being evaluated is         |
-     * | complete - it's the entire population of values. In this case, the 1   |
-     * | is not subtracted and the denominator for dividing the sum of squared  |
-     * | deviations is simply N itself, the number of observations (a count of  |
-     * | items in the data set). Technically, this is referred to as "biased."  |
-     * | Remembering that the P in stdDevPop stands for "population" may be     |
-     * | helpful. Since the data set is not a mere sample, but constituted of   |
-     * | All the actual values, this standard deviation function can return a   |
-     * | more precise result.                                                   |
+     * | stdDevPop is used when the group of numbers being evaluated are only   |
+     * | a partial sampling of the whole population. The denominator for        |
+     * | dividing the sum of squared deviations is N-1, where N is the number   |
+     * | of observations ( a count of items in the data set ). Technically,     |
+     * | subtracting the 1 is referred to as "non-biased".                      |
      * | The function only processes non-zero values. That is, zero values are  |
      * | ignored by the function.                                               |
      * | Sqlite driver does not support this feature.                           |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "stdDev".                                                      |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      * @throws \Exception
      */
     public function stdDevPop(string $column): self
+    {
+        $this->standardDeviationAggregateFunctionClauseBinder($column, false);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function that returns the standard deviation of a sample  |
+     * | of input values.                                                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | stdDevSamp('column') - standard deviation of a sample of input values. |
+     * | ---------------------------------------------------------------------- |
+     * | stdDevSamp is used when the group of numbers being evaluated is        |
+     * | complete—the entire set of values. In this case, 1 is not subtracted,  |
+     * | and the denominator for dividing the sum of squared deviations is      |
+     * | simply N, the number of observations (the number of elements in the    |
+     * | data set). Technically this is called "biased".                        |
+     * | The function only processes non-zero values. That is, zero values are  |
+     * | ignored by the function.                                               |
+     * | Sqlite driver does not support this feature.                           |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     * @throws Exception
+     */
+    public function stdDevSamp(string $column): self
     {
         $this->standardDeviationAggregateFunctionClauseBinder($column, true);
 
@@ -867,36 +893,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
 
 
-
-
-
-
-
-
-
-    /**
-     * @param string $column
-     * @return $this
-     * @throws Exception
-     */
-    public function stdDevSamp(string $column): self
-    {
-        $driver = $this->getDriver();
-
-        if ($driver === AvailableDbmsDrivers::SQLITE) {
-            throw new Exception(
-                'Sqlite driver does not support this feature.'
-            );
-        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
-            $aggregateFunction = 'STDEV';
-        } else {
-            $aggregateFunction = 'STDDEV_SAMP';
-        }
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
-
-        return $this;
-    }
 
 
 
