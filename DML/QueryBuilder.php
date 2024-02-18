@@ -260,7 +260,7 @@ class QueryBuilder
      * @param bool $biased
      * @throws \Exception
      */
-    protected function standardDeviationAggregateFunctionClauseBinder(string $column, bool $biased)
+    protected function standardDeviationAggregateFunctionClauseBinder(string $column, bool $biased = false)
     {
         $driver = $this->getDriver();
 
@@ -272,27 +272,27 @@ class QueryBuilder
 
         /**
          * ---------------------- MySQL, Maria Db ----------------------
-         * | STD - population standard deviation                       |
-         * | STDDEV - population standard deviation                    |
-         * | STDDEV_POP - population standard deviation                |
-         * | STDDEV_SAMP - sample standard deviation                   |
+         * | STD - population standard deviation.                      |
+         * | STDDEV - population standard deviation.                   |
+         * | STDDEV_POP - population standard deviation.               |
+         * | STDDEV_SAMP - sample standard deviation.                  |
          * -------------------------------------------------------------
          * ------------------------ Postgre SQL ------------------------
-         * | STDDEV - sample standard deviation of expression          |
-         * | STDDEV_POP - population standard deviation                |
-         * | STDDEV_SAMP -  sample standard deviation                  |
+         * | STDDEV - sample standard deviation of expression.         |
+         * | STDDEV_POP - population standard deviation.               |
+         * | STDDEV_SAMP -  sample standard deviation.                 |
          * -------------------------------------------------------------
          * ----------------------- MS SQL Server -----------------------
-         * | STDEV - population standard deviation                     |
-         * | STDEV_POP - population standard deviation                 |
+         * | STDEV - population standard deviation.                    |
+         * | STDEV_POP - population standard deviation.                |
          * -------------------------------------------------------------
          * -------------------------- Oracle ---------------------------
          * | STDDEV -  sample standard deviation. It differs from      |
          * | STDDEV_SAMP in that STDDEV returns zero when              |
          * | it has only 1 row of input, whereas STDDEV_SAMP returns   |
          * | zero.                                                     |
-         * | STDDEV_POP - population standard deviation                |
-         * | STDDEV_SAMP - sample standard deviation                   |
+         * | STDDEV_POP - population standard deviation.               |
+         * | STDDEV_SAMP - sample standard deviation.                  |
          * -------------------------------------------------------------
          */
 
@@ -314,6 +314,54 @@ class QueryBuilder
             }
 
             $aggregateFunction = 'STDDEV_SAMP';
+        }
+
+        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+    }
+
+    /**
+     * @param string $column
+     * @param bool $biased
+     * @throws \Exception
+     */
+    protected function varianceAggregateFunctionClauseBinder(string $column, bool $biased = false)
+    {
+        $driver = $this->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::SQLITE) {
+            throw new Exception(
+                'Sqlite driver does not support this feature.'
+            );
+        }
+
+        /**
+         * ---------------------- MySQL, Maria Db ----------------------
+         * | VARIANCE - standard variance.                             |
+         * | VAR_SAMP - sample variance.                               |
+         * | VAR_POP - standard variance.                              |
+         * -------------------------------------------------------------
+         * ------------------------ Postgre SQL ------------------------
+         * | VARIANCE - sample variance.                               |
+         * | VAR_SAMP - sample variance.                               |
+         * | VAR_POP - standard variance.                              |
+         * -------------------------------------------------------------
+         * ----------------------- MS SQL Server -----------------------
+         * | VAR - sample variance.                                    |
+         * | VARP - standard variance.                                 |
+         * -------------------------------------------------------------
+         * -------------------------- Oracle ---------------------------
+         * | VARIANCE - sample variance.                               |
+         * | VAR_SAMP - sample variance.                               |
+         * | VAR_POP - standard variance.                              |
+         * -------------------------------------------------------------
+         */
+
+        if (!$biased) {
+            // Standard variance
+            $aggregateFunction = $driver !== AvailableDbmsDrivers::MS_SQL_SERVER ? 'VAR_POP' : 'VARP';
+        } else {
+            // Sample variance
+            $aggregateFunction = $driver !== AvailableDbmsDrivers::MS_SQL_SERVER ? 'VAR_SAMP' : 'VAR';
         }
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);

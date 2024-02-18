@@ -815,7 +815,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | the sum of squared deviations is N-1, where N is the number of         |
      * | observations ( a count of items in the data set ). Technically,        |
      * | subtracting the 1 is referred to as "non-biased".                      |
-     * | The function only processes non-zero values. That is, zero values are  |
+     * | The function only processes non-null values. That is, null values are  |
      * | ignored by the function.                                               |
      * | Sqlite driver does not support this feature.                           |
      * | ---------------------------------------------------------------------- |
@@ -827,7 +827,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      */
     public function stdDev(string $column): self
     {
-        $this->standardDeviationAggregateFunctionClauseBinder($column, false);
+        $this->standardDeviationAggregateFunctionClauseBinder($column);
 
         return $this;
     }
@@ -846,7 +846,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | dividing the sum of squared deviations is N-1, where N is the number   |
      * | of observations ( a count of items in the data set ). Technically,     |
      * | subtracting the 1 is referred to as "non-biased".                      |
-     * | The function only processes non-zero values. That is, zero values are  |
+     * | The function only processes non-null values. That is, null values are  |
      * | ignored by the function.                                               |
      * | Sqlite driver does not support this feature.                           |
      * | ---------------------------------------------------------------------- |
@@ -858,7 +858,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      */
     public function stdDevPop(string $column): self
     {
-        $this->standardDeviationAggregateFunctionClauseBinder($column, false);
+        $this->standardDeviationAggregateFunctionClauseBinder($column);
 
         return $this;
     }
@@ -875,7 +875,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | and the denominator for dividing the sum of squared deviations is      |
      * | simply N, the number of observations (the number of elements in the    |
      * | data set). Technically this is called "biased".                        |
-     * | The function only processes non-zero values. That is, zero values are  |
+     * | The function only processes non-null values. That is, null values are  |
      * | ignored by the function.                                               |
      * | Sqlite driver does not support this feature.                           |
      * --------------------------------------------------------------------------
@@ -890,79 +890,82 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning the standard variance of the input     |
+     * | values.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | variance('column') - standard variance of column "column".             |
+     * | ---------------------------------------------------------------------- |
+     * | Population variance is a statistical measure that quantifies the       |
+     * | standard deviation of values from the mean in a data set.              |
+     * | The function only processes non-null values. That is, null values are  |
+     * | ignored by the function.                                               |
+     * | Sqlite driver does not support this feature.                           |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "varPop".                                                      |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return $this
+     * @throws \Exception
+     */
+    public function variance(string $column): self
+    {
+        $this->varianceAggregateFunctionClauseBinder($column);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return $this;
+    }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning the standard variance of the input     |
+     * | values.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | varPop('column') - standard variance of column "column".               |
+     * | ---------------------------------------------------------------------- |
+     * | Population variance is a statistical measure that quantifies the       |
+     * | standard deviation of values from the mean in a data set.              |
+     * | The function only processes non-null values. That is, null values are  |
+     * | ignored by the function.                                               |
+     * | Sqlite driver does not support this feature.                           |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "variance".                                                    |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      * @throws Exception
      */
     public function varPop(string $column): self
     {
-        $driver = $this->getDriver();
-
-        if ($driver === AvailableDbmsDrivers::SQLITE) {
-            throw new Exception(
-                'Sqlite driver does not support this feature.'
-            );
-        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
-            $aggregateFunction = 'VARP';
-        } else {
-            $aggregateFunction = 'VAR_POP';
-        }
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+        $this->varianceAggregateFunctionClauseBinder($column);
 
         return $this;
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | An aggregate function returning the sample variance of the input       |
+     * | values.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | varSamp('column') - sample variance of column "column".                |
+     * | ---------------------------------------------------------------------- |
+     * | "varSamp" considers the entire dataset rather than just a sample.      |
+     * | Sample variance is a statistical measure that indicates the spread or  |
+     * | dispersion of a dataset.                                               |
+     * | The function only processes non-null values. That is, null values are  |
+     * | ignored by the function.                                               |
+     * | Sqlite driver does not support this feature.                           |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
      * @throws Exception
      */
     public function varSamp(string $column): self
     {
-        $driver = $this->getDriver();
-
-        if ($driver === AvailableDbmsDrivers::SQLITE) {
-            throw new Exception(
-                'Sqlite driver does not support this feature.'
-            );
-        } elseif ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
-            $aggregateFunction = 'VAR';
-        } else {
-            $aggregateFunction = 'VAR_SAMP';
-        }
-
-        $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
+        $this->varianceAggregateFunctionClauseBinder($column, true);
 
         return $this;
     }
-
-
-
-
-
-
-
-
-
 
     /**
      * --------------------------------------------------------------------------
