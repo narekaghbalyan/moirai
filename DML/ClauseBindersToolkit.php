@@ -161,13 +161,13 @@ trait ClauseBindersToolkit
      * @param string $whereLogicalType
      * @param string $column
      * @param string $operator
-     * @param string $value
+     * @param string|int|float $value
      */
     protected function bindInWhereBeforeCheckingForThePresenceOfJson(string $conditionType,
                                                                      string $whereLogicalType,
                                                                      string $column,
                                                                      string $operator,
-                                                                     string $value): void
+                                                                     string|int|float $value): void
     {
         if (stristr($column, '->')) {
             $fields = explode('->', $column);
@@ -220,7 +220,7 @@ trait ClauseBindersToolkit
             $whereLogicalType,
             $expression,
             $operator,
-            $value
+            $this->solveValueWrappingInPita($value)
         ]);
     }
 
@@ -444,6 +444,15 @@ trait ClauseBindersToolkit
         $this->bind($bindingName, [$virginInstance]);
 
         $this->bind($bindingName, [')']);
+    }
+
+    /**
+     * @param string|int|float $value
+     * @return string|int|float
+     */
+    protected function solveValueWrappingInPita(string|int|float $value): string|int|float
+    {
+        return !is_string($value) ? $value : $this->wrapStringInPita($value);
     }
 
     /**

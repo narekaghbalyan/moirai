@@ -1043,29 +1043,31 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request.                         |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | where('column', '=', 'value')                                   |    |
+     * | | where(['column', '=', 'value'])                                 |    |
+     * | | where(['column' => 'value']) - this expression uses the "="     |    |
+     * | | operator for condition and logical "AND" operator to combine.   |    |
+     * | | where(['column1' => 'value1', 'column2' => 'value2']) - this    |    |
+     * | | expression uses the "=" operator.                               |    |
+     * | | where(function ($query) { $query->... }, '=', 'value') - this   |    |
+     * | | expression uses the result of the sub query to compare with     |    |
+     * | | "value".                                                        |    |
+     * | -------------------------------------------------------------------    |
+     * --------------------------------------------------------------------------
      * @param string|array|callable $column
-     * @param string|null $operator
-     * @param string|null $value
+     * @param string|int|float|null $operator
+     * @param string|int|float|null $value
      * @return $this
-     * @throws Exception
+     * @throws \Exception
      */
-    public function where(string|array|callable $column, string|null $operator = null, string|null $value = ''): self
+    public function where(string|array|callable $column,
+                          string|int|float|null $operator = null,
+                          string|int|float|null $value = ''): self
     {
         $this->baseConditionClauseBinder('', 'where', $column, $operator, $value);
 

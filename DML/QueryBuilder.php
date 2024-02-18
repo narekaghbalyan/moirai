@@ -391,20 +391,15 @@ class QueryBuilder
      * @param string $whereLogicalType
      * @param string $conditionType
      * @param string|array|callable $column
-     * @param string|null $operator
-     * @param string $value
+     * @param string|int|float|null $operator
+     * @param string|int|float $value
      * @throws \Exception
-     * where('column', '=', 'value') -> where column = value
-     * where(['column', '=', 'value']) -> where column = value
-     * where(['column' => 'value']) -> where column = value
-     * where(['column1' => 'value1', 'column2' => 'value2']) -> where column1 = value1 and column2 = value2
-     * where(function ($query) { $query->... }, '=', value) -> where $query->result = value
      */
     protected function baseConditionClauseBinder(string $whereLogicalType,
                                                  string $conditionType,
                                                  string|array|callable $column,
-                                                 string|null $operator,
-                                                 string $value): void
+                                                 string|int|float|null $operator,
+                                                 string|int|float $value): void
     {
         if (is_array($column)) {
             if (!is_null($operator) || !empty($value)) {
@@ -478,7 +473,7 @@ class QueryBuilder
                 }
             }
         } elseif (is_string($column)) {
-            if (empty($value)) {
+            if (empty($value) && !in_array($value, [0, '0'])) {
                 if (!$this->checkMatching($operator, $this->operators)) {
                     $value = $operator;
 
@@ -512,7 +507,7 @@ class QueryBuilder
 
             $this->bind($conditionType, [
                 $operator,
-                $value
+                $this->solveValueWrappingInPita($value)
             ]);
         }
     }
@@ -1891,24 +1886,26 @@ class QueryBuilder
         $query = '';
 
         foreach ($bindings as $bindingName => $binding) {
-            if (!empty($binding)) {
-                if (is_string($bindingName)) {
-                    if ($bindingName !== 'evasive') {
-                        $bindingName = implode(' ', preg_split('/(?=[A-Z])/', $bindingName));
+            if (empty($binding) && $binding !== 0) {
+                continue;
+            }
 
-                        $query .= strtoupper($bindingName);
-                    }
+            if (is_string($bindingName)) {
+                if ($bindingName !== 'evasive') {
+                    $bindingName = implode(' ', preg_split('/(?=[A-Z])/', $bindingName));
+
+                    $query .= strtoupper($bindingName);
+                }
+            }
+
+            if (is_array($binding)) {
+                $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
+            } else {
+                if (!strpbrk($binding, '()`\'"[]')) {
+                    $binding = strtoupper($binding);
                 }
 
-                if (is_array($binding)) {
-                    $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
-                } else {
-                    if (!strpbrk($binding, '()`\'"[]')) {
-                        $binding = strtoupper($binding);
-                    }
-
-                    $query .= ' ' . $binding . ' ';
-                }
+                $query .= ' ' . $binding . ' ';
             }
         }
 
