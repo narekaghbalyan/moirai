@@ -391,21 +391,21 @@ class QueryBuilder
      * @param string $whereLogicalType
      * @param string $conditionType
      * @param string|array|callable $column
-     * @param string|int|float|null $operator
-     * @param string|int|float $value
+     * @param string|int|float|callable|null $operator
+     * @param string|int|float|callable $value
      * @throws \Exception
      */
     protected function baseConditionClauseBinder(string $whereLogicalType,
                                                  string $conditionType,
                                                  string|array|callable $column,
-                                                 string|int|float|null $operator,
-                                                 string|int|float $value): void
+                                                 string|int|float|callable|null $operator,
+                                                 string|int|float|callable $value): void
     {
         if (is_array($column)) {
             if (!is_null($operator) || !empty($value)) {
                 throw new Exception(
-                    'If for the "' . $conditionType . '" function the first argument is passed as an array, 
-                    then the following arguments must be omitted.'
+                    'Invalid argument in "' . $conditionType . '" function. If the first argument is passed as 
+                    an array, then the following arguments must be omitted.'
                 );
             }
 
@@ -468,37 +468,105 @@ class QueryBuilder
                     );
                 } else {
                     throw new Exception(
-                        'Invalid data for "' . $conditionType . '" clause.'
+                        'Invalid argument in "' . $conditionType . '" function. When you set the first 
+                        argument (argument "column") to be a non-associative array then it must have 3 elements 
+                        (1. column, 2. operator, 3. value). Or instead you should use an associative array with 
+                        key => value pairs where the key will be used as the column and the value as the value a in 
+                        place of the operator the function will insert "=".'
                     );
                 }
             }
         } elseif (is_string($column)) {
-            if (empty($value) && !in_array($value, [0, '0'])) {
-                if (!$this->checkMatching($operator, $this->operators)) {
-                    $value = $operator;
+            if (!is_callable($operator) && !is_callable($value)) {
+                if (empty($value) && !in_array($value, [0, '0'])) {
+                    if ($this->checkMatching($operator, $this->operators)) {
+                        throw new Exception(
+                            'Invalid argument in "' . $conditionType . '" function. If you pass the first two 
+                            arguments (argument "column" and argument "operator") and skip the third (argument "value") 
+                            then you must pass the second argument (argument "operator") as a value and not as an 
+                            operator, since in this case the function inserts the "=" operator. If you want to 
+                            explicitly specify an operator, then you must pass the second argument (argument "operator")
+                            as an operator and the third (argument "value") as a value, or pass a non-associative array
+                            where the first element is a column, the second element is an operator and the third element
+                            is a value.'
+                        );
+                    }
 
+                    $value = $operator;
                     $operator = '=';
                 } else {
+                    $this->throwExceptionIfOperatorIsInvalid($operator);
+                }
+
+                $this->bindInWhereBeforeCheckingForThePresenceOfJson(
+                    $conditionType,
+                    $whereLogicalType,
+                    $column,
+                    $operator,
+                    $value
+                );
+            } else {
+                if (is_callable($operator)) {
+                    if (!empty($value)) {
+                        throw new Exception(
+                            'Misplaced parameter in "' . $conditionType . '" function. When you set the second 
+                        argument (argument "operator") as the called function, the third argument becomes redundant, 
+                        since the function automatically puts "=" instead of the operator, and the second argument 
+                        (argument "operator") is used as the value, so there is no need to specify a "value" argument 
+                        if you set the second argument (argument "operator") to be the function being called.'
+                        );
+                    }
+
+                    $value = $operator;
+                    $operator = '=';
+                } elseif (is_callable($value)) {
+                    if (is_null($operator)) {
+                        throw new Exception(
+                            'Missing argument in "' . $conditionType . '" function. When you set the third argument 
+                        (argument "value") as the function to be called, the second argument (argument "operator") must 
+                        be specified explicitly. It cannot be null.'
+                        );
+                    }
+
+                    $this->throwExceptionIfOperatorIsInvalid($operator);
+                }
+
+                $this->bind($conditionType, [$whereLogicalType]);
+
+                $this->bind($conditionType, [
+                    $this->wrapColumnInPita($column),
+                    $operator
+                ]);
+
+                $this->runCallbackForVirginInstance($conditionType, $value);
+            }
+        } elseif (is_callable($column)) {
+            if (empty($operator)) {
+                throw new Exception(
+                    'Invalid argument in "' . $conditionType . '" function. When you set the first argument of 
+                    a function "' . $conditionType . '" (argument "column") to be the function to call, the second 
+                    argument (argument "operator") is required. It either must be an operator (but then the third 
+                    argument (argument "value") must also be present) or it must be a value, but then the function "'
+                    . $conditionType . '" puts "=" instead of the operator, and in place of the value it will use the 
+                    second argument (argument "operator").'
+                );
+            } elseif (empty($value)) {
+                if ($this->checkMatching($operator, $this->operators)) {
                     throw new Exception(
-                        'Missing argument in "' . $conditionType . '" function.'
+                        'Invalid argument in "' . $conditionType . '" function. When you set the first argument 
+                        of a function "' . $conditionType . '" (argument "column") to be the function to call and the 
+                        second argument (argument "operator") to be the operator, then you must fill in the third 
+                        argument (argument "value"). Or you should skip the third one argument (argument "value") and 
+                        instead of the second argument (argument "operator") put a value, in this case the function "'
+                        . $conditionType . '" will use the second argument (argument "operator") as the value and put 
+                        "=" instead of the operator.'
                     );
                 }
+
+                $value = $operator;
+                $operator = '=';
             } else {
                 $this->throwExceptionIfOperatorIsInvalid($operator);
-            }
-
-            $this->bindInWhereBeforeCheckingForThePresenceOfJson(
-                $conditionType,
-                $whereLogicalType,
-                $column,
-                $operator,
-                $value
-            );
-        } elseif (is_callable($column)) {
-            if (is_null($operator) || empty($value)) {
-                throw new Exception(
-                    'Missing argument in "' . $conditionType . '" function.'
-                );
             }
 
             $this->bind($conditionType, [$whereLogicalType]);
@@ -572,11 +640,15 @@ class QueryBuilder
                 $startOfRange . ' AND ' . $endOfRange
             ]);
         } else {
-            $this->runCallback(
-                'where',
-                $whereLogicalType,
-                $column
-            );
+            $this->bind('where', [$whereLogicalType]);
+
+            $this->runCallbackForVirginInstance('where', $column);
+
+//            $this->runCallback(
+//                'where',
+//                $whereLogicalType,
+//                $column
+//            );
         }
     }
 
@@ -1901,8 +1973,12 @@ class QueryBuilder
             if (is_array($binding)) {
                 $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
             } else {
-                if (!strpbrk($binding, '()`\'"[]')) {
-                    $binding = strtoupper($binding);
+                if ($binding instanceof self) {
+                    $binding = $binding->pickUpThePieces($binding->bindings);
+                } else {
+                    if (!strpbrk($binding, '()`\'"[]')) {
+                        $binding = strtoupper($binding);
+                    }
                 }
 
                 $query .= ' ' . $binding . ' ';

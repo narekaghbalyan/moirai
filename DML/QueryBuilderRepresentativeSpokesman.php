@@ -1049,25 +1049,38 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ------------------------------ Use cases ----------------------------- |
      * | -- The below variations retrieves records that match a condition --    |
      * | | where('column', '=', 'value')                                   |    |
+     * | | where('column', 'value') - this expression uses the "="         |    |
+     * | | operator for condition.                                         |    |
      * | | where(['column', '=', 'value'])                                 |    |
      * | | where(['column' => 'value']) - this expression uses the "="     |    |
-     * | | operator for condition and logical "AND" operator to combine.   |    |
+     * | | operator for condition.                                         |    |
      * | | where(['column1' => 'value1', 'column2' => 'value2']) - this    |    |
-     * | | expression uses the "=" operator.                               |    |
+     * | | expression uses the "=" operator for condition and logical      |    |
+     * | | "AND" operator for combine.                                     |    |
      * | | where(function ($query) { $query->... }, '=', 'value') - this   |    |
      * | | expression uses the result of the sub query to compare with     |    |
      * | | "value".                                                        |    |
+     * | | where(function ($query) { $query->... }, 'value') - this        |    |
+     * | | expression uses the result of the sub query to compare with     |    |
+     * | | "value". This expression uses the "=" operator for condition.   |    |
+     * | | where('column', '=', function ($query) { $query->... }) - this  |    |
+     * | | expression uses the result of the sub query to compare with     |    |
+     * | | "column".                                                       |    |
+     * | | where('column', function ($query) { $query->... }) - this       |    |
+     * | | expression uses the result of the sub query for insertion       |    |
+     * | | instead of the "value" for comparison. This expression uses     |    |
+     * | | the "=" operator for condition.                                 |    |
      * | -------------------------------------------------------------------    |
      * --------------------------------------------------------------------------
      * @param string|array|callable $column
-     * @param string|int|float|null $operator
-     * @param string|int|float|null $value
+     * @param string|int|float|callable|null $operator
+     * @param string|int|float|callable|null $value
      * @return $this
      * @throws \Exception
      */
     public function where(string|array|callable $column,
-                          string|int|float|null $operator = null,
-                          string|int|float|null $value = ''): self
+                          string|int|float|callable|null $operator = null,
+                          string|int|float|callable|null $value = ''): self
     {
         $this->baseConditionClauseBinder('', 'where', $column, $operator, $value);
 
@@ -1075,13 +1088,24 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | whereBetween('column', '0', '10')                               |    |
+     * | | whereBetween('column', [0, 10])                                 |    |
+     * | | whereBetween(function ($query) { $query->... }, [0, 10])        |    |
+     * | -------------------------------------------------------------------    |
+     * --------------------------------------------------------------------------
      * @param string|callable $column
      * @param array|string|int|float $range
      * @param string|int|float $endOfRange
      * @return $this
      * @throws Exception
      */
-    public function whereBetween(string|callable $column, array|string|int|float $range = '', string|int|float $endOfRange = ''): self
+    public function whereBetween(string|callable $column,
+                                 array|string|int|float $range = '',
+                                 string|int|float $endOfRange = ''): self
     {
         $this->whereBetweenClauseBinder('', $column, $range, $endOfRange);
 
@@ -1095,7 +1119,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @return $this
      * @throws Exception
      */
-    public function whereBetweenColumns(string|callable $column, array|string|int|float $range = '', string|int|float $endOfRange = ''): self
+    public function whereBetweenColumns(string|callable $column,
+                                        array|string|int|float $range = '',
+                                        string|int|float $endOfRange = ''): self
     {
         $this->whereBetweenClauseBinder('', $column, $range, $endOfRange, false, true);
 
