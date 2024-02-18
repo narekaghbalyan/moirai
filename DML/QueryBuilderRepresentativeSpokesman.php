@@ -1005,8 +1005,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return !$this->existsClauseBinder();
     }
 
-
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to specify the table that the query builder should work on.     |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | from('table') - specifies the table the query builder should work      |
+     * | with.                                                                  |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "table".                                                       |
+     * --------------------------------------------------------------------------
      * @param string $table
      * @return $this
      */
@@ -1018,6 +1025,14 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to specify the table that the query builder should work on.     |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | table('table') - specifies the table the query builder should work     |
+     * | with.                                                                  |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "from".                                                        |
+     * --------------------------------------------------------------------------
      * @param string $table
      * @return $this
      */
@@ -1027,6 +1042,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string|array|callable $column
