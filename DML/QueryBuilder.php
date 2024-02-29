@@ -643,13 +643,13 @@ class QueryBuilder
             $this->bind('where', [$whereLogicalType]);
 
             $this->runCallbackForVirginInstance('where', $column);
-
-//            $this->runCallback(
-//                'where',
-//                $whereLogicalType,
-//                $column
-//            );
         }
+
+        $this->bind('where', [
+            $isNotCondition ? 'NOT' : '',
+            'BETWEEN',
+            $startOfRange . ' AND ' . $endOfRange
+        ]);
     }
 
     /**
