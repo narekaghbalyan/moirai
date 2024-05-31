@@ -56,11 +56,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    // TODO: [implement] implement function
-    public function find(int $id)
-    {
-    }
-
     /**
      * --------------------------------------------------------------------------
      * | Clause to select from database table.                                  |
@@ -85,6 +80,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
+    // TODO [implement]
     /**
      * --------------------------------------------------------------------------
      * | Clause for fragmentary processing of many records from a table.        |
@@ -1089,21 +1085,21 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * |
+     * | Clause for specifying conditions in a request. Verifies  whether the   |
+     * | column value is between the given values.                              |
      * | ------------------------------ Use cases ----------------------------- |
      * | -- The below variations retrieves records that match a condition --    |
      * | | whereBetween('column', '0', '10')                               |    |
      * | | whereBetween('column', [0, 10])                                 |    |
-     * | | whereBetween(function ($query) { $query->... }, [0, 10])        |    |
      * | -------------------------------------------------------------------    |
      * --------------------------------------------------------------------------
-     * @param string|callable $column
+     * @param string $column
      * @param array|string|int|float $range
      * @param string|int|float $endOfRange
      * @return $this
      * @throws Exception
      */
-    public function whereBetween(string|callable $column,
+    public function whereBetween(string $column,
                                  array|string|int|float $range = '',
                                  string|int|float $endOfRange = ''): self
     {
@@ -1113,13 +1109,23 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
-     * @param string|callable $column
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies that a         |
+     * | column's value is between the two values of two columns in the same    |
+     * | table row.                                                             |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | whereBetweenColumns('column', 'column1', 'column2')             |    |
+     * | | whereBetweenColumns('column', ['column1', 'column2'])           |    |
+     * | -------------------------------------------------------------------    |
+     * --------------------------------------------------------------------------
+     * @param string $column
      * @param array|string|int|float $range
      * @param string|int|float $endOfRange
      * @return $this
      * @throws Exception
      */
-    public function whereBetweenColumns(string|callable $column,
+    public function whereBetweenColumns(string $column,
                                         array|string|int|float $range = '',
                                         string|int|float $endOfRange = ''): self
     {

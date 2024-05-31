@@ -50,7 +50,7 @@ class QueryBuilder
     /**
      * @return string
      */
-    public function getDriver(): string
+    public function getDriverName(): string
     {
         return $this->driver->getDriverName();
     }
@@ -142,12 +142,14 @@ class QueryBuilder
             }
         }
 
-        if (!empty($this->getBinding('select'))) {
-            $selectBindingLastKey = array_key_last($this->bindings['select']);
+        $selectBinding = $this->getBinding('select');
 
-            $this->bindings['select'][$selectBindingLastKey][array_key_last(
-                $this->bindings['select'][$selectBindingLastKey]
-            )] .= ',';
+        if (!empty($selectBinding)) {
+            $selectBindingLastKey = array_key_last($selectBinding);
+
+            $this->bindings['select'][$selectBindingLastKey][
+                array_key_last($this->bindings['select'][$selectBindingLastKey])
+            ] .= ',';
         }
 
         $this->bind('select', [$aggregateFunction . $this->concludeBrackets($preparedColumn)]);
@@ -162,9 +164,9 @@ class QueryBuilder
                                                                 string $separator = ',',
                                                                 bool $distinct = false): void
     {
-        $driver = $this->getDriver();
+        $driverName = $this->getDriverName();
 
-        $aggregateFunction = match ($driver) {
+        $aggregateFunction = match ($driverName) {
             AvailableDbmsDrivers::SQLITE,
             AvailableDbmsDrivers::MARIADB,
             AvailableDbmsDrivers::MYSQL => 'GROUP_CONCAT',
@@ -173,7 +175,7 @@ class QueryBuilder
             AvailableDbmsDrivers::ORACLE => 'LISTAGG'
         };
 
-        if (in_array($driver, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
+        if (in_array($driverName, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
             $column = $this->wrapColumnInPita($column) . ' SEPARATOR ' . $this->wrapStringInPita($separator);
         } else {
             $column = $this->wrapColumnInPita($column) . ', ' . $this->wrapStringInPita($separator);
@@ -192,7 +194,7 @@ class QueryBuilder
         // TODO: for what ? (remove below line)
 //        $this->throwExceptionIfArgumentNotNumeric($column);
 
-        if (in_array($this->getDriver(), [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
+        if (in_array($this->getDriverName(), [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
         }
 
@@ -206,9 +208,9 @@ class QueryBuilder
      */
     protected function jsonObjectAggregateFunctionClauseBinder(string $keyColumn, array $valueColumn)
     {
-        $driver = $this->getDriver();
+        $driverName = $this->getDriverName();
 
-        $aggregateFunction = match ($this->getDriver()) {
+        $aggregateFunction = match ($driverName) {
             AvailableDbmsDrivers::POSTGRESQL => 'JSON_OBJECT_AGG',
             AvailableDbmsDrivers::SQLITE,
             AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_OBJECT',
@@ -219,7 +221,7 @@ class QueryBuilder
          * If the Microsoft SQL Server driver is used, the keyColumn argument
          * is also treated as an element of the valueColumn argument.
          */
-        if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
+        if ($driverName === AvailableDbmsDrivers::MS_SQL_SERVER) {
             array_unshift($valueColumn, $keyColumn);
 
             foreach ($valueColumn as $key => $value) {
@@ -262,9 +264,9 @@ class QueryBuilder
      */
     protected function standardDeviationAggregateFunctionClauseBinder(string $column, bool $biased = false)
     {
-        $driver = $this->getDriver();
+        $driverName = $this->getDriverName();
 
-        if ($driver === AvailableDbmsDrivers::SQLITE) {
+        if ($driverName === AvailableDbmsDrivers::SQLITE) {
             throw new Exception(
                 'Sqlite driver does not support this feature.'
             );
@@ -298,7 +300,7 @@ class QueryBuilder
 
         if (!$biased) {
             // Population standard deviation
-            $aggregateFunction = match ($driver) {
+            $aggregateFunction = match ($driverName) {
                 AvailableDbmsDrivers::MYSQL,
                 AvailableDbmsDrivers::MARIADB => 'STDDEV',
                 AvailableDbmsDrivers::POSTGRESQL ,
@@ -307,7 +309,7 @@ class QueryBuilder
             };
         } else {
             // Sample standard deviation
-            if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
+            if ($driverName === AvailableDbmsDrivers::MS_SQL_SERVER) {
                 throw new Exception(
                     'Microsoft SQL Server driver does not support this feature.'
                 );
@@ -326,9 +328,9 @@ class QueryBuilder
      */
     protected function varianceAggregateFunctionClauseBinder(string $column, bool $biased = false)
     {
-        $driver = $this->getDriver();
+        $driverName = $this->getDriverName();
 
-        if ($driver === AvailableDbmsDrivers::SQLITE) {
+        if ($driverName === AvailableDbmsDrivers::SQLITE) {
             throw new Exception(
                 'Sqlite driver does not support this feature.'
             );
@@ -358,10 +360,10 @@ class QueryBuilder
 
         if (!$biased) {
             // Standard variance
-            $aggregateFunction = $driver !== AvailableDbmsDrivers::MS_SQL_SERVER ? 'VAR_POP' : 'VARP';
+            $aggregateFunction = $driverName !== AvailableDbmsDrivers::MS_SQL_SERVER ? 'VAR_POP' : 'VARP';
         } else {
             // Sample variance
-            $aggregateFunction = $driver !== AvailableDbmsDrivers::MS_SQL_SERVER ? 'VAR_SAMP' : 'VAR';
+            $aggregateFunction = $driverName !== AvailableDbmsDrivers::MS_SQL_SERVER ? 'VAR_SAMP' : 'VAR';
         }
 
         $this->aggregateFunctionsClauseBinder($aggregateFunction, $column);
@@ -582,70 +584,66 @@ class QueryBuilder
 
     /**
      * @param string $whereLogicalType
-     * @param string|callable $column
+     * @param string $column
      * @param array|string|int|float $range
      * @param string|int|float $endOfRange
      * @param bool $isNotCondition
      * @param bool $betweenColumns
-     * @throws \Exception
+     * @throws Exception
      */
     protected function whereBetweenClauseBinder(string $whereLogicalType,
-                                                string|callable $column,
+                                                string $column,
                                                 array|string|int|float $range,
                                                 string|int|float $endOfRange,
                                                 bool $isNotCondition = false,
                                                 bool $betweenColumns = false): void
     {
-        if (!is_callable($column)) {
-            if (is_array($range)) {
-                $this->throwExceptionIfArrayAssociative(
-                    $range,
-                    'Array for range cannot be associative.'
+        if (is_array($range)) {
+            $this->throwExceptionIfArrayAssociative(
+                $range,
+                'Array for range cannot be associative.'
+            );
+
+            if (count($range) !== 2) {
+                throw new Exception(
+                    'Array for range must contain 2 elements. 
+                    The first value is the beginning of the range, the second value is the end of the range.'
                 );
-
-                if (count($range) !== 2) {
-                    throw new Exception(
-                        'Array for range must contain 2 elements. 
-                        The first value is the beginning of the range, the second value is the end of the range.'
-                    );
-                }
-
-                if (!empty($endOfRange)) {
-                    throw new Exception(
-                        'If the range is specified as an array, then the third argument 
-                        of the function must be skipped.'
-                    );
-                }
-
-                if ($betweenColumns) {
-                    $startOfRange = $this->concludeBrackets('SELECT ' . $range[0]);
-                    $endOfRange = $this->concludeBrackets('SELECT ' . $range[1]);
-                } else {
-                    $startOfRange = $range[0];
-                    $endOfRange = $range[1];
-                }
-            } else {
-                if (empty($endOfRange)) {
-                    throw new Exception('Range end not specified');
-                }
-
-                $startOfRange = $range;
             }
 
-            $this->bind('where', [
-                $whereLogicalType,
-                $this->wrapColumnInPita($column),
-                $isNotCondition ? 'NOT' : '',
-                'BETWEEN',
-                $startOfRange . ' AND ' . $endOfRange
-            ]);
-        } else {
-            $this->bind('where', [$whereLogicalType]);
+            if (!empty($endOfRange)) {
+                throw new Exception(
+                    'If the range is specified as an array, then the third argument 
+                    of the function must be skipped.'
+                );
+            }
 
-            $this->runCallbackForVirginInstance('where', $column);
+            $startOfRange = $range[0];
+            $endOfRange = $range[1];
+        } else {
+            if (empty($endOfRange)) {
+                throw new Exception('Range end not specified');
+            }
+
+            $startOfRange = $range;
+        }
+
+        if ($betweenColumns) {
+            $startOfRange = $this->wrapColumnInPita($startOfRange);
+            $endOfRange = $this->wrapColumnInPita($endOfRange);
+        } else {
+            if (!is_numeric($startOfRange)) {
+                $startOfRange = $this->wrapStringInPita($startOfRange);
+            }
+
+            if (!is_numeric($endOfRange)) {
+                $endOfRange = $this->wrapStringInPita($endOfRange);
+            }
         }
 
         $this->bind('where', [
+            $whereLogicalType,
+            $this->wrapColumnInPita($column),
             $isNotCondition ? 'NOT' : '',
             'BETWEEN',
             $startOfRange . ' AND ' . $endOfRange
@@ -748,7 +746,7 @@ class QueryBuilder
                                                  bool|array $highlighting,
                                                  bool $isNotCondition = false): void
     {
-        switch ($this->getDriver()) {
+        switch ($this->getDriverName()) {
             case AvailableDbmsDrivers::MARIADB:
             case AvailableDbmsDrivers::MYSQL:
                 if (!is_array($column)) {
@@ -1179,7 +1177,7 @@ class QueryBuilder
      */
     protected function whereJsonContainsClauseBinder(string $whereLogicalType, string $column, string|array $value)
     {
-        $driver = $this->getDriver();
+        $driver = $this->getDriverName();
 
         if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
@@ -1246,7 +1244,7 @@ class QueryBuilder
                                                    string $operator,
                                                    string|int|null $value)
     {
-        $driver = $this->getDriver();
+        $driver = $this->getDriverName();
 
         if (in_array($driver, [AvailableDbmsDrivers::SQLITE, AvailableDbmsDrivers::ORACLE])) {
             $this->throwExceptionIfDriverNotSupportFunction();
@@ -1331,7 +1329,7 @@ class QueryBuilder
                 $column = implode(', ', $this->wrapColumnInPita($column));
             }
         } else {
-            $randomExpression = match ($this->getDriver()) {
+            $randomExpression = match ($this->getDriverName()) {
                 AvailableDbmsDrivers::MARIADB,
                 AvailableDbmsDrivers::MYSQL => 'RAND()',
                 AvailableDbmsDrivers::POSTGRESQL,
@@ -1355,7 +1353,7 @@ class QueryBuilder
     // TODO integrate pgsql
     protected function offsetClauseBinder(int $count)
     {
-        if ($this->getDriver() === AvailableDbmsDrivers::ORACLE) {
+        if ($this->getDriverName() === AvailableDbmsDrivers::ORACLE) {
             $count .= ' ROWS';
         }
 
@@ -1364,11 +1362,11 @@ class QueryBuilder
 
     protected function limitClauseBinder(int $count, bool $inPercentages)
     {
-        if ($this->getDriver() !== AvailableDbmsDrivers::ORACLE) {
+        if ($this->getDriverName() !== AvailableDbmsDrivers::ORACLE) {
             if ($inPercentages) {
                 throw new Exception(
                     '"'
-                    . $this->getDriver()
+                    . $this->getDriverName()
                     . '" database management system does not support limit request with percentage applied.'
                 );
             }
@@ -1450,7 +1448,7 @@ class QueryBuilder
                 foreach ($update as $key => $item) {
                     $readyUpdate .= ' ' . $this->wrapColumnInPita($item);
 
-                    $readyUpdate .= match ($this->getDriver()) {
+                    $readyUpdate .= match ($this->getDriverName()) {
                         AvailableDbmsDrivers::MSSQLSERVER => ' = ' . $this->wrapStringInPita(
                                 $columnsWithValues[array_key_first($columnsWithValues)][$item]
                             ),
@@ -1464,7 +1462,7 @@ class QueryBuilder
                     $key !== $lastKey ? $readyUpdate .= ',' : $readyUpdate .= '';
                 }
 
-                switch ($this->getDriver()) {
+                switch ($this->getDriverName()) {
                     case AvailableDbmsDrivers::MARIADB:
                     case AvailableDbmsDrivers::MYSQL:
                         $odkuPostfix = 'ON DUPLICATE KEY UPDATE' . $readyUpdate;
@@ -1603,7 +1601,7 @@ class QueryBuilder
             ]);
 
             if ($ignore) {
-                switch ($this->getDriver()) {
+                switch ($this->getDriverName()) {
                     case AvailableDbmsDrivers::MARIADB:
                     case AvailableDbmsDrivers::MYSQL:
                         array_unshift($this->bindings['insert'], 'IGNORE');
@@ -1709,7 +1707,7 @@ class QueryBuilder
 
         $expressionForUpdate = [];
 
-        $driver = $this->getDriver();
+        $driver = $this->getDriverName();
 
         foreach ($columnsWithValues as $column => $value) {
             $lockThisIteration = false;
@@ -1888,7 +1886,7 @@ class QueryBuilder
 
     protected function truncateClauseBinder()
     {
-        $driver = $this->getDriver();
+        $driver = $this->getDriverName();
 
         if ($driver !== AvailableDbmsDrivers::SQLITE) {
             $this->changeQueryTypeToTruncate();
@@ -1921,7 +1919,7 @@ class QueryBuilder
 
     protected function lockClauseBinder($isSharedLock = true): void
     {
-        $driver = $this->getDriver();
+        $driver = $this->getDriverName();
 
         if ($driver === AvailableDbmsDrivers::SQLITE) {
             $this->throwExceptionIfDriverNotSupportFunction();

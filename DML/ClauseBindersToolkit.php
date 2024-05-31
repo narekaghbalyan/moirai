@@ -361,7 +361,7 @@ trait ClauseBindersToolkit
 
         if (!empty($additionalAccessories)) {
             foreach ($additionalAccessories as $accessoryName => $accessory) {
-                $this->$accessoryName = array_merge($this->$accessoryName, $accessory);
+                $this->{$accessoryName} = array_merge($this->{$accessoryName}, $accessory);
             }
         }
     }
@@ -437,7 +437,8 @@ trait ClauseBindersToolkit
     {
         $this->bind($bindingName, ['(']);
 
-        $virginInstance = new $this($this->connection);
+//        $virginInstance = new $this($this->connection);
+        $virginInstance = new $this();
 
         $callback($virginInstance);
 
