@@ -1135,12 +1135,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
-     * @param string|callable $column
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies that a given   |
+     * | column's value is contained within the given array.                    |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | whereIn('column', ['value1', 'value2']) - retrieves records that       |
+     * | match a condition.                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $column
      * @param array $setOfSupposedVariables
      * @return $this
      * @throws Exception
      */
-    public function whereIn(string|callable $column, array $setOfSupposedVariables = []): self
+    public function whereIn(string $column, array $setOfSupposedVariables = []): self
     {
         $this->whereInClauseBinder('', $column, $setOfSupposedVariables);
 

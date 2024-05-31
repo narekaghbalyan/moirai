@@ -1107,40 +1107,32 @@ class QueryBuilder
 
     /**
      * @param string $whereLogicalType
-     * @param string|callable $column
+     * @param string $column
      * @param array $setOfSupposedVariables
      * @param bool $isNotCondition
-     * @throws \Exception
+     * @throws Exception
      */
     protected function whereInClauseBinder(string $whereLogicalType,
-                                           string|callable $column,
+                                           string $column,
                                            array $setOfSupposedVariables,
                                            bool $isNotCondition = false): void
     {
-        if (!is_callable($column)) {
-            $this->throwExceptionIfArrayAssociative(
-                $setOfSupposedVariables,
-                'Array for variables cannot be associative'
-            );
+        $this->throwExceptionIfArrayAssociative(
+            $setOfSupposedVariables,
+            'Array for variables cannot be associative'
+        );
 
-            if (empty($setOfSupposedVariables)) {
-                throw new Exception('Array for values cannot be empty');
-            }
-
-            $this->bind('where', [
-                $whereLogicalType,
-                $this->wrapColumnInPita($column),
-                $isNotCondition ? 'NOT' : '',
-                'IN',
-                $this->concludeBrackets(implode(', ', $setOfSupposedVariables))
-            ]);
-        } else {
-            $this->runCallback(
-                'where',
-                $whereLogicalType,
-                $column
-            );
+        if (empty($setOfSupposedVariables)) {
+            throw new Exception('Array for values cannot be empty');
         }
+
+        $this->bind('where', [
+            $whereLogicalType,
+            $this->wrapColumnInPita($column),
+            $isNotCondition ? 'NOT' : '',
+            'IN',
+            $this->concludeBrackets(implode(', ', $setOfSupposedVariables))
+        ]);
     }
 
     /**
