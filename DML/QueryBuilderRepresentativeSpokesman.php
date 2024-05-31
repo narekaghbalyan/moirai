@@ -1155,12 +1155,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
-     * @param string|callable $column
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies that the value |
+     * | of the given column is NULL.                                           |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | whereNull('column') - retrieves records that match a condition.        |
+     * --------------------------------------------------------------------------
+     * @param string $column
      * @return $this
      */
-    public function whereNull(string|callable $column): self
+    public function whereNull(string $column): self
     {
-        $this->whereNullClauseBinder('', $column, false);
+        $this->whereNullClauseBinder('', $column);
 
         return $this;
     }

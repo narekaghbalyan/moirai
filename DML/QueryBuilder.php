@@ -1137,28 +1137,20 @@ class QueryBuilder
 
     /**
      * @param string $whereLogicalType
-     * @param string|callable $column
+     * @param string $column
      * @param bool $isNotCondition
      */
     protected function whereNullClauseBinder(string $whereLogicalType,
-                                             string|callable $column,
+                                             string $column,
                                              bool $isNotCondition = false)
     {
-        if (!is_callable($column)) {
-            $this->bind('where', [
-                $whereLogicalType,
-                $this->wrapColumnInPita($column),
-                'IS',
-                $isNotCondition ? 'NOT' : '',
-                'NULL'
-            ]);
-        } else {
-            $this->runCallback(
-                'where',
-                $whereLogicalType,
-                $column
-            );
-        }
+        $this->bind('where', [
+            $whereLogicalType,
+            $this->wrapColumnInPita($column),
+            'IS',
+            $isNotCondition ? 'NOT' : '',
+            'NULL'
+        ]);
     }
 
     /**
