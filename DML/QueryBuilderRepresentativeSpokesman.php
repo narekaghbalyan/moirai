@@ -972,10 +972,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | A predictive function that checks for the presence of a record         |
+     * | A predictive function that verifies for the presence of a record       |
      * | matching the requirements in a sub query.                              |
      * | ------------------------------ Use cases ----------------------------- |
-     * | exists() - checks whether a record exists that matches the             |
+     * | exists() - verifies whether a record exists that matches the           |
      * | requirements of the query that was written before the exists call.     |
      * --------------------------------------------------------------------------
      * @return bool
@@ -987,10 +987,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
     /**
      * --------------------------------------------------------------------------
-     * | A predictive function that checks for the absence of a matching record |
-     * | in a sub query.                                                        |
+     * | A predictive function that verifies for the absence of a matching      |
+     * | record in a sub query.                                                 |
      * | ------------------------------ Use cases ----------------------------- |
-     * | doesntExists() - checks whether the corresponding record is missing    |
+     * | doesntExists() - verifies whether the corresponding record is missing  |
      * | requirements of the query that was written before calling              |
      * | doesntExists.                                                          |
      * --------------------------------------------------------------------------
@@ -1172,6 +1172,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies whether there  |
+     * | is a row corresponding to the sub query written in the closure.        |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | whereExists(function ($query) { $query->... }) - retrieves record      |
+     * | that match a condition.                                                |
+     * --------------------------------------------------------------------------
      * @param callable $callback
      * @return $this
      */
@@ -1183,6 +1190,38 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies whether there  |
+     * | is a row corresponding that the selected comparison of the selected    |
+     * | columns each other in row.                                             |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | whereColumn('column1', '=', 'column2')                          |    |
+     * | | whereColumn('column1', 'column2') - this expression uses the    |    |
+     * | | "=" operator for condition.                                     |    |
+     * | | whereColumn(['column1', '=', 'column2'])                        |    |
+     * | | whereColumn(['column1', 'column2']) - this expression uses the  |    |
+     * | | "=" operator for condition.                                     |    |
+     * | | where(['column1' => 'column2']) - this expression uses the "="  |    |
+     * | | operator for condition.                                         |    |
+     * | | where(['column1' => 'column2', 'column3' => 'column4']) - this  |    |
+     * | | expression uses the "=" operator for condition and logical      |    |
+     * | | "AND" operator for combine.                                     |    |
+     * | | where([                                                         |    |
+     * | |       ['column1', '=', 'column2'],                              |    |
+     * | |       ['column3', 'column4']                                    |    |
+     * | |       ['column5' => 'column6']                                  |    |
+     * | |       ['column5' => 'column6']                                  |    |
+     * | | ]) - If you pass an array as the first argument and pass other  |    |
+     * | | nested arrays in it then you can use all the above options for  |    |
+     * | | nested arrays. This expression uses the logical "AND" operator  |    |
+     * | | for combine and the conditional operator will be chosen         |    |
+     * | | depending on the nested array, depends on which of the above    |    |
+     * | | notation types you use (the conditional statement will be       |    |
+     * | | selected according to the conditions specified after the        |    |
+     * | | notation type).                                                 |    |
+     * | -------------------------------------------------------------------    |
+     * --------------------------------------------------------------------------
      * @param string|array $firstColumn
      * @param string|null $operator
      * @param string|null $secondColumn

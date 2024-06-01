@@ -55,6 +55,14 @@ trait ClauseBindersToolkit
     /**
      * @return array
      */
+    public function getOperators(): array
+    {
+        return $this->operators;
+    }
+
+    /**
+     * @return array
+     */
     protected function getBindings(): array
     {
         return $this->bindings;
@@ -477,6 +485,26 @@ trait ClauseBindersToolkit
     }
 
     /**
+     * @param string|int|float|array $suspect
+     * @param array $dataFromWhichToCheck
+     * @return bool
+     */
+    protected function checkIfArrayContainsOnlyArrays(): bool
+    {
+        if (is_array($suspect)) {
+            foreach ($suspect as $item) {
+                if (!in_array($item, $dataFromWhichToCheck)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return in_array($suspect, $dataFromWhichToCheck);
+    }
+
+    /**
      * @param array $array
      * @return bool
      */
@@ -532,7 +560,7 @@ trait ClauseBindersToolkit
      */
     protected function throwExceptionIfOperatorIsInvalid(string $operator): void
     {
-        if (!$this->checkMatching($operator, $this->operators)) {
+        if (!$this->checkMatching($operator, $this->getOperators())) {
             throw new Exception(
                 '"' . $operator . '" is not a SQL operator.'
             );

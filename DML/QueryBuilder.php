@@ -656,7 +656,7 @@ class QueryBuilder
      * @param string|null $operator
      * @param string|null $secondColumn
      * @param bool $isNotCondition
-     * @throws \Exception
+     * @throws Exception
      */
     protected function whereColumnClauseBinder(string $whereLogicalType,
                                                string|array $firstColumn,
@@ -664,36 +664,87 @@ class QueryBuilder
                                                string|null $secondColumn,
                                                bool $isNotCondition = false): void
     {
-        if (is_string($firstColumn)) {
-            if (empty($operator) || empty($secondColumn)) {
-                throw new Exception(
-                    'Missing argument in where column function.'
-                );
-            }
-
-            $this->throwExceptionIfOperatorIsInvalid($operator);
-        } elseif (is_array($firstColumn)) {
+        if (is_array($firstColumn)) {
             if (!empty($operator) || !empty($secondColumn)) {
                 throw new Exception(
                     'If the first argument is an array, then the following arguments must be omitted.'
                 );
             }
 
-            if (count($firstColumn) !== 3) {
-                throw new Exception('Array must contain 3 elements.');
-            }
-
-            if ($this->isAssociative($firstColumn)) {
-                throw new Exception('Array cannot be associative.');
-            }
-
             $columns = $firstColumn;
 
-            $firstColumn = $columns[0];
-            $operator = $columns[1];
-            $secondColumn = $columns[2];
+            $firstKey = array_key_first($columns);
 
-            $this->throwExceptionIfOperatorIsInvalid($operator);
+            if (is_array($columns[$firstKey])) {
+                foreach ($columns as $key => $column) {
+                    if (!is_array($column)) {
+                        throw new Exception(
+                            'If you are using an array as first argument, and array first element also an array, 
+                            then all other elements must also be arrays.'
+                        );
+                    }
+
+                    if ($key !== $firstKey) {
+                        $whereLogicalType = 'AND';
+                    }
+
+                    $this->whereColumnClauseBinder(
+                        $whereLogicalType, $column, null, null, $isNotCondition
+                    );
+                }
+
+                return;
+            } else {
+                if ($this->isAssociative($columns)) {
+                    foreach ($columns as $key => $value) {
+                        if ($key !== $firstKey) {
+                            $whereLogicalType = 'AND';
+                        }
+
+                        $this->bind('where', [
+                            $whereLogicalType,
+                            $isNotCondition ? 'NOT' : '',
+                            $this->wrapColumnInPita($key),
+                            '=',
+                            $this->wrapColumnInPita($value),
+                        ]);
+                    }
+
+                    return;
+                } else {
+                    if (count($columns) === 2) {
+                        $firstColumn = $columns[0];
+                        $operator = '=';
+                        $secondColumn = $columns[1];
+                    } elseif (count($columns) === 3) {
+                        $firstColumn = $columns[0];
+                        $operator = $columns[1];
+                        $secondColumn = $columns[2];
+
+                        $this->throwExceptionIfOperatorIsInvalid($operator);
+                    } else {
+                        throw new Exception(
+                            'If array not associative, array must contain 2 (column and value) or 3 (column, 
+                        operator and value) elements. If you pass 2 elements, by default operator will be used "=".'
+                        );
+                    }
+                }
+            }
+        } elseif (is_string($firstColumn)) {
+            if (empty($operator)) {
+                throw new Exception(
+                    'If the first argument is passed as a string (not an array) then you must pass the second 
+                    argument as an operator and the third argument as the second column, or the second argument as the 
+                    second column but in this case the "=" will be used as operator.'
+                );
+            }
+
+            if (!empty($secondColumn)) {
+                $this->throwExceptionIfOperatorIsInvalid($operator);
+            } else {
+                $secondColumn = $operator;
+                $operator = '=';
+            }
         }
 
         $this->bind('where', [
