@@ -184,7 +184,7 @@ trait ClauseBindersToolkit
 
             unset($fields[0]);
 
-            $expression = match ($this->getDriver()) {
+            $expression = match ($this->getDriverName()) {
                 AvailableDbmsDrivers::MARIADB,
                 AvailableDbmsDrivers::MYSQL => 'JSON_UNQUOTE' . $this->concludeBrackets(
                         'JSON_EXTRACT'
@@ -485,26 +485,6 @@ trait ClauseBindersToolkit
     }
 
     /**
-     * @param string|int|float|array $suspect
-     * @param array $dataFromWhichToCheck
-     * @return bool
-     */
-    protected function checkIfArrayContainsOnlyArrays(): bool
-    {
-        if (is_array($suspect)) {
-            foreach ($suspect as $item) {
-                if (!in_array($item, $dataFromWhichToCheck)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        return in_array($suspect, $dataFromWhichToCheck);
-    }
-
-    /**
      * @param array $array
      * @return bool
      */
@@ -590,7 +570,7 @@ trait ClauseBindersToolkit
 
         if (!$this->checkMatching($modifier, $reflectionClass->getConstants())) {
             throw new Exception(
-                '"' . $modifier . '" is not a modifier.'
+                '"' . $modifier . '" is not a full text search modifier.'
             );
         }
     }

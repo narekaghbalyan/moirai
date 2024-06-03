@@ -1235,66 +1235,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    // MySql
-    /*
-     * -- In natural language mode --
-     * Полнотекстовый поиск в режиме поиска на естественном языке
-     * Режим поиска на естественном языке, как отмечалось выше, включен по умолчанию или
-     * при указании модификатора IN NATURAL LANGUAGE MODE . В этом режиме выполняется поиск на естественном
-     * языке по заданному текстовому набору (один или несколько столбцов). Базовый формат запроса
-     * полнотекстового поиска в MySQL должен быть примерно таким:
-     */
 
-    /*
-     * -- With query expansion mode --
-     * Полнотекстовый поиск в режиме расширения запроса
-     * Полнотекстовый поиск также поддерживает режим расширения запроса. Такой режим поиска часто используется, когда
-     * пользователь полагается на подразумеваемые знания — например, пользователь может искать «СУБД», надеясь
-     * увидеть в результатах поиска как «MongoDB», так и «MySQL». Причина, по которой пользователь может полагаться
-     * на некоторые подразумеваемые знания при использовании такого режима поиска, довольно проста —
-     * полнотекстовый поиск с режимом расширения запроса работает, выполняя поиск дважды: вторая поисковая фраза —
-     * это первая поисковая фраза. объединены с несколькими наиболее релевантными записями из первого поиска.
-     * Это означает, что, например, если при первом поиске одна из строк будет содержать слово «СУБД» и слово
-     * «MySQL», то при втором поиске будут найдены записи, содержащие слово «MySQL»,
-     * даже если они не содержат содержать «СУБД».
-     */
-
-    /*
-     * В РЕЖИМЕ ЕСТЕСТВЕННОГО ЯЗЫКА ... ваш поисковый запрос
-     * будет рассматриваться как естественный язык (человеческий язык). Так что здесь нет специальных символов,
-     * кроме " (двойная кавычка). Все слова в вашем списке стоп-слов будут исключены при поиске!
-     *
-     * В БУЛЕВОМ РЕЖИМЕ ... операторы могут быть добавлены к вашему поисковому запросу. Это означает,
-     * что вы можете указать дополнительные пожелания относительно вашего поиска. Конечно,
-     * также применяется правило списка стоп-слов, означающее, что они будут исключены из вашего поиска.
-     *
-     * С РАСШИРЕНИЕМ ЗАПРОСА (или В РЕЖИМЕ ЕСТЕСТВЕННОГО ЯЗЫКА С РАСШИРЕНИЕМ ЗАПРОСА) ...
-     * так как эта фамилия подразумевает расширение до В ЕСТЕСТВЕННОМ РЕЖИМЕ. Таким образом, это в основном
-     * то же самое, что и этот первый режим, упомянутый выше, за исключением этой функции: наиболее
-     * релевантные слова, найденные с вашим начальным поисковым запросом, добавляются к вашему
-     * начальному поисковому запросу, и выполняется окончательный поиск. Запрос возвращает более
-     * широкий результат с вашим поисковым запросом и тем, что может быть интересным,
-     * если вы согласны с таким определением интересного.
-     */
-
-    //  with query expansion mode -> Слепое расширение запроса (также известное как автоматическая обратная
-    // связь по релевантности).
-
-    // whereFullText('text', 'Hello world') -> WHERE MATCH (`text`) AGAINST ("Hello world" IN NATURAL LANGUAGE MODE)
-    // whereFullText(['title', 'text'], 'Hello world') -> WHERE MATCH (`title`, `text`) AGAINST ("Hello world" IN NATURAL LANGUAGE MODE)
-
-
-    // MySql
-    // whereFullText('text', 'Hello world', FullTextSearchModifiers::NATURAL_LANGUAGE_MODE) -> in natural language mode
-    // whereFullText(['text'], ['Hello world'], FullTextSearchModifiers::NATURAL_LANGUAGE_MODE) -> in natural language mode
-    // whereFullText(['text'], ['Hello world'], FullTextSearchModifiers::WITH_QUERY_EXPANSION) -> with query expansion mode
-    // whereFullText(['text'], ['Hello world'], FullTextSearchModifiers::BOOLEAN_MODE) -> in boolean mode
-
-    // PostgreSql
-    // whereFullText('text', 'Hello world', 'language')
-    // -> SELECT `*` FROM `users` WHERE to_tsvector('language', `text`) @@ to_tsquery('language', "Hello world")
-    // whereFullText(['text'], ['Hello world'], 'language')
-    // -> SELECT `*` FROM `users` WHERE to_tsvector('language', `text`) @@ to_tsquery('language', "Hello world")
 
     /*
      * 0 (по умолчанию): длина документа не учитывается
@@ -1309,21 +1250,111 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * -- PostgreSql --
      * ->whereFullText('title', 'Some text');
      * ->whereFullText(['title', 'description'], 'Some text');
-     * ->whereFullText('title', 'Some text', 'english');
-     * ->whereFullText('title', 'Some text', 'english', true);
-     * ->whereFullText('title', 'Some text', 'english', true, 'title');
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, ['title', 'description]);
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', 32);
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, 2]);
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, '2']);
-     * ->whereFullText(['title', 'description'], 'Some text', 'english', ['tag' => 'mark', 'MaxWords' => 10]);
+     * ->whereFullText('title', 'Some text', 'english'); -> lezun enq nshum vorpes 3rd argument
+     * ->whereFullText('title', 'Some text', 'english', true); -> highlithing enq miacnum
+     * ->whereFullText('title', 'Some text', 'english', true, 'title'); -> ranking column enq dnum
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, ['title', 'description]);ranking column enq dnum mi qani hat
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', 32); normalization bitmask enq dnum
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, 2]); normalization bitmask enq dnum
+     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, '2']); normalization bitmask enq dnum
+     * ->whereFullText(['title', 'description'], 'Some text', 'english', ['tag' => 'mark', 'MaxWords' => 10]); highliting arguments
      *
-     * -- MySql --
-     * ->whereFullText('title', 'Some text');
-     * ->whereFullText(['title', 'description'], 'Some text');
-     * ->whereFullText(['title', 'description'], 'Some text', FullTextSearchModifiers::BOOLEAN_MODE);
      */
+
+
+
     /**
+     * --------------------------------------------------------------------------
+     * |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | ----------- The below variations only for MySQL DB driver ---------    |
+     * | | whereFullText('column', 'Target text for search') - performs a  |    |
+     * | | full-text search of text by column.                             |    |
+     * | | whereFullText(                                                  |    |
+     * | |       ['column1', 'column2'],                                   |    |
+     * | |       'Target text for search'                                  |    |
+     * | | ) - performs full text search of text by columns.               |    |
+     * | | For all options you can pass a full-text search modifier.       |    |
+     * | | Modifiers are passed from the FullTextSearchModifiers class.    |    |
+     * | | If you don't pass a third argument, the NATURAL_LANGUAGE_MODE   |    |
+     * | | modifier is used by default.                                    |    |
+     * | | The following modifiers exist.                                  |    |
+     * | | NATURAL_LANGUAGE_MODE - natural language full-text search       |    |
+     * | | interprets the search string as a free text (natural human      |    |
+     * | | language). So there are no special characters here except "     |    |
+     * | | (double quote). For each row in the table, mode returns a       |    |
+     * | | relevance value, that is, a similarity measure between the      |    |
+     * | | search string (given as the argument to function) and the text  |    |
+     * | | in that row in specified columns.                               |    |
+     * | | WITH_QUERY_EXPANSION - with query expansion (also known as      |    |
+     * | | automatic relevance feedback or blind query expansion) search   |    |
+     * | | interprets the search string when a search phrase is too short  |    |
+     * | | which often means that the user is relying on implied knowledge |    |
+     * | | that the full-text search engine lacks. For example, a user     |    |
+     * | | searching for “database” may really mean that “MySQL”,          |    |
+     * | | “Oracle”, “DB2”, and “RDBMS” all are phrases that should match  |    |
+     * | | “databases” and should be returned, too. This is implied        |    |
+     * | | knowledge. Blind query expansion (also known as automatic       |    |
+     * | | relevance feedback) is enabled by adding WITH_QUERY_EXPANSION   |    |
+     * | | or NATURAL_LANGUAGE_MODE_WITH_QUERY_EXPANSION following the     |    |
+     * | | search phrase. It works by performing the search twice, where   |    |
+     * | | the search phrase for the second search is the original search  |    |
+     * | | phrase concatenated with the few most highly relevant documents |    |
+     * | | from the first search. Thus, if one of these documents contains |    |
+     * | | the word “databases” and the word “MySQL”, the second search    |    |
+     * | | finds the documents that contain the word “MySQL” even if they  |    |
+     * | | do not contain the word “database”.                             |    |
+     * | | BOOLEAN_MODE - a boolean search interprets the search string    |    |
+     * | | using the rules of a special query language. The string         |    |
+     * | | contains the words to search for. It can also contain operators |    |
+     * | | that specify requirements such that a word must be present or   |    |
+     * | | absent in matching rows, or that it should be weighted higher   |    |
+     * | | or lower than usual. Certain common words (stop words) are      |    |
+     * | | omitted from the search index and do not match if present in    |    |
+     * | | the search string.                                              |    |
+     * | | Do not use the 50% threshold that applies to MyISAM search      |    |
+     * | | indexes.                                                        |    |
+     * | | Do not automatically sort rows in order of decreasing           |    |
+     * | | relevance.                                                      |    |
+     * | | Boolean queries against a MyISAM search index can work even     |    |
+     * | | without a full-text index.                                      |    |
+     * | | The minimum and maximum word length full-text parameters        |    |
+     * | | apply:                                                          |    |
+     * | | For InnoDB search indexes, innodb_ft_min_token_size and         |    |
+     * | | innodb_ft_max_token_size.                                       |    |
+     * | | For MyISAM search indexes, ft_min_word_len and ft_max_word_len. |    |
+     * | | InnoDB full-text search does not support the use of multiple    |    |
+     * | | operators on a single search word.                              |    |
+     * | | The boolean full-text search supports the following operators:  |    |
+     * | | (no operator) - By default, the word is optional, but the rows  |    |
+     * | | that contain it are rated higher.                               |    |
+     * | | + - A leading plus sign indicates that a word must be present   |    |
+     * | | in each row that is returned.                                   |    |
+     * | | - - A leading minus sign indicates that a particular word must  |    |
+     * | | not be present in any of the rows that are returned. The "-"    |    |
+     * | | operator acts only to exclude rows that are otherwise matched   |    |
+     * | | by other search terms.                                          |    |
+     * | | > < - These two operators are used to change a word's           |    |
+     * | | contribution to the relevance value that is assigned to a       |    |
+     * | | row. The > operator increases the contribution and the <        |    |
+     * | | operator decreases it.                                          |    |
+     * | | ( ) - Parentheses group words into subexpressions.              |    |
+     * | | Parenthesized groups can be nested.                             |    |
+     * | | ~ - A leading tilde acts as a negation operator, causing the    |    |
+     * | | word's contribution to the row's relevance to be negative.      |    |
+     * | | * - The asterisk serves as the truncation (or wildcard)         |    |
+     * | | operator. Unlike the other operators, it is appended to the     |    |
+     * | | word to be affected. Words match if they begin with the word    |    |
+     * | | preceding the * operator.                                       |    |
+     * | | " - A phrase that is enclosed within double quote (“"”)         |    |
+     * | | characters matches only rows that contain the phrase literally, |    |
+     * | | as it was typed.                                                |    |
+     * | -------------------------------------------------------------------    |
+     * | ------- The below variations only for Postgre SQL DB driver -------    |
+     * |
+     * | -------------------------------------------------------------------    |
+     * |                                                                        |
+     * --------------------------------------------------------------------------
      * @param string|array $column
      * @param string $value
      * @param string $searchModifier
@@ -1341,7 +1372,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
                                   string|int|array $normalizationBitmask = 32
     ): self
     {
-        if ($this->getDriver() !== AvailableDbmsDrivers::MYSQL) {
+        if ($this->getDriverName() !== AvailableDbmsDrivers::MYSQL) {
             $reflectionClass = new ReflectionClass(FullTextSearchModifiers::class);
 
             if ($this->checkMatching($searchModifier, $reflectionClass->getConstants())) {
@@ -1361,6 +1392,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
+
+
+
+
 
     public function whereJsonContains(string $column, string|array $value): self
     {

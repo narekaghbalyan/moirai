@@ -42,7 +42,7 @@ class QueryBuilder
      */
     public function __construct()
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = new PostgreSqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -800,25 +800,19 @@ class QueryBuilder
         switch ($this->getDriverName()) {
             case AvailableDbmsDrivers::MARIADB:
             case AvailableDbmsDrivers::MYSQL:
+                $this->throwExceptionIfFtsModifierIsInvalid($searchModifier);
+
                 if (!is_array($column)) {
                     $column = [$column];
                 }
-
-                $column = $this->concludeBrackets(implode(', ', $this->wrapColumnInPita($column)));
-
-                $value = $this->wrapStringInPita($value);
-
-                $this->throwExceptionIfFtsModifierIsInvalid($searchModifier);
-
-                $value .= ' ' . $searchModifier;
 
                 $this->bind('where', [
                     $whereLogicalType,
                     $isNotCondition ? 'NOT' : '',
                     'MATCH',
-                    $column,
+                    $this->concludeBrackets(implode(', ', $this->wrapColumnInPita($column))),
                     'AGAINST',
-                    $this->concludeBrackets($value)
+                    $this->concludeBrackets($this->wrapStringInPita($value) . ' ' . $searchModifier)
                 ]);
 
                 break;
@@ -894,7 +888,7 @@ class QueryBuilder
                     }
 
                     if (!empty($searchModifier)) {
-                        $glowwormOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
+                        $glowwormOpenExpression .= $this->wrapStringInPita($searchModifier) . ',';
                     }
 
                     $glowworms = [];
@@ -917,7 +911,27 @@ class QueryBuilder
 
                     $glowworms = implode(', ', $glowworms);
 
-                    $this->bind('select', [$glowworms]);
+                    $selectBinding = $this->getBinding('select');
+
+                    $selectBindingLastKey = array_key_last($selectBinding);
+
+                    $collectedSelectedColumns = '';
+
+                    foreach ($selectBinding as $key => $bindingItem) {
+                        foreach ($bindingItem as $selectedColumns) {
+                            $collectedSelectedColumns .= $selectedColumns;
+                        }
+
+                        if ($key !== $selectBindingLastKey) {
+                            $collectedSelectedColumns .= ', ';
+                        }
+                    }
+
+                    if ($collectedSelectedColumns === '*') {
+                        $this->replaceBind('select', [$glowworms]);
+                    } else {
+                        $this->replaceBind('select', [$collectedSelectedColumns . ', ' . $glowworms]);
+                    }
                 }
 
                 if (!is_null($rankingColumn)) {
@@ -951,9 +965,7 @@ class QueryBuilder
 
                     $columnsForRankingByRelevance = [];
 
-                    foreach ($rankingColumn as $key => $item) {
-                        $itemName = $item;
-
+                    foreach ($rankingColumn as $item) {
                         $relevancyColumn = 'rank_' . $item;
 
                         $relevancyColumns[] = $relevancyColumn;
@@ -962,7 +974,7 @@ class QueryBuilder
                             $item = $this->concludeEntities(
                                 $this->wrapColumnInPita($item),
                                 'setweight(' . $valueOpenExpression,
-                                '), ' . $this->wrapStringInPita($weights[$itemName]) . ')'
+                                '), ' . $this->wrapStringInPita($weights[$item]) . ')'
                             );
                         } else {
                             $item = $this->concludeEntities(
@@ -983,10 +995,8 @@ class QueryBuilder
                         );
                     }
 
-                    $columnsForRankingByRelevance = implode(', ', $columnsForRankingByRelevance);
-
                     $this->bind('select', [
-                        $columnsForRankingByRelevance
+                        ', ' . trim(implode(', ', $columnsForRankingByRelevance))
                     ]);
 
                     $this->bind('orderBy', [
@@ -1149,8 +1159,6 @@ class QueryBuilder
                 $this->bind('where', [implode(' OR ', $containers)]);
 
                 $this->bind('orderBy', [implode(' DESC, ', $scores) . ' DESC']);
-
-                // TODO find a better option
 
                 break;
         }
@@ -2007,7 +2015,7 @@ class QueryBuilder
                 $query .= ' ' . $this->pickUpThePieces($binding) . ' ';
             } else {
                 if ($binding instanceof self) {
-                    $binding = $binding->pickUpThePieces($binding->bindings);
+                    $binding = $binding->pickUpThePieces($binding->getBindings());
                 } else {
                     if (!strpbrk($binding, '()`\'"[]')) {
                         $binding = strtoupper($binding);
