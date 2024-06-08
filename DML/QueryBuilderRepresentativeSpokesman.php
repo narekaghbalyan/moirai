@@ -1615,13 +1615,49 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies json item      |
+     * | value and passed value/values for equality (does the json element have |
+     * | this passed value/values ?).                                           |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | whereJsonContains('column', 'value')                            |    |
+     * | | whereJsonContains('column->nestedItem1->nestedItem2', 'value')  |    |
+     * | | - The below variations only for MySQL, PostgreSQL and MariaDB - |    |
+     * | | | whereJsonContains('column', ['value1', 'value2'])           | |    |
+     * | | | whereJsonContains(                                          | |    |
+     * | | |       'column->nestedItem1->nestedItem2',                   | |    |
+     * | | |       ['value1', 'value2']                                  | |    |
+     * | | | )                                                           | |    |
+     * | | --------------------------------------------------------------- |    |
+     * | -------------------------------------------------------------------    |
+     * | ---------------------------------------------------------------------- |
+     * | This clause only works for json type columns.                          |
+     * | This clause is supported by: MySQL 8.0+, PostgreSQL 12.0+, SQL Server  |
+     * | 2017+ and MariaDB.                                                     |
+     * | SQLite and Oracle does not support this clause.                        |
+     * | MS SQL Server does not support multiple values. As second argument you |
+     * | can pass one value without array or an array with one element and this |
+     * | element will be taken as the value.                                    |
+     * | MySQL, PostgreSQL and MariaDB support multiple values and you can pass |
+     * | array with several elements as second argument.                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|array $value
+     * @return $this
+     * @throws Exception
+     */
     public function whereJsonContains(string $column, string|array $value): self
     {
         $this->whereJsonContainsClauseBinder('', $column, $value);
 
         return $this;
     }
+
+
+
+
 
     public function whereJsonLength(string $column, string $operator, string|int|null $value = null): self
     {

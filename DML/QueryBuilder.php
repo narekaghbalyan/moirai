@@ -42,7 +42,7 @@ class QueryBuilder
      */
     public function __construct()
     {
-        $this->driver = new PostgreSqlDriver();
+        $this->driver = new MsSqlServerDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -1482,7 +1482,17 @@ class QueryBuilder
             }
         } else {
             if (is_array($value)) {
-                $value = $value[0];
+                if (count($value) > 1) {
+                    throw new Exception(
+                        'DriverInterface '
+                        . $this->getDriverName()
+                        . ' does not support multiple values when checking in json. You can\'t pass multiple values to 
+                    array in the second argument. You can pass one value without array or an array with one element and
+                    this element will be taken as the value.'
+                    );
+                } else {
+                    $value = $value[0];
+                }
             }
         }
 
@@ -1503,7 +1513,7 @@ class QueryBuilder
             AvailableDbmsDrivers::POSTGRESQL => $this->concludeBrackets(
                     $this->wrapColumnInPita($column) . $subsequence
                 ) . '::jsonb @> ' . $value,
-            AvailableDbmsDrivers::MSSQLSERVER => $value . ' IN ' . $this->concludeBrackets(
+            AvailableDbmsDrivers::MS_SQL_SERVER => $value . ' IN ' . $this->concludeBrackets(
                     'SELECT [VALUE] FROM OPENJSON'
                     . $this->concludeBrackets($this->wrapColumnInPita($column) . $subsequence)
                 ),
@@ -2254,7 +2264,6 @@ class QueryBuilder
     private function pickUpThePieces(array $bindings): string
     {
         $query = '';
-dd($bindings);
 
         foreach ($bindings as $bindingName => $binding) {
             if (empty($binding) && $binding !== 0) {

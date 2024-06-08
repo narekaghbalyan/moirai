@@ -214,7 +214,7 @@ trait ClauseBindersToolkit
         unset($sequence[0]);
 
         if (count($sequence) >= 1) {
-            $subsequence = match ($this->getDriver()) {
+            $subsequence = match ($this->getDriverName()) {
                 AvailableDbmsDrivers::POSTGRESQL => !$forUpdate
                     ? '->' . implode('->', $this->wrapStringInPita($sequence))
                     : ', ' . $this->wrapStringInPita(
@@ -417,6 +417,6 @@ trait ClauseBindersToolkit
      */
     protected function throwExceptionIfDriverNotSupportFunction(): void
     {
-        throw new Exception('DriverInterface ' . $this->getDriver() . ' does not support this function.');
+        throw new Exception('DriverInterface ' . $this->getDriverName() . ' does not support this function.');
     }
 }
