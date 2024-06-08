@@ -63,221 +63,47 @@ trait ClauseBindersToolkit
     /**
      * @return array
      */
-    protected function getBindings(): array
+    public function getBitwiseOperators(): array
     {
-        return $this->bindings;
+        return $this->bitwiseOperators;
+    }
+
+    /**
+     * @return array
+     */
+    public function getLogicalOperators(): array
+    {
+        return $this->logicalOperators;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOrderDirections(): array
+    {
+        return $this->orderDirections;
+    }
+
+    /**
+     * @return array
+     */
+    public function getJoinTypes(): array
+    {
+        return $this->joinTypes;
     }
 
     /**
      * @param string $bindingName
-     * @return mixed
-     */
-    protected function getBinding(string $bindingName): mixed
-    {
-        return $this->bindings[$bindingName];
-    }
-
-    /**
+     * @param string $passedLogicalType
      * @return string
      */
-    protected function getTableBinding(): string
+    protected function resolveLogicalType(string $bindingName, string $passedLogicalType): string
     {
-        $fromBinding = $this->getBinding('from');
-
-        $table = null;
-
-        array_walk_recursive($fromBinding, function ($item) use (&$table) {
-            $table = $item;
-        });
-
-        return $table;
-    }
-
-    /**
-     * @param string $bindingName
-     * @param array $binding
-     */
-    protected function replaceBind(string $bindingName, array $binding): void
-    {
-        $this->bindings[$bindingName] = $binding;
-    }
-
-    /**
-     * @param string $bindingName
-     */
-    protected function devastateBinding(string $bindingName): void
-    {
-        $this->bindings[$bindingName] = [];
-    }
-
-    protected function devastateBindings(): void
-    {
-        $this->bindings = [];
-    }
-
-    protected function deleteBinding(string $bindingName): void
-    {
-        unset($this->bindings[$bindingName]);
-    }
-
-    protected function resetBindingsToDefault(): void
-    {
-        $this->bindings = [
-            'select' => [],
-            'from' => [],
-            'join' => [],
-            'where' => [],
-            'union' => [],
-            'groupBy' => [],
-            'having' => [],
-            'orderBy' => [],
-            'unionOrder' => [],
-            'limit' => [],
-            'offset' => []
-        ];
-    }
-
-    /**
-     * @param string $bindingName
-     * @param string $bindingNewName
-     * @throws \Exception
-     */
-    protected function renameBinding(string $bindingName, string $bindingNewName): void
-    {
-        if (!array_key_exists($bindingName, $this->bindings)) {
-            throw new Exception('Binding called "' . $bindingName . '" doesnt exist.');
+        if (!empty($passedLogicalType)) {
+            return $passedLogicalType;
         }
 
-        $keys = array_keys($this->bindings);
-
-        $keys[array_search($bindingName, $keys)] = $bindingNewName;
-
-        $this->bindings = array_combine($keys, $this->bindings);
-    }
-
-    /**
-     * @param string $bindingName
-     * @param array $binding
-     */
-    protected function bind(string $bindingName, array $binding): void
-    {
-        $this->bindings[$bindingName][] = $binding;
-    }
-
-    /**
-     * @param string $conditionType
-     * @param string $whereLogicalType
-     * @param string $column
-     * @param string $operator
-     * @param string|int|float $value
-     */
-    protected function bindInWhereBeforeCheckingForThePresenceOfJson(string $conditionType,
-                                                                     string $whereLogicalType,
-                                                                     string $column,
-                                                                     string $operator,
-                                                                     string|int|float $value): void
-    {
-        if (stristr($column, '->')) {
-            $fields = explode('->', $column);
-
-            $column = $fields[0];
-
-            unset($fields[0]);
-
-            $expression = match ($this->getDriverName()) {
-                AvailableDbmsDrivers::MARIADB,
-                AvailableDbmsDrivers::MYSQL => 'JSON_UNQUOTE' . $this->concludeBrackets(
-                        'JSON_EXTRACT'
-                        . $this->concludeBrackets(
-                            $this->wrapColumnInPita($column)
-                            . ', '
-                            . $this->wrapStringInPita(
-                                '$.'
-                                . implode('.', $this->concludeDoubleQuotes($fields))
-                            )
-                        )
-                    ),
-                AvailableDbmsDrivers::POSTGRESQL => $this->wrapColumnInPita($column)
-                    . '->'
-                    . implode('->>', $this->wrapStringInPita($fields)),
-                AvailableDbmsDrivers::ORACLE,
-                AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_VALUE'
-                    . $this->concludeBrackets(
-                        $this->wrapColumnInPita($column)
-                        . ', '
-                        . $this->wrapStringInPita(
-                            '$.'
-                            . implode('.', $this->wrapColumnInPita($fields))
-                        )
-                    ),
-                // Sqlite > 3.38.0
-                AvailableDbmsDrivers::SQLITE => 'JSON_EXTRACT' . $this->concludeBrackets(
-                        $this->wrapColumnInPita($column)
-                        . ', '
-                        . $this->wrapStringInPita(
-                            '$.'
-                            . implode('.', $this->concludeDoubleQuotes($fields))
-                        )
-                    )
-            };
-        } else {
-            $expression = $this->wrapColumnInPita($column);
-        }
-
-        $this->bind($conditionType, [
-            $whereLogicalType,
-            $expression,
-            $operator,
-            $this->solveValueWrappingInPita($value)
-        ]);
-    }
-
-    protected function changeQueryTypeToInsert(): void
-    {
-        $this->changeQueryType('insert');
-    }
-
-    protected function changeQueryTypeToUpdate(): void
-    {
-        $this->changeQueryType('update', false);
-    }
-
-    protected function changeQueryTypeToDelete(): void
-    {
-        $this->changeQueryType('delete', false, true);
-    }
-
-    protected function changeQueryTypeToTruncate(): void
-    {
-        $this->changeQueryType('truncate', false, false, true);
-    }
-
-    /**
-     * @param string $bindingName
-     * @param bool $useInto
-     * @param bool $useFrom
-     * @param bool $useTable
-     */
-    protected function changeQueryType(string $bindingName,
-                                       bool $useInto = true,
-                                       bool $useFrom = false,
-                                       bool $useTable = false): void
-    {
-        $table = $this->getBinding('from');
-
-        $this->bindings = [$bindingName => $table];
-
-        if ($useFrom) {
-            array_unshift($this->bindings[$bindingName], 'FROM');
-        }
-
-        if ($useInto) {
-            array_unshift($this->bindings[$bindingName], 'INTO');
-        }
-
-        if ($useTable) {
-            array_unshift($this->bindings[$bindingName], 'TABLE');
-        }
+         return !empty($this->getBinding($bindingName)) ? 'AND' : '';
     }
 
     /**

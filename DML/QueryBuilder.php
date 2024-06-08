@@ -56,6 +56,264 @@ class QueryBuilder
     }
 
     /**
+     * @return array
+     */
+    protected function getBindings(): array
+    {
+        return $this->bindings;
+    }
+
+    /**
+     * @param string $bindingName
+     * @return mixed
+     */
+    protected function getBinding(string $bindingName): mixed
+    {
+        return $this->bindings[$bindingName];
+    }
+
+    /**
+     * @return string
+     */
+    protected function getTableBinding(): string
+    {
+        $fromBinding = $this->getBinding('from');
+
+        $table = null;
+
+        array_walk_recursive($fromBinding, function ($item) use (&$table) {
+            $table = $item;
+        });
+
+        return $table;
+    }
+
+    /**
+     * @param string $bindingName
+     * @param array $binding
+     */
+    protected function replaceBind(string $bindingName, array $binding): void
+    {
+        $this->bindings[$bindingName] = $binding;
+    }
+
+    /**
+     * @param string $bindingName
+     * @param string $bindingNewName
+     * @throws \Exception
+     */
+    protected function renameBinding(string $bindingName, string $bindingNewName): void
+    {
+        if (!array_key_exists($bindingName, $this->bindings)) {
+            throw new Exception('Binding called "' . $bindingName . '" doesnt exist.');
+        }
+
+        $keys = array_keys($this->bindings);
+
+        $keys[array_search($bindingName, $keys)] = $bindingNewName;
+
+        $this->bindings = array_combine($keys, $this->bindings);
+    }
+
+    /**
+     * @param string $bindingName
+     * @param array $binding
+     */
+    protected function bind(string $bindingName, array $binding): void
+    {
+        $this->bindings[$bindingName][] = $binding;
+    }
+
+    /**
+     * @param string $conditionType
+     * @param string $whereLogicalType
+     * @param string $column
+     * @param string $operator
+     * @param string|int|float $value
+     */
+    protected function bindInWhereBeforeCheckingForThePresenceOfJson(string $conditionType,
+                                                                     string $whereLogicalType,
+                                                                     string $column,
+                                                                     string $operator,
+                                                                     string|int|float $value): void
+    {
+        if (stristr($column, '->')) {
+            $fields = explode('->', $column);
+
+            $column = $fields[0];
+
+            unset($fields[0]);
+
+            $expression = match ($this->getDriverName()) {
+                AvailableDbmsDrivers::MARIADB,
+                AvailableDbmsDrivers::MYSQL => 'JSON_UNQUOTE' . $this->concludeBrackets(
+                        'JSON_EXTRACT'
+                        . $this->concludeBrackets(
+                            $this->wrapColumnInPita($column)
+                            . ', '
+                            . $this->wrapStringInPita(
+                                '$.'
+                                . implode('.', $this->concludeDoubleQuotes($fields))
+                            )
+                        )
+                    ),
+                AvailableDbmsDrivers::POSTGRESQL => $this->wrapColumnInPita($column)
+                    . '->'
+                    . implode('->>', $this->wrapStringInPita($fields)),
+                AvailableDbmsDrivers::ORACLE,
+                AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_VALUE'
+                    . $this->concludeBrackets(
+                        $this->wrapColumnInPita($column)
+                        . ', '
+                        . $this->wrapStringInPita(
+                            '$.'
+                            . implode('.', $this->wrapColumnInPita($fields))
+                        )
+                    ),
+                // Sqlite > 3.38.0
+                AvailableDbmsDrivers::SQLITE => 'JSON_EXTRACT' . $this->concludeBrackets(
+                        $this->wrapColumnInPita($column)
+                        . ', '
+                        . $this->wrapStringInPita(
+                            '$.'
+                            . implode('.', $this->concludeDoubleQuotes($fields))
+                        )
+                    )
+            };
+        } else {
+            $expression = $this->wrapColumnInPita($column);
+        }
+
+        $this->bind($conditionType, [
+            $this->resolveLogicalType($conditionType, $whereLogicalType),
+            $expression,
+            $operator,
+            $this->solveValueWrappingInPita($value)
+        ]);
+    }
+
+    protected function changeQueryTypeToInsert(): void
+    {
+        $this->changeQueryType('insert');
+    }
+
+    protected function changeQueryTypeToUpdate(): void
+    {
+        $this->changeQueryType('update', false);
+    }
+
+    protected function changeQueryTypeToDelete(): void
+    {
+        $this->changeQueryType('delete', false, true);
+    }
+
+    protected function changeQueryTypeToTruncate(): void
+    {
+        $this->changeQueryType('truncate', false, false, true);
+    }
+
+    /**
+     * @param string $bindingName
+     * @param bool $useInto
+     * @param bool $useFrom
+     * @param bool $useTable
+     */
+    protected function changeQueryType(string $bindingName,
+                                       bool $useInto = true,
+                                       bool $useFrom = false,
+                                       bool $useTable = false): void
+    {
+        $table = $this->getBinding('from');
+
+        $this->bindings = [$bindingName => $table];
+
+        if ($useFrom) {
+            array_unshift($this->bindings[$bindingName], 'FROM');
+        }
+
+        if ($useInto) {
+            array_unshift($this->bindings[$bindingName], 'INTO');
+        }
+
+        if ($useTable) {
+            array_unshift($this->bindings[$bindingName], 'TABLE');
+        }
+    }
+
+    protected function resetBindingsToDefault(): void
+    {
+        $this->bindings = [
+            'select' => [],
+            'from' => [],
+            'join' => [],
+            'where' => [],
+            'union' => [],
+            'groupBy' => [],
+            'having' => [],
+            'orderBy' => [],
+            'unionOrder' => [],
+            'limit' => [],
+            'offset' => []
+        ];
+    }
+
+    protected function devastateBindings(): void
+    {
+        $this->bindings = [];
+    }
+
+    /**
+     * @param string $bindingName
+     */
+    protected function devastateBinding(string $bindingName): void
+    {
+        $this->bindings[$bindingName] = [];
+    }
+
+    /**
+     * @param string $bindingName
+     */
+    protected function deleteBinding(string $bindingName): void
+    {
+        unset($this->bindings[$bindingName]);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
      * @param bool $distinct
      * @param string|mixed ...$columns
      */
@@ -67,10 +325,21 @@ class QueryBuilder
             $flattenedColumns = implode(', ', $this->wrapColumnInPita($columns));
         }
 
-        $this->bind('select', [
-            $distinct ? 'DISTINCT' : '',
-            $flattenedColumns
-        ]);
+        $selectBinding = $this->getBinding('select');
+
+        if (!empty($selectBinding)) {
+            $this->replaceBind('select', [
+               [
+                   $distinct || $selectBinding[0][0] === 'DISTINCT' ? 'DISTINCT' : '',
+                   $selectBinding[0][1] . ', ' . $flattenedColumns
+               ]
+            ]);
+        } else {
+            $this->bind('select', [
+                $distinct ? 'DISTINCT' : '',
+                $flattenedColumns
+            ]);
+        }
     }
 
     /**
@@ -142,17 +411,7 @@ class QueryBuilder
             }
         }
 
-        $selectBinding = $this->getBinding('select');
-
-        if (!empty($selectBinding)) {
-            $selectBindingLastKey = array_key_last($selectBinding);
-
-            $this->bindings['select'][$selectBindingLastKey][
-                array_key_last($this->bindings['select'][$selectBindingLastKey])
-            ] .= ',';
-        }
-
-        $this->bind('select', [$aggregateFunction . $this->concludeBrackets($preparedColumn)]);
+        $this->selectClauseBinder(false, $aggregateFunction . $this->concludeBrackets($preparedColumn));
     }
 
     /**
@@ -642,7 +901,7 @@ class QueryBuilder
         }
 
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $this->wrapColumnInPita($column),
             $isNotCondition ? 'NOT' : '',
             'BETWEEN',
@@ -702,7 +961,7 @@ class QueryBuilder
                         }
 
                         $this->bind('where', [
-                            $whereLogicalType,
+                            $this->resolveLogicalType('where', $whereLogicalType),
                             $isNotCondition ? 'NOT' : '',
                             $this->wrapColumnInPita($key),
                             '=',
@@ -748,7 +1007,7 @@ class QueryBuilder
         }
 
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $isNotCondition ? 'NOT' : '',
             $this->wrapColumnInPita($firstColumn),
             $operator,
@@ -766,7 +1025,7 @@ class QueryBuilder
                                                bool $isNotCondition = false)
     {
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $isNotCondition ? 'NOT' : '',
             'EXISTS'
         ]);
@@ -807,7 +1066,7 @@ class QueryBuilder
                 }
 
                 $this->bind('where', [
-                    $whereLogicalType,
+                    $this->resolveLogicalType('where', $whereLogicalType),
                     $isNotCondition ? 'NOT' : '',
                     'MATCH',
                     $this->concludeBrackets(implode(', ', $this->wrapColumnInPita($column))),
@@ -836,7 +1095,7 @@ class QueryBuilder
                 if ($weighing) {
                     $weights = $column;
 
-                    array_walk($weights, function ($value, $key) use ($weights) {
+                    array_walk($weights, function ($value, $key) use (&$weights) {
                         $weights[$key] = strtoupper($value);
                     });
 
@@ -888,7 +1147,7 @@ class QueryBuilder
                     }
 
                     if (!empty($searchModifier)) {
-                        $glowwormOpenExpression .= $this->wrapStringInPita($searchModifier) . ',';
+                        $glowwormOpenExpression .= $this->wrapStringInPita($searchModifier) . ', ';
                     }
 
                     $glowworms = [];
@@ -909,29 +1168,7 @@ class QueryBuilder
                         );
                     }
 
-                    $glowworms = implode(', ', $glowworms);
-
-                    $selectBinding = $this->getBinding('select');
-
-                    $selectBindingLastKey = array_key_last($selectBinding);
-
-                    $collectedSelectedColumns = '';
-
-                    foreach ($selectBinding as $key => $bindingItem) {
-                        foreach ($bindingItem as $selectedColumns) {
-                            $collectedSelectedColumns .= $selectedColumns;
-                        }
-
-                        if ($key !== $selectBindingLastKey) {
-                            $collectedSelectedColumns .= ', ';
-                        }
-                    }
-
-                    if ($collectedSelectedColumns === '*') {
-                        $this->replaceBind('select', [$glowworms]);
-                    } else {
-                        $this->replaceBind('select', [$collectedSelectedColumns . ', ' . $glowworms]);
-                    }
+                    $this->selectClauseBinder(false, $glowworms);
                 }
 
                 if (!is_null($rankingColumn)) {
@@ -995,13 +1232,9 @@ class QueryBuilder
                         );
                     }
 
-                    $this->bind('select', [
-                        ', ' . trim(implode(', ', $columnsForRankingByRelevance))
-                    ]);
+                    $this->selectClauseBinder(false, $columnsForRankingByRelevance);
 
-                    $this->bind('orderBy', [
-                        implode(', ', $this->wrapColumnInPita($relevancyColumns)) . ' DESC'
-                    ]);
+                    $this->orderByClauseBinder($relevancyColumns, 'desc');
                 }
 
                 $tsVectors = $this->concludeEntities(
@@ -1021,7 +1254,7 @@ class QueryBuilder
                 }
 
                 $this->bind('where', [
-                    $whereLogicalType,
+                    $this->resolveLogicalType('where', $whereLogicalType),
                     $tsVectors,
                     '@@',
                     $value
@@ -1084,7 +1317,7 @@ class QueryBuilder
                 ]);
 
                 $this->bind('where', [
-                    $whereLogicalType, //?
+                    $this->resolveLogicalType('where', $whereLogicalType),
                     $column,
                     $isNotCondition ? 'NOT' : '',
                     'MATCH',
@@ -1092,9 +1325,11 @@ class QueryBuilder
                 ]);
 
                 break;
-            case AvailableDbmsDrivers::MSSQLSERVER:
+            case AvailableDbmsDrivers::MS_SQL_SERVER:
                 if (!is_array($column)) {
                     $column = [$column];
+                } else {
+                    $this->throwExceptionIfArrayAssociative($column);
                 }
 
                 $table = $this->getTableBinding();
@@ -1121,17 +1356,19 @@ class QueryBuilder
 
                 $this->replaceBind('from', [$rankingExpression]);
 
-                $this->bind('orderBy', [
+                $this->orderByClauseBinder(
                     $this->wrapColumnInPita('fts_table')
                     . '.'
-                    . $this->wrapColumnInPita('rank')
-                    . ' DESC'
-                ]);
+                    . $this->wrapColumnInPita('rank'),
+                    'desc'
+                );
 
                 break;
             case AvailableDbmsDrivers::ORACLE:
                 if (!is_array($column)) {
                     $column = [$column];
+                } else {
+                    $this->throwExceptionIfArrayAssociative($column);
                 }
 
                 $scores = [];
@@ -1154,11 +1391,14 @@ class QueryBuilder
                     $scores[] = 'SCORE' . $this->concludeBrackets($iterator);
                 }
 
-                $this->bind('select', [implode(', ', $scores)]);
+                $this->selectClauseBinder(false, $scores);
 
-                $this->bind('where', [implode(' OR ', $containers)]);
+                $this->bind('where', [
+                    $this->resolveLogicalType('where', $whereLogicalType),
+                    implode(' OR ', $containers)
+                ]);
 
-                $this->bind('orderBy', [implode(' DESC, ', $scores) . ' DESC']);
+                $this->orderByClauseBinder($scores, 'desc');
 
                 break;
         }
@@ -1186,7 +1426,7 @@ class QueryBuilder
         }
 
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $this->wrapColumnInPita($column),
             $isNotCondition ? 'NOT' : '',
             'IN',
@@ -1204,7 +1444,7 @@ class QueryBuilder
                                              bool $isNotCondition = false)
     {
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $this->wrapColumnInPita($column),
             'IS',
             $isNotCondition ? 'NOT' : '',
@@ -1270,7 +1510,7 @@ class QueryBuilder
         };
 
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $expression
         ]);
     }
@@ -1330,7 +1570,7 @@ class QueryBuilder
         $expression .= ' ' . $operator . ' ' . $value;
 
         $this->bind('where', [
-            $whereLogicalType,
+            $this->resolveLogicalType('where', $whereLogicalType),
             $expression
         ]);
     }
@@ -1371,6 +1611,20 @@ class QueryBuilder
 
                 $column = implode(', ', $this->wrapColumnInPita($column));
             }
+
+            $orderByBinding = $this->getBinding('orderBy');
+
+            if (!empty($orderByBinding)) {
+                $this->replaceBind('orderBy', [
+                    [
+                        $orderByBinding[0][0] . ', ' . $column . ' ' . ($needDirection ? $direction : ''),
+                    ]
+                ]);
+            } else {
+                $this->bind('orderBy', [
+                    $column . ' ' . ($needDirection ? $direction : '')
+                ]);
+            }
         } else {
             $randomExpression = match ($this->getDriverName()) {
                 AvailableDbmsDrivers::MARIADB,
@@ -1378,12 +1632,13 @@ class QueryBuilder
                 AvailableDbmsDrivers::POSTGRESQL,
                 AvailableDbmsDrivers::SQLITE => 'RANDOM()'
             };
-        }
 
-        $this->bind('orderBy', [
-            !$inRandomOrder ? $column : '',
-            !$inRandomOrder ? ($needDirection ? $direction : '') : $randomExpression
-        ]);
+            $this->replaceBind('orderBy', [
+                [
+                    $randomExpression
+                ]
+            ]);
+        }
     }
 
     protected function groupByClauseBinder(string|array ...$columns)
@@ -1434,7 +1689,9 @@ class QueryBuilder
 
     protected function getClause()
     {
-        return $this->executeQuery($this->pickUpThePieces($this->bindings));
+
+
+        return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
 
     // ODKU -> on duplicate key update
@@ -1997,6 +2254,7 @@ class QueryBuilder
     private function pickUpThePieces(array $bindings): string
     {
         $query = '';
+dd($bindings);
 
         foreach ($bindings as $bindingName => $binding) {
             if (empty($binding) && $binding !== 0) {

@@ -1235,37 +1235,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-    /*
-     * 0 (по умолчанию): длина документа не учитывается
-     * 1: ранг документа делится на 1 + логарифм длины документа
-     * 2: ранг документа делится на его длину
-     * 4: ранг документа делится на среднее гармоническое расстояние между блоками (это реализовано только в ts_rank_cd)
-     * 8: ранг документа делится на число уникальных слов в документе
-     * 16: ранг документа делится на 1 + логарифм числа уникальных слов в документе
-     * 32: ранг делится своё же значение + 1
-     */
-    /*
-     * -- PostgreSql --
-     * ->whereFullText('title', 'Some text');
-     * ->whereFullText(['title', 'description'], 'Some text');
-     * ->whereFullText('title', 'Some text', 'english'); -> lezun enq nshum vorpes 3rd argument
-     * ->whereFullText('title', 'Some text', 'english', true); -> highlithing enq miacnum
-     * ->whereFullText('title', 'Some text', 'english', true, 'title'); -> ranking column enq dnum
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, ['title', 'description]);ranking column enq dnum mi qani hat
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', 32); normalization bitmask enq dnum
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, 2]); normalization bitmask enq dnum
-     * ->whereFullText(['title', 'description'], 'Some text', '', false, '', [32, '2']); normalization bitmask enq dnum
-     * ->whereFullText(['title', 'description'], 'Some text', 'english', ['tag' => 'mark', 'MaxWords' => 10]); highliting arguments
-     *
-     */
-
-
-
     /**
      * --------------------------------------------------------------------------
-     * |
+     * | Clause for specifying conditions in a request. Performs a full-text    |
+     * | search for the specified text in the specified columns with or without |
+     * | the specified parameters.                                              |
      * | ------------------------------ Use cases ----------------------------- |
      * | ----------- The below variations only for MySQL DB driver ---------    |
      * | | whereFullText('column', 'Target text for search') - performs a  |    |
@@ -1274,86 +1248,334 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | |       ['column1', 'column2'],                                   |    |
      * | |       'Target text for search'                                  |    |
      * | | ) - performs full text search of text by columns.               |    |
-     * | | For all options you can pass a full-text search modifier.       |    |
+     * | | whereFullText(                                                  |    |
+     * | |       ['column1', 'column2'],                                   |    |
+     * | |       'Target text for search'                                  |    |
+     * | |        FullTextSearchModifiers::BOOLEAN_MODE                    |    |
+     * | | ) - performs full text search of text by columns.               |    |
+     * | | You can pass a full-text search modifier as third argument.     |    |
      * | | Modifiers are passed from the FullTextSearchModifiers class.    |    |
      * | | If you don't pass a third argument, the NATURAL_LANGUAGE_MODE   |    |
      * | | modifier is used by default.                                    |    |
      * | | The following modifiers exist.                                  |    |
-     * | | NATURAL_LANGUAGE_MODE - natural language full-text search       |    |
-     * | | interprets the search string as a free text (natural human      |    |
-     * | | language). So there are no special characters here except "     |    |
-     * | | (double quote). For each row in the table, mode returns a       |    |
-     * | | relevance value, that is, a similarity measure between the      |    |
-     * | | search string (given as the argument to function) and the text  |    |
-     * | | in that row in specified columns.                               |    |
-     * | | WITH_QUERY_EXPANSION - with query expansion (also known as      |    |
-     * | | automatic relevance feedback or blind query expansion) search   |    |
-     * | | interprets the search string when a search phrase is too short  |    |
-     * | | which often means that the user is relying on implied knowledge |    |
-     * | | that the full-text search engine lacks. For example, a user     |    |
-     * | | searching for “database” may really mean that “MySQL”,          |    |
-     * | | “Oracle”, “DB2”, and “RDBMS” all are phrases that should match  |    |
-     * | | “databases” and should be returned, too. This is implied        |    |
-     * | | knowledge. Blind query expansion (also known as automatic       |    |
-     * | | relevance feedback) is enabled by adding WITH_QUERY_EXPANSION   |    |
-     * | | or NATURAL_LANGUAGE_MODE_WITH_QUERY_EXPANSION following the     |    |
-     * | | search phrase. It works by performing the search twice, where   |    |
-     * | | the search phrase for the second search is the original search  |    |
-     * | | phrase concatenated with the few most highly relevant documents |    |
-     * | | from the first search. Thus, if one of these documents contains |    |
-     * | | the word “databases” and the word “MySQL”, the second search    |    |
-     * | | finds the documents that contain the word “MySQL” even if they  |    |
-     * | | do not contain the word “database”.                             |    |
-     * | | BOOLEAN_MODE - a boolean search interprets the search string    |    |
-     * | | using the rules of a special query language. The string         |    |
-     * | | contains the words to search for. It can also contain operators |    |
-     * | | that specify requirements such that a word must be present or   |    |
-     * | | absent in matching rows, or that it should be weighted higher   |    |
-     * | | or lower than usual. Certain common words (stop words) are      |    |
-     * | | omitted from the search index and do not match if present in    |    |
-     * | | the search string.                                              |    |
-     * | | Do not use the 50% threshold that applies to MyISAM search      |    |
-     * | | indexes.                                                        |    |
-     * | | Do not automatically sort rows in order of decreasing           |    |
-     * | | relevance.                                                      |    |
-     * | | Boolean queries against a MyISAM search index can work even     |    |
-     * | | without a full-text index.                                      |    |
-     * | | The minimum and maximum word length full-text parameters        |    |
-     * | | apply:                                                          |    |
-     * | | For InnoDB search indexes, innodb_ft_min_token_size and         |    |
-     * | | innodb_ft_max_token_size.                                       |    |
-     * | | For MyISAM search indexes, ft_min_word_len and ft_max_word_len. |    |
-     * | | InnoDB full-text search does not support the use of multiple    |    |
-     * | | operators on a single search word.                              |    |
-     * | | The boolean full-text search supports the following operators:  |    |
-     * | | (no operator) - By default, the word is optional, but the rows  |    |
-     * | | that contain it are rated higher.                               |    |
-     * | | + - A leading plus sign indicates that a word must be present   |    |
-     * | | in each row that is returned.                                   |    |
-     * | | - - A leading minus sign indicates that a particular word must  |    |
-     * | | not be present in any of the rows that are returned. The "-"    |    |
-     * | | operator acts only to exclude rows that are otherwise matched   |    |
-     * | | by other search terms.                                          |    |
-     * | | > < - These two operators are used to change a word's           |    |
-     * | | contribution to the relevance value that is assigned to a       |    |
-     * | | row. The > operator increases the contribution and the <        |    |
-     * | | operator decreases it.                                          |    |
-     * | | ( ) - Parentheses group words into subexpressions.              |    |
-     * | | Parenthesized groups can be nested.                             |    |
-     * | | ~ - A leading tilde acts as a negation operator, causing the    |    |
-     * | | word's contribution to the row's relevance to be negative.      |    |
-     * | | * - The asterisk serves as the truncation (or wildcard)         |    |
-     * | | operator. Unlike the other operators, it is appended to the     |    |
-     * | | word to be affected. Words match if they begin with the word    |    |
-     * | | preceding the * operator.                                       |    |
-     * | | " - A phrase that is enclosed within double quote (“"”)         |    |
-     * | | characters matches only rows that contain the phrase literally, |    |
-     * | | as it was typed.                                                |    |
+     * | |       NATURAL_LANGUAGE_MODE - natural language full-text        |    |
+     * | |       search interprets the search string as a free text        |    |
+     * | |       (natural human language). So there are no special         |    |
+     * | |       characters here except " (double quote). For each row in  |    |
+     * | |       the table, mode returns a relevance value, that is, a     |    |
+     * | |       similarity measure between the search string (given as    |    |
+     * | |       the argument to function) and the text in that row in     |    |
+     * | |       specified columns.                                        |    |
+     * | |                                                                 |    |
+     * | |       WITH_QUERY_EXPANSION - with query expansion (also known   |    |
+     * | |       as automatic relevance feedback or blind query expansion) |    |
+     * | |       search interprets the search string when a search phrase  |    |
+     * | |       is too short which often means that the user is relying   |    |
+     * | |       on implied knowledge that the full-text search engine     |    |
+     * | |       lacks. For example, a user searching for “database” may   |    |
+     * | |       really mean that “MySQL”, “Oracle”, “DB2”, and “RDBMS”    |    |
+     * | |       all are phrases that should match “databases” and should  |    |
+     * | |       be returned, too. This is implied knowledge. Blind query  |    |
+     * | |       expansion (also known as automatic relevance feedback) is |    |
+     * | |       enabled by adding WITH_QUERY_EXPANSION or                 |    |
+     * | |       NATURAL_LANGUAGE_MODE_WITH_QUERY_EXPANSION following the  |    |
+     * | |       search phrase. It works by performing the search twice,   |    |
+     * | |       where the search phrase for the second search is the      |    |
+     * | |       original search phrase concatenated with the few most     |    |
+     * | |       highly relevant documents from the first search. Thus, if |    |
+     * | |       one of these documents contains the word “databases” and  |    |
+     * | |       the word “MySQL”, the second search finds the documents   |    |
+     * | |       that contain the word “MySQL” even if they  do not        |    |
+     * | |       contain the word “database”.                              |    |
+     * | |                                                                 |    |
+     * | |       BOOLEAN_MODE - a boolean search interprets the search     |    |
+     * | |       string using the rules of a special query language.       |    |
+     * | |       The string contains the words to search for. It can       |    |
+     * | |       also contain operators that specify requirements such     |    |
+     * | |       that a word must be present or absent in matching rows,   |    |
+     * | |       or that it should be weighted higher or lower than usual. |    |
+     * | |       Certain common words (stop words) are omitted from the    |    |
+     * | |       search index and do not match if present in the search    |    |
+     * | |       string. Do not use the 50% threshold that applies to      |    |
+     * | |       MyISAM search indexes.                                    |    |
+     * | |       Do not automatically sort rows in order of decreasing     |    |
+     * | |       relevance.                                                |    |
+     * | |       Boolean queries against a MyISAM search index can work    |    |
+     * | |       even without a full-text index.                           |    |
+     * | |       The minimum and maximum word length full-text parameters  |    |
+     * | |       apply:                                                    |    |
+     * | |       For InnoDB search indexes, innodb_ft_min_token_size and   |    |
+     * | |       innodb_ft_max_token_size.                                 |    |
+     * | |       For MyISAM search indexes, ft_min_word_len and            |    |
+     * | |       ft_max_word_len. InnoDB full-text search does not support |    |
+     * | |       the use of multiple operators on a single search word.    |    |
+     * | |       The boolean full-text search supports the following       |    |
+     * | |       operators:                                                |    |
+     * | |              (no operator) - By default, the word is optional,  |    |
+     * | |              but the rows that contain it are rated higher.     |    |
+     * | |                                                                 |    |
+     * | |              + - A leading plus sign indicates that a word must |    |
+     * | |              be present in each row that is returned.           |    |
+     * | |                                                                 |    |
+     * | |              - - A leading minus sign indicates that a          |    |
+     * | |              particular word must not be present in any of      |    |
+     * | |              the rows that are returned. The "-" operator acts  |    |
+     * | |              only to exclude rows that are otherwise matched    |    |
+     * | |              by other search terms.                             |    |
+     * | |                                                                 |    |
+     * | |              > < - These two operators are used to change a     |    |
+     * | |              word's contribution to the relevance value that is |    |
+     * | |              assigned to a row. The > operator increases the    |    |
+     * | |              contribution and the < operator decreases it.      |    |
+     * | |                                                                 |    |
+     * | |              ( ) - Parentheses group words into subexpressions. |    |
+     * | |              Parenthesized groups can be nested.                |    |
+     * | |                                                                 |    |
+     * | |              ~ - A leading tilde acts as a negation operator,   |    |
+     * | |              causing the word's contribution to the row's       |    |
+     * | |              relevance to be negative.                          |    |
+     * | |                                                                 |    |
+     * | |              * - The asterisk serves as the truncation          |    |
+     * | |              (or wildcard) operator. Unlike the other           |    |
+     * | |              operators, it is appended to the word to be        |    |
+     * | |              affected. Words match if they begin with the word  |    |
+     * | |              preceding the * operator.                          |    |
+     * | |                                                                 |    |
+     * | |              " - A phrase that is enclosed within double quote  |    |
+     * | |              (“"”) characters matches only rows that contain    |    |
+     * | |              the phrase literally, as it was typed.             |    |
+     * | |              The remaining arguments, even if you specify them, |    |
+     * | |              will not be used.                                  |    |
      * | -------------------------------------------------------------------    |
-     * | ------- The below variations only for Postgre SQL DB driver -------    |
-     * |
+     * | ------- The below variations only for PostgreSQL DB driver --------    |
+     * | | Third argument (searchModifier) - as search modifier you can    |    |
+     * | | pass a language name. If you do not specify this argument or    |    |
+     * | | specify an empty string, the language will not be listed for    |    |
+     * | | full-text search.                                               |    |
+     * | |                                                                 |    |
+     * | | Fourth argument (highlighting) - highlighting search words in   |    |
+     * | | text. If you set true this argument or pass array with          |    |
+     * | | highlighting configs (which implies that you have enabled       |    |
+     * | | highlighting), function accepts a  document along with a query, |    |
+     * | | and returns an excerpt from the document in which terms from    |    |
+     * | | the query are highlighted. Specifically, the function will use  |    |
+     * | | the query to select relevant text fragments, and then highlight |    |
+     * | | all words that appear in the query, even if those word          |    |
+     * | | positions do not match the query's restrictions.                |    |
+     * | | If you passed an array with configurations, then they will be   |    |
+     * | | used, and if not (you passed just true), then the default will  |    |
+     * | | be used default_text_search_config configuration.               |    |
+     * | |       MaxWords, MinWords (integers): these numbers determine    |    |
+     * | |       the longest and shortest headlines to output. The default |    |
+     * | |       values are 35 and 15.                                     |    |
+     * | |                                                                 |    |
+     * | |       ShortWord (integer): words of this length or less will    |    |
+     * | |       be dropped at the start and end of a headline, unless     |    |
+     * | |       they are query terms. The default value of three          |    |
+     * | |       eliminates common English articles.                       |    |
+     * | |                                                                 |    |
+     * | |       HighlightAll (boolean): if true the whole document        |    |
+     * | |       will be used as the headline, ignoring the preceding      |    |
+     * | |       three parameters. The default is false.                   |    |
+     * | |                                                                 |    |
+     * | |       MaxFragments (integer): maximum number of text            |    |
+     * | |       fragments to display. The default value of zero selects   |    |
+     * | |       a non-fragment-based headline generation method. A value  |    |
+     * | |       greater than zero selects fragment-based headline         |    |
+     * | |       generation (see below).                                   |    |
+     * | |                                                                 |    |
+     * | |       StartSel, StopSel (strings): the strings with which       |    |
+     * | |       to delimit query words appearing in the document, to      |    |
+     * | |       distinguish them from other excerpted words. The default  |    |
+     * | |       values are “<b>” and “</b>”, which can be suitable for    |    |
+     * | |       HTML output.                                              |    |
+     * | |                                                                 |    |
+     * | |       FragmentDelimiter (string): When more than one fragment   |    |
+     * | |       is displayed, the fragments will be separated by this     |    |
+     * | |       string. The default is “ ... ”.                           |    |
+     * | | Examples:                                                       |    |
+     * | |       whereFullText(                                            |    |
+     * | |              column or columns array,                           |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string'                    |    |
+     * | |              true                                               |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | |       whereFullText(                                            |    |
+     * | |              column or columns array,                           |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string'                    |    |
+     * | |              ['Tag' => 'mark', 'MaxWords' => 10]                |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | | Fifth argument (rankingColumn) - you can specify a column or    |    |
+     * | | several columns by which search results will be ranked. If you  |    |
+     * | | specify a column or columns for this argument, they must be     |    |
+     * | | included in the first argument.                                 |    |
+     * | | You can also pass weights for columns, they should be passed in |    |
+     * | | the first argument as an associative array. Weights offers the  |    |
+     * | | ability to weigh word instances more or less heavily depending  |    |
+     * | | on how they are labeled. The weight arrays specify how heavily  |    |
+     * | | to weigh each category of word, in the order.                   |    |
+     * | | Typically weights are used to mark words from special areas of  |    |
+     * | | the document, like the title or an initial abstract, so they    |    |
+     * | | can be treated with more or less importance than words in the   |    |
+     * | | document body.                                                  |    |
+     * | | Weights:                                                        |    |
+     * | |       A, B, C, D (also you can specify the weights in           |    |
+     * | |       lowercase)                                                |    |
+     * | | If you specified a weight for at least one column, then you     |    |
+     * | | must indicate the weights for all because when even one weight  |    |
+     * | | is specified, the function understands that this is an array    |    |
+     * | | with weights and it must validate all the weights, and if at    |    |
+     * | | least one column does not have a weight, then during validation |    |
+     * | | when the function reaches this column and validates an empty    |    |
+     * | | string, it will find that there is no such value for weight in  |    |
+     * | | PostgreSQL and throw an exception.                              |    |
+     * | | But if you want to give weight to one of several columns and    |    |
+     * | | use it for ranking and not use the other for ranking, then you  |    |
+     * | | can give weight to both columns to avoid exceptions and in the  |    |
+     * | | fifth argument use only those columns that you need. in this    |    |
+     * | | case the weights of the columns that are not used in ranked     |    |
+     * | | will be skipped.                                                |    |
+     * | | Ranking attempts to measure how relevant documents are to a     |    |
+     * | | particular query, so that when there are many matches the most  |    |
+     * | | relevant ones can be shown first. Ranking functions, take into  |    |
+     * | | account lexical, proximity, and structural information, that    |    |
+     * | | is, they consider how often the query terms appear in the       |    |
+     * | | document, how close together the terms are in the document,     |    |
+     * | | and how important is the part of the document where they occur. |    |
+     * | | This function requires lexeme positional information to perform |    |
+     * | | its calculation. Therefore, it ignores any “stripped” lexemes   |    |
+     * | | in the ts_vector. If there are no un-stripped lexemes in the    |    |
+     * | | input, the result will be zero.                                 |    |
+     * | | Examples:                                                       |    |
+     * | |       whereFullText(                                            |    |
+     * | |              'column1',                                         |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string',                   |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              'column1'                                          |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | |       whereFullText(                                            |    |
+     * | |              ['column1', 'column2'],                            |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string',                   |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              'column1'                                          |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | |       whereFullText(                                            |    |
+     * | |              ['column1', 'column2', 'column3'],                 |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string',                   |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              ['column1', 'column2']                             |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | |       whereFullText(                                            |    |
+     * | |              ['column1' => 'A', 'column2' => 'B'],              |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string',                   |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              ['column1', 'column2']                             |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | |       whereFullText(                                            |    |
+     * | |              ['column1' => 'A', 'column2' => 'B'],              |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string',                   |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              'column1'                                          |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | | Sixth argument (normalization bitmask) - you can specify an     |    |
+     * | | normalization option as integer or array that specifies whether |    |
+     * | | and how a document's length should impact its rank. The integer |    |
+     * | | option controls several behaviors, so it is a bit mask. You can |    |
+     * | | specify one or more behaviors (normalization bitmasks) using    |    |
+     * | | array.                                                          |    |
+     * | | You can also specify the normalization bitmask (just bitmask or |    |
+     * | | elements array of bitmasks) elements as string instead of       |    |
+     * | | integer type values.                                            |    |
+     * | | Normalization bitmasks:                                         |    |
+     * | |       0 - ignores the document length.                          |    |
+     * | |                                                                 |    |
+     * | |       1 - divides the rank by 1 + the logarithm of the document |    |
+     * | |       length.                                                   |    |
+     * | |                                                                 |    |
+     * | |       2 - divides the rank by the document length.              |    |
+     * | |                                                                 |    |
+     * | |       4 - divides the rank by the mean harmonic distance        |    |
+     * | |       between extents.                                          |    |
+     * | |                                                                 |    |
+     * | |       8 - divides the rank by the number of unique words in     |    |
+     * | |       document.                                                 |    |
+     * | |                                                                 |    |
+     * | |       16 - divides the rank by 1 + the logarithm of the number  |    |
+     * | |       of unique words in document.                              |    |
+     * | |                                                                 |    |
+     * | |       32 - divides the rank by itself + 1.                      |    |
+     * | | If you do not specify a bitmask, the default will be a          |    |
+     * | | 32 bitmask.                                                     |    |
+     * | | If more than one flag bit is specified, the transformations are |    |
+     * | | applied in the order listed.                                    |    |
+     * | | If you do not specify fifth argument (rankingColumn) (specify   |    |
+     * | | as null) then normalization masks will not be used.             |    |
+     * | | Examples:                                                       |    |
+     * | |       whereFullText(                                            |    |
+     * | |              column or columns array,                           |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string'                    |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              column or columns for ranking,                     |    |
+     * | |              4                                                  |    |
+     * | |       )                                                         |    |
+     * | |                                                                 |    |
+     * | |       whereFullText(                                            |    |
+     * | |              column or columns array,                           |    |
+     * | |              'Target text for search',                          |    |
+     * | |              'language name or empty string'                    |    |
+     * | |              highlighting true, false or configs array,         |    |
+     * | |              column or columns for ranking,                     |    |
+     * | |              [4, 32, 0, ...]                                    |    |
+     * | |       )                                                         |    |
      * | -------------------------------------------------------------------    |
-     * |                                                                        |
+     * | --------- The below variations only for SQLite DB driver ----------    |
+     * | | whereFullText('column', 'Target text for search') - performs a  |    |
+     * | | full-text search of text by column.                             |    |
+     * | | whereFullText(                                                  |    |
+     * | |       ['column1', 'column2'],                                   |    |
+     * | |       'Target text for search'                                  |    |
+     * | | ) - performs full text search of text by columns.               |    |
+     * | | The remaining arguments, even if you specify them, will not be  |    |
+     * | | used.                                                           |    |
+     * | -------------------------------------------------------------------    |
+     * | ----- The below variations only for MS SQL Server DB driver -------    |
+     * | | whereFullText('column', 'Target text for search') - performs a  |    |
+     * | | full-text search of text by column.                             |    |
+     * | | whereFullText(                                                  |    |
+     * | |       ['column1'],                                              |    |
+     * | |       'Target text for search'                                  |    |
+     * | | ) - performs a full text search of text by column.              |    |
+     * | | You cannot specify more than one column. If the first argument  |    |
+     * | | is specified as an array and there are several elements in it,  |    |
+     * | | then only the first element will be used and all others will be |    |
+     * | | skipped.                                                        |    |
+     * | | The remaining arguments, even if you specify them, will not be  |    |
+     * | | used.                                                           |    |
+     * | -------------------------------------------------------------------    |
+     * | --------- The below variations only for Oracle DB driver ----------    |
+     * | | whereFullText('column', 'Target text for search') - performs a  |    |
+     * | | full-text search of text by column.                             |    |
+     * | | whereFullText(                                                  |    |
+     * | |       ['column1', 'column2'],                                   |    |
+     * | |       'Target text for search'                                  |    |
+     * | | ) - performs full text search of text by columns.               |    |
+     * | | The remaining arguments, even if you specify them, will not be  |    |
+     * | | used.                                                           |    |
+     * | -------------------------------------------------------------------    |
      * --------------------------------------------------------------------------
      * @param string|array $column
      * @param string $value
@@ -1392,9 +1614,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 
         return $this;
     }
-
-
-
 
 
     public function whereJsonContains(string $column, string|array $value): self
