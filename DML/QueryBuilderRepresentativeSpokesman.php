@@ -1705,24 +1705,29 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-
-
-
-
-
-
-
-
-    /*
-     * ->orderBy('a', 'DESC')
-     * ->orderBy('a', 'desc')
-     * ->orderBy('a', 'asc')
-     * ->orderBy(['a', 'b'], 'asc')
-     * ->orderBy(['a' => 'asc', 'b' => 'desc'])
-     */
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for sort the results of the query by a given column.            |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | orderBy('column') - the default "asc" direction will be used if      |
+     * | | you do not specify a second argument and the first argument is not   |
+     * | | an associative array of the form column => direction.                |
+     * | | orderBy('column', 'direction (desc or asc for example)')             |
+     * | | orderBy(                                                             |
+     * | |       ['column1', 'column2'],                                        |
+     * | |       'direction (desc or asc for example)'                          |
+     * | | ) - the direction specified in the second argument will be used for  |
+     * | | all columns listed in the first argument.                            |
+     * | | orderBy(                                                             |
+     * | |       [                                                              |
+     * | |              'column1' => 'direction (desc or asc for example)',     |
+     * | |              'column2' => 'direction (desc or asc for example)'      |
+     * | |       ]                                                              |
+     * | | ) - If you specify an associative array (column => direction) in the |
+     * | | first argument then the second argument will be ignored.             |
+     * | ---------------------------------------------------------------------- |
+     * | You can specify directions in any case.                                |
+     * --------------------------------------------------------------------------
      * @param string|array $column
      * @param string $direction
      * @return $this
