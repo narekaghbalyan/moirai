@@ -1651,11 +1651,31 @@ class QueryBuilder
         }
     }
 
+    /**
+     * @param string|mixed ...$columns
+     * @throws Exception
+     */
     protected function groupByClauseBinder(string|array ...$columns)
     {
-        $this->bind('groupBy', [
-            $this->wrapColumnInPita($columns)
-        ]);
+        if (empty($columns[array_key_first($columns)])) {
+            throw new Exception('"columns" can not be empty.');
+        }
+
+        $groupByBinding = $this->getBinding('groupBy');
+
+        $columns = implode(', ', $this->wrapColumnInPita($columns));
+
+        if (!empty($groupByBinding)) {
+            $this->replaceBind('groupBy', [
+                [
+                    $groupByBinding[0][0] . ', ' . $columns
+                ]
+            ]);
+        } else {
+            $this->bind('groupBy', [
+                $columns
+            ]);
+        }
     }
 
     // TODO integrate pgsql

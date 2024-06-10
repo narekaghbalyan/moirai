@@ -1812,8 +1812,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for grouping rows that have the same values into total rows by  |
+     * | specified column/columns.                                              |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | groupBy('column')                                                    |
+     * | | groupBy('column1', 'column2', ..., 'columnN')                        |
+     * | | groupBy(['column'])                                                  |
+     * | | groupBy(['column1', 'column2', ..., 'columnN'])                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
      * @return $this
+     * @throws Exception
      */
     public function groupBy(string|array ...$columns): self
     {
@@ -1823,6 +1834,25 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request.                         |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | having('column', '=', 'value')                                  |    |
+     * | | having('column', 'value') - this expression uses the "="        |    |
+     * | | operator for condition.                                         |    |
+     * | | having(['column', '=', 'value'])                                |    |
+     * | | having(['column' => 'value']) - this expression uses the "="    |    |
+     * | | operator for condition.                                         |    |
+     * | | having(['column1' => 'value1', 'column2' => 'value2']) - this   |    |
+     * | | expression uses the "=" operator for condition and logical      |    |
+     * | | "AND" operator for combine.                                     |    |
+     * | -------------------------------------------------------------------    |
+     * | The conditions in "having" are checked after grouping, so they are     |
+     * | specified after the "groupBy" clause. This is different from "where"   |
+     * | conditions, which are applied to rows in the source table before       |
+     * | grouping.                                                              |
+     * --------------------------------------------------------------------------
      * @param string|array $column
      * @param string|null $operator
      * @param string|null $value
