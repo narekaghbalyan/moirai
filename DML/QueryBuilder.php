@@ -1558,7 +1558,7 @@ class QueryBuilder
             $this->throwExceptionIfOperatorIsInvalid($operator);
         }
 
-        $subsequenceWithColumn = $this->devideSubsequenceFromSequence($column);
+        $subsequenceWithColumn = $this->divideSubsequenceFromSequence($column);
 
         $column = $subsequenceWithColumn['column'];
 
@@ -1572,7 +1572,7 @@ class QueryBuilder
             AvailableDbmsDrivers::POSTGRESQL => 'JSONB_ARRAY_LENGTH' . $this->concludeBrackets(
                     $this->concludeBrackets($subsequence) . '::jsonb'
                 ),
-            AvailableDbmsDrivers::MSSQLSERVER => $this->concludeBrackets(
+            AvailableDbmsDrivers::MS_SQL_SERVER => $this->concludeBrackets(
                 'SELECT COUNT(*) FROM OPENJSON' . $this->concludeBrackets($subsequence)
             )
         };

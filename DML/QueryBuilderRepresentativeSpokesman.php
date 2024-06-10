@@ -1655,16 +1655,65 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-
-
-
-
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause for specifying conditions in a request. Verifies the length of  |
+     * | a json array according to a condition.                                 |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | -- The below variations retrieves records that match a condition --    |
+     * | | whereJsonContains('column', '> or other operator' 'value')      |    |
+     * | | whereJsonContains(                                              |    |
+     * | |       'column->nestedItem1',                                    |    |
+     * | |       '> or other operator',                                    |    |
+     * | |       'value'                                                   |    |
+     * | | )                                                               |    |
+     * | | whereJsonContains('column', 'value') - this expression uses     |    |
+     * | | the "=" operator for condition.                                 |    |
+     * | | whereJsonContains('column->nestedItem1', 'value') - this        |    |
+     * | | expression uses the "=" operator for condition.                 |    |
+     * | |                                                                 |    |
+     * | | If instead of the second argument you specify not an operator   |    |
+     * | | but a value, then operator "=" will be used, and the second     |    |
+     * | | argument as the value, and in this case you should skip the     |    |
+     * | | third argument because if you also specify the third argument,  |    |
+     * | | then the function will consider that you passed the operator as |    |
+     * | | the second argument not a value and will validate this value as |    |
+     * | | an operator and if it is not in the list of operators then the  |    |
+     * | | function will throw an exception that you are using the wrong   |    |
+     * | | operator. to avoid this, you either must specify all 3          |    |
+     * | | arguments (the second is the operator, the third is the value)  |    |
+     * | | or pass the first two arguments, but pass the value as the      |    |
+     * | | second argument and not the operator, and in this case the      |    |
+     * | | operator "=" will be used.                                      |    |
+     * | -------------------------------------------------------------------    |
+     * | ---------------------------------------------------------------------- |
+     * | This clause only works for json type columns.                          |
+     * | This clause is supported by: MySQL 8.0+, PostgreSQL 12.0+, SQL Server  |
+     * | 2017+ and MariaDB.                                                     |
+     * | SQLite and Oracle does not support this clause.                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string $operator
+     * @param string|int|null $value
+     * @return $this
+     * @throws Exception
+     */
     public function whereJsonLength(string $column, string $operator, string|int|null $value = null): self
     {
         $this->whereJsonLengthClauseBinder('', $column, $operator, $value);
 
         return $this;
     }
+
+
+
+
+
+
+
+
+
+
 
     /*
      * ->orderBy('a', 'DESC')
