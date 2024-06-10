@@ -1752,6 +1752,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | You can specify an array of columns but the array cannot be            |
      * | associative if the array is associative then an exception will be      |
      * | thrown.                                                                |
+     * | The same as "orderBy" with second argument "desc".                     |
      * --------------------------------------------------------------------------
      * @param string|array $column
      * @return $this
@@ -1778,6 +1779,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | You can specify an array of columns but the array cannot be            |
      * | associative if the array is associative then an exception will be      |
      * | thrown.                                                                |
+     * | The same as "orderBy" with second argument "asc".                      |
      * --------------------------------------------------------------------------
      * @param string|array $column
      * @return $this
@@ -1793,6 +1795,12 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for sort the results in random order.                           |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | inRandomOrder()                                                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      * @throws Exception
      */
