@@ -1741,24 +1741,52 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for sort the results of the query by a given column (in         |
+     * | descending order).                                                     |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | latest('column')                                                     |
+     * | | latest(['column1', 'column2'])                                       |
+     * | ---------------------------------------------------------------------- |
+     * | The direction "desc" (descending order) will be used.                  |
+     * | You can specify an array of columns but the array cannot be            |
+     * | associative if the array is associative then an exception will be      |
+     * | thrown.                                                                |
+     * --------------------------------------------------------------------------
      * @param string|array $column
      * @return $this
      * @throws Exception
      */
     public function latest(string|array $column): self
     {
+        $this->throwExceptionIfArrayAssociative($column);
+
         $this->orderBy($column, 'desc');
 
         return $this;
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for sort the results of the query by a given column (in         |
+     * | ascending order).                                                      |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | oldest('column')                                                     |
+     * | | oldest(['column1', 'column2'])                                       |
+     * | ---------------------------------------------------------------------- |
+     * | The direction "asc" (ascending order) will be used.                    |
+     * | You can specify an array of columns but the array cannot be            |
+     * | associative if the array is associative then an exception will be      |
+     * | thrown.                                                                |
+     * --------------------------------------------------------------------------
      * @param string|array $column
      * @return $this
      * @throws Exception
      */
     public function oldest(string|array $column): self
     {
+        $this->throwExceptionIfArrayAssociative($column);
+
         $this->orderBy($column);
 
         return $this;
