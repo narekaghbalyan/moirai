@@ -1869,6 +1869,20 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     // TODO having between
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for specify the number of records to return.                    |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | limit('5 for example or any count')                                  |
+     * | | limit('5 for example or any count', true) - if you pass the second   |
+     * | | argument as true (by default it is false) then percentage mode is    |
+     * | | enabled. That is, the number in the first argument will indicate not |
+     * | | the number of records but the percentage of records from the total   |
+     * | | amount. That is, if you specified 5 in first argument and the second |
+     * | | argument is true, then the query will return 5% of the records       |
+     * | | instead of five records. This feature only for Oracle DB driver.     |
+     * | | Other DB drivers do not support this feature.                        |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param int $count
      * @param bool $inPercentages
      * @return $this
@@ -1882,6 +1896,41 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for specify the number of records to return.                    |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | take('5 for example or any count')                                   |
+     * | | take('5 for example or any count', true) - if you pass the second    |
+     * | | argument as true (by default it is false) then percentage mode is    |
+     * | | enabled. That is, the number in the first argument will indicate not |
+     * | | the number of records but the percentage of records from the total   |
+     * | | amount. That is, if you specified 5 in first argument and the second |
+     * | | argument is true, then the query will return 5% of the records       |
+     * | | instead of five records. This feature only for Oracle DB driver.     |
+     * | | Other DB drivers do not support this feature.                        |
+     * | ---------------------------------------------------------------------- |
+     * | The same as "limit".                                                   |
+     * --------------------------------------------------------------------------
+     * @param int $count
+     * @param bool $inPercentages
+     * @return $this
+     * @throws Exception
+     */
+    public function take(int $count, bool $inPercentages = false): self
+    {
+        $this->limit($count, $inPercentages);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause for skipping some count of records. The offset construct        |
+     * | indicates how many records to skip.                                    |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | offset('5 for example or any count')                                 |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param int $count
      * @return $this
      */
@@ -1893,25 +1942,20 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for skipping some count of records. The skip construct          |
+     * | indicates how many records to skip.                                    |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | | skip('5 for example or any count')                                   |
+     * | ---------------------------------------------------------------------- |
+     * | The same as "offset".                                                  |
+     * --------------------------------------------------------------------------
      * @param int $count
      * @return $this
      */
     public function skip(int $count): self
     {
         $this->offset($count);
-
-        return $this;
-    }
-
-    /**
-     * @param int $count
-     * @param bool $inPercentages
-     * @return $this
-     * @throws Exception
-     */
-    public function take(int $count, bool $inPercentages = false): self
-    {
-        $this->limit($count, $inPercentages);
 
         return $this;
     }
