@@ -1709,22 +1709,22 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause for sort the results of the query by a given column.            |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | orderBy('column') - the default "asc" direction will be used if      |
-     * | | you do not specify a second argument and the first argument is not   |
-     * | | an associative array of the form column => direction.                |
-     * | | orderBy('column', 'direction (desc or asc for example)')             |
-     * | | orderBy(                                                             |
-     * | |       ['column1', 'column2'],                                        |
-     * | |       'direction (desc or asc for example)'                          |
-     * | | ) - the direction specified in the second argument will be used for  |
-     * | | all columns listed in the first argument.                            |
-     * | | orderBy(                                                             |
-     * | |       [                                                              |
-     * | |              'column1' => 'direction (desc or asc for example)',     |
-     * | |              'column2' => 'direction (desc or asc for example)'      |
-     * | |       ]                                                              |
-     * | | ) - If you specify an associative array (column => direction) in the |
-     * | | first argument then the second argument will be ignored.             |
+     * | orderBy('column') - the default "asc" direction will be used if        |
+     * | you do not specify a second argument and the first argument is not     |
+     * | an associative array of the form column => direction.                  |
+     * | orderBy('column', 'direction (desc or asc for example)')               |
+     * | orderBy(                                                               |
+     * |       ['column1', 'column2'],                                          |
+     * |       'direction (desc or asc for example)'                            |
+     * | ) - the direction specified in the second argument will be used for    |
+     * | all columns listed in the first argument.                              |
+     * | orderBy(                                                               |
+     * |       [                                                                |
+     * |              'column1' => 'direction (desc or asc for example)',       |
+     * |              'column2' => 'direction (desc or asc for example)'        |
+     * |       ]                                                                |
+     * | ) - If you specify an associative array (column => direction) in the   |
+     * | first argument then the second argument will be ignored.               |
      * | ---------------------------------------------------------------------- |
      * | You can specify directions in any case.                                |
      * --------------------------------------------------------------------------
@@ -1745,8 +1745,8 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for sort the results of the query by a given column (in         |
      * | descending order).                                                     |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | latest('column')                                                     |
-     * | | latest(['column1', 'column2'])                                       |
+     * | latest('column')                                                       |
+     * | latest(['column1', 'column2'])                                         |
      * | ---------------------------------------------------------------------- |
      * | The direction "desc" (descending order) will be used.                  |
      * | You can specify an array of columns but the array cannot be            |
@@ -1772,8 +1772,8 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for sort the results of the query by a given column (in         |
      * | ascending order).                                                      |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | oldest('column')                                                     |
-     * | | oldest(['column1', 'column2'])                                       |
+     * | oldest('column')                                                       |
+     * | oldest(['column1', 'column2'])                                         |
      * | ---------------------------------------------------------------------- |
      * | The direction "asc" (ascending order) will be used.                    |
      * | You can specify an array of columns but the array cannot be            |
@@ -1798,7 +1798,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause for sort the results in random order.                           |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | inRandomOrder()                                                      |
+     * | inRandomOrder()                                                        |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @return $this
@@ -1816,10 +1816,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for grouping rows that have the same values into total rows by  |
      * | specified column/columns.                                              |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | groupBy('column')                                                    |
-     * | | groupBy('column1', 'column2', ..., 'columnN')                        |
-     * | | groupBy(['column'])                                                  |
-     * | | groupBy(['column1', 'column2', ..., 'columnN'])                      |
+     * | groupBy('column')                                                      |
+     * | groupBy('column1', 'column2', ..., 'columnN')                          |
+     * | groupBy(['column'])                                                    |
+     * | groupBy(['column1', 'column2', ..., 'columnN'])                        |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string|mixed ...$columns
@@ -1872,15 +1872,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause for specify the number of records to return.                    |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | limit('5 for example or any count')                                  |
-     * | | limit('5 for example or any count', true) - if you pass the second   |
-     * | | argument as true (by default it is false) then percentage mode is    |
-     * | | enabled. That is, the number in the first argument will indicate not |
-     * | | the number of records but the percentage of records from the total   |
-     * | | amount. That is, if you specified 5 in first argument and the second |
-     * | | argument is true, then the query will return 5% of the records       |
-     * | | instead of five records. This feature only for Oracle DB driver.     |
-     * | | Other DB drivers do not support this feature.                        |
+     * | limit('5 for example or any count')                                    |
+     * | limit('5 for example or any count', true) - if you pass the second     |
+     * | argument as true (by default it is false) then percentage mode is      |
+     * | enabled. That is, the number in the first argument will indicate not   |
+     * | the number of records but the percentage of records from the total     |
+     * | amount. That is, if you specified 5 in first argument and the second   |
+     * | argument is true, then the query will return 5% of the records         |
+     * | instead of five records. This feature only for Oracle DB driver.       |
+     * | Other DB drivers do not support this feature.                          |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param int $count
@@ -1899,15 +1899,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * | Clause for specify the number of records to return.                    |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | take('5 for example or any count')                                   |
-     * | | take('5 for example or any count', true) - if you pass the second    |
-     * | | argument as true (by default it is false) then percentage mode is    |
-     * | | enabled. That is, the number in the first argument will indicate not |
-     * | | the number of records but the percentage of records from the total   |
-     * | | amount. That is, if you specified 5 in first argument and the second |
-     * | | argument is true, then the query will return 5% of the records       |
-     * | | instead of five records. This feature only for Oracle DB driver.     |
-     * | | Other DB drivers do not support this feature.                        |
+     * | take('5 for example or any count')                                     |
+     * | take('5 for example or any count', true) - if you pass the second      |
+     * | argument as true (by default it is false) then percentage mode is      |
+     * | enabled. That is, the number in the first argument will indicate not   |
+     * | the number of records but the percentage of records from the total     |
+     * | amount. That is, if you specified 5 in first argument and the second   |
+     * | argument is true, then the query will return 5% of the records         |
+     * | instead of five records. This feature only for Oracle DB driver.       |
+     * | Other DB drivers do not support this feature.                          |
      * | ---------------------------------------------------------------------- |
      * | The same as "limit".                                                   |
      * --------------------------------------------------------------------------
@@ -1928,7 +1928,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for skipping some count of records. The offset construct        |
      * | indicates how many records to skip.                                    |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | offset('5 for example or any count')                                 |
+     * | offset('5 for example or any count')                                   |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param int $count
@@ -1946,7 +1946,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for skipping some count of records. The skip construct          |
      * | indicates how many records to skip.                                    |
      * | ------------------------------ Use cases ----------------------------- |
-     * | | skip('5 for example or any count')                                   |
+     * | skip('5 for example or any count')                                     |
      * | ---------------------------------------------------------------------- |
      * | The same as "offset".                                                  |
      * --------------------------------------------------------------------------
@@ -1961,12 +1961,40 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for add a some query to the current query depending on the      |
+     * | another condition.                                                     |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | when(                                                                  |
+     * |       'value',                                                         |
+     * |       function ($query) {                                              |
+     * |              $query->...                                               |
+     * |       }                                                                |
+     * | ) - method executes the given closure when the first argument is true. |
+     * | If the first argument is false, the closure will not be executed.      |
+     * | when(                                                                  |
+     * |       'value',                                                         |
+     * |       function ($query) {                                              |
+     * |              $query->...                                               |
+     * |       },                                                               |
+     * |       function ($query) {                                              |
+     * |              $query->...                                               |
+     * |       }                                                                |
+     * | ) - You may pass another closure as the third argument to the when     |
+     * | method. This closure will only execute if the first argument evaluates |
+     * | as false. If the third argument is not passed or passed as null then   |
+     * | the "else" case will not be executed and the code will continue        |
+     * | without executing the closure for the true condition.                  |
+     * | ---------------------------------------------------------------------- |
+     * | The first argument must be boolean, or if another type is passed it    |
+     * | will be cast to boolean according to php type casting.                 |
+     * --------------------------------------------------------------------------
      * @param bool $value
      * @param callable $callback
      * @param callable|null $else
      * @return $this
      */
-    public function when(bool $value, callable $callback, callable|null $else = null): self
+    public function when(string|int|bool|null $value, callable $callback, callable|null $else = null): self
     {
         $this->whenClauseBinder($value, $callback, $else);
 
