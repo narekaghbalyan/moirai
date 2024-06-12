@@ -2009,15 +2009,24 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
 //        return $this;
     }
 
-    // not multiple rows
-    // ->insert(['id' => 1, 'name' => 'Test']);
-    // insert into table (`c1`, `c2`) values ('v1', 'v2')
-    // multiple rows
-    // ->insert(['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']);
-    // or
-    // ->insert([['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']]);
-    // insert into table (`c1`, `c2`) values ('v1', 'v2') ('v3', 'v4')
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for inserting records.                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | insert(['column1' => 'value1', 'column2' => 'value2', ...]) - inserts  |
+     * | single record.                                                         |
+     * | ----- The below variations are for inserting multiple records -----    |
+     * | | insert(                                                         |    |
+     * | |       ['column1' => 'value1', 'column2' => 'value2', ...])      |    |
+     * | |       ['column1' => 'value3', 'column2' => 'value4', ...])      |    |
+     * | | )                                                               |    |
+     * | | insert([                                                        |    |
+     * | |       ['column1' => 'value1', 'column2' => 'value2', ...])      |    |
+     * | |       ['column1' => 'value3', 'column2' => 'value4', ...])      |    |
+     * | | ])                                                              |    |
+     * | -------------------------------------------------------------------    |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param mixed ...$columnsWithValues
      * @throws Exception
      */
@@ -2028,15 +2037,29 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         // TODO return value
     }
 
-    // not multiple rows
-    // ->insertWithIgnore(['id' => 1, 'name' => 'Test']);
-    // insert ignore into table (`c1`, `c2`) values ('v1', 'v2')
-    // multiple rows
-    // ->insertWithIgnore(['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']);
-    // or
-    // ->insertWithIgnore([['id' => 1, 'name' => 'Test'], ['id' => 2, 'name' => 'Test2']]);
-    // insert ignore into table (`c1`, `c2`) values ('v1', 'v2') ('v3', 'v4')
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for inserting records with ignoring errors.                     |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | insertOrIgnore(['column1' => 'value1', 'column2' => 'value2', ...])    |
+     * | - inserts single record.                                               |
+     * | ----- The below variations are for inserting multiple records -----    |
+     * | | insertOrIgnore(                                                 |    |
+     * | |       ['column1' => 'value1', 'column2' => 'value2', ...])      |    |
+     * | |       ['column1' => 'value3', 'column2' => 'value4', ...])      |    |
+     * | | )                                                               |    |
+     * | | insertOrIgnore([                                                |    |
+     * | |       ['column1' => 'value1', 'column2' => 'value2', ...])      |    |
+     * | |       ['column1' => 'value3', 'column2' => 'value4', ...])      |    |
+     * | | ])                                                              |    |
+     * | -------------------------------------------------------------------    |
+     * | ---------------------------------------------------------------------- |
+     * | The "insertOrIgnore" method will ignore errors while inserting         |
+     * | records.                                                               |
+     * | Duplicate record errors will be ignored and other types of errors may  |
+     * | also be ignored depending on the database engine. For example,         |
+     * | "insertOrIgnore" will bypass MySQL's strict mode.                      |
+     * --------------------------------------------------------------------------
      * @param mixed ...$columnsWithValues
      * @throws Exception
      */
@@ -2047,9 +2070,27 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         // TODO return value
     }
 
-    // ->insertUsing(['id', 'name'], $q->where(['id' => 1])->get('id', 'name'));
-    // insert into table (`id`, `name`) values (query result values)
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for inserting records using a sub query to determine the data   |
+     * | that should be inserted.                                               |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | insertUsing(                                                           |
+     * |       ['column1', 'column2', ...],                                     |
+     * |       someBuilder->select('sameColumn1', 'sameColumn2', ...)->where... |
+     * |       or other query                                                   |
+     * | ) - in the first argument you can pass the columns in which the value  |
+     * | should be inserted, in the second argument you specify the query which |
+     * | should return the value for insertion and these values will be         |
+     * | inserted into the columns listed in first argument.                    |
+     * | ---------------------------------------------------------------------- |
+     * | The method uses the result of the query (second argument) as a value   |
+     * | and inserts them into the appropriate columns in first argument. That  |
+     * | is, the method combines the columns from the first argument and the    |
+     * | values from the second argument and inserts a new record.              |
+     * | You can't use an associative array in the first argument, otherwise an |
+     * | exception will be thrown.                                              |
+     * --------------------------------------------------------------------------
      * @param array $columns
      * @param $query
      * @throws Exception
@@ -2061,12 +2102,66 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         // TODO return value
     }
 
-    // ->upsert(['id' => 1, 'name'=> 'Test'], ['id', 'name']);
-    // INSERT INTO `users` (`id`, `name`) VALUES (1, Test) ON DUPLICATE KEY UPDATE `id` = VALUES(`id`), `name` = VALUES(`name`)
-    // If not exists second array unique keys in table -> insert first array columns with values
-    // If exists second array unique keys in table -> if empty third array -> update first array columns with values
-    //                                                if not empty third array ->  update third array columns with first array values
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for inserting non-existent records and updating existing        |
+     * | records with new values.                                               |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | upsert(                                                                |
+     * |       ['column1' => 'value1', 'column2' => 'value2']                   |
+     * | ) - if the inserted row results in a duplicate value in at least one   |
+     * | of the listed columns in the unique or primary key index, the old row  |
+     * | will be update, if not, the record/records will be inserted. That is,  |
+     * | if in the listed columns have a column with an unique or primary key   |
+     * | indexes and there is a collision when inserting, then the data is      |
+     * | updated, if not, then an insertion will occur.                         |
+     * |                                                                        |
+     * | upsert(                                                                |
+     * |       ['column1' => 'value1', 'column2' => 'value2']                   |
+     * |       ['column1', 'column2']                                           |
+     * | ) - same as first variation with the difference that the columns that  |
+     * | need to be updated are indicated, in this case, in the event of a      |
+     * | collision, not all columns are updated, but only those specified.      |
+     * | The list columns(s) of the second argument must also be present in the |
+     * | first argument so that the method knows what value to use and takes    |
+     * | the value from the first argument.                                     |
+     * |                                                                        |
+     * | upsert(                                                                |
+     * |       ['column1' => 'value1', 'column2' => 'value2']                   |
+     * |       'column1'                                                        |
+     * | ) - same as above variation, but with the difference that instead of   |
+     * | array of columns, passed single column for updating.                   |
+     * |                                                                        |
+     * | -- The below variations for all drivers except MySQL and MariaDB --    |
+     * | | upsert(..., ..., 'column')                                      |    |
+     * | |                                                                 |    |
+     * | | upsert(..., ..., ['column1', 'column2'])                        |    |
+     * | |                                                                 |    |
+     * | | You can pass a third argument, this will be the column/columns  |    |
+     * | | by which it will be identified record/records. You can pass     |    |
+     * | | single column or array of columns. The column/columns must      |    |
+     * | | either be unique or be a primary key.                           |    |
+     * | -------------------------------------------------------------------    |
+     * |                                                                        |
+     * | For all variations you may not pass the second argument in which case  |
+     * | all columns from the first argument will be updated and if you use the |
+     * | third argument and do not want to specify the columns in the second    |
+     * | argument you can pass the second argument as null.                     |
+     * |                                                                        |
+     * | upsert(                                                                |
+     * |       [                                                                |
+     * |              ['column1' => 'value1', 'column2' => 'value2']            |
+     * |              ['column1' => 'value3', 'column2' => 'value4']            |
+     * |       ],                                                               |
+     * |       ...,                                                             |
+     * |       ...                                                              |
+     * | ) - you can also pass multiple records in the first argument, all the  |
+     * | options listed will work for multiple records as well.                 |
+     * | ---------------------------------------------------------------------- |
+     * | First argument must be an associative array (column => value).         |
+     * | The third argument will be ignored if you use MySQL or MariaDB DB      |
+     * | drivers.                                                               |
+     * --------------------------------------------------------------------------
      * @param array $values
      * @param string|array|null $update
      * @param string|array|null $uniqueBy

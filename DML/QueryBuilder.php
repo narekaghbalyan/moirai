@@ -42,7 +42,7 @@ class QueryBuilder
      */
     public function __construct()
     {
-        $this->driver = new MsSqlServerDriver();
+        $this->driver = new MySqlDriver();
 
         $this->useAdditionalAccessories();
     }
@@ -1779,7 +1779,7 @@ class QueryBuilder
                     $readyUpdate .= ' ' . $this->wrapColumnInPita($item);
 
                     $readyUpdate .= match ($this->getDriverName()) {
-                        AvailableDbmsDrivers::MSSQLSERVER => ' = ' . $this->wrapStringInPita(
+                        AvailableDbmsDrivers::MS_SQL_SERVER => ' = ' . $this->wrapStringInPita(
                                 $columnsWithValues[array_key_first($columnsWithValues)][$item]
                             ),
                         AvailableDbmsDrivers::MYSQL => ' = VALUES' . $this->concludeBrackets(
@@ -1816,7 +1816,7 @@ class QueryBuilder
 
                         break;
                     case AvailableDbmsDrivers::ORACLE:
-                    case AvailableDbmsDrivers::MSSQLSERVER;
+                    case AvailableDbmsDrivers::MS_SQL_SERVER;
                         $this->devastateBinding('insert');
 
                         $odkuPostfix = '';
@@ -1829,7 +1829,7 @@ class QueryBuilder
                             );
                         }
 
-                        $mergingTable = $this->wrapColumnInPita('moarai_source');
+                        $mergingTable = $this->wrapColumnInPita('moirai_source');
 
                         $matchingExpression = [];
 
@@ -1943,10 +1943,10 @@ class QueryBuilder
 
                         break;
                     case AvailableDbmsDrivers::ORACLE:
-                    case AvailableDbmsDrivers::MSSQLSERVER:
+                    case AvailableDbmsDrivers::MS_SQL_SERVER:
                         $this->deleteBinding('insert');
 
-                        $mergingTable = $this->wrapColumnInPita('moarai_source');
+                        $mergingTable = $this->wrapColumnInPita('moirai_source');
 
                         $columns = $this->wrapColumnInPita(
                             array_keys($columnsWithValues[array_key_first($columnsWithValues)])
@@ -2024,7 +2024,7 @@ class QueryBuilder
             ]);
         }
 
-        return $this->executeQuery($this->pickUpThePieces($this->bindings));
+        return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
 
     protected function updateClauseBinder(array $columnsWithValues, bool $operationIsUsed = false)
@@ -2047,7 +2047,7 @@ class QueryBuilder
                     throw new Exception('DriverInterface "Oracle" does not support updating json column values.');
                 }
 
-                if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+                if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
                     $lockThisIteration = true;
                 }
 
@@ -2071,7 +2071,7 @@ class QueryBuilder
                             . ', '
                             . $this->wrapStringInPita($value)
                         ),
-                    AvailableDbmsDrivers::MSSQLSERVER => 'JSON_VALUE' . $this->concludeBrackets(
+                    AvailableDbmsDrivers::MS_SQL_SERVER => 'JSON_VALUE' . $this->concludeBrackets(
                             $this->wrapColumnInPita($column)
                             . $subsequence['subsequence']
                         ) . ' = ' . $this->wrapStringInPita($value)
@@ -2255,7 +2255,7 @@ class QueryBuilder
             $this->throwExceptionIfDriverNotSupportFunction();
         }
 
-        if ($driver === AvailableDbmsDrivers::MSSQLSERVER) {
+        if ($driver === AvailableDbmsDrivers::MS_SQL_SERVER) {
             $lockingExpression = 'WITH(rowlock, %s holdlock)';
 
             $plug = '';
