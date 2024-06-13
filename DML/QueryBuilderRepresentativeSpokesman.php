@@ -2181,7 +2181,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for update a record.                                            |
      * | ------------------------------ Use cases ----------------------------- |
      * | update(['column1' => 'value1', 'column2' => 'value2', ...])            |
+     * |                                                                        |
      * | update(['column1->nestedItem1' => 'value1', ...]) - you can also       |
+     * |                                                                        |
      * | update the json columns. You can specify nested json elements via the  |
      * | "->" operator. Oracle DB driver doesn't support json update and you    |
      * | can't use this variation.                                              |
@@ -2203,8 +2205,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for updating an existing record or inserting a non-existent     |
      * | record.                                                                |
      * | ------------------------------ Use cases ----------------------------- |
-     * | update(['column1' => 'value1', ...], ['column2' => 'value2', ...])     |
-     * | update(                                                                |
+     * | updateOrInsert(                                                        |
+     * |       ['column1' => 'value1', ...], ['column2' => 'value2', ...]       |
+     * | )                                                                      |
+     * |                                                                        |
+     * | updateOrInsert(                                                        |
      * |       ['column1->nestedItem1' => 'value1', ...],                       |
      * |       ['column2->nestedItem2' => 'value2', ...]                        |
      * | ) - You can also work with json in the first and second arguments. But |
@@ -2250,6 +2255,46 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for join tables.                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | join('tableForJoin', 'column1', '= or other operator', 'column2')      |
+     * |                                                                        |
+     * | join(                                                                  |
+     * |       'tableForJoin',                                                  |
+     * |       'column1',                                                       |
+     * |       '= or other operator',                                           |
+     * |       'column2',                                                       |
+     * |       'inner or other join type'                                       |
+     * | ) - you can pass the join type as the last argument (you can also use  |
+     * | separate methods for this).                                            |
+     * |                                                                        |
+     * | For all variations instead of columns you can pass the column along    |
+     * | with the table (table.column). In this case, if tables in a place with |
+     * | columns are passed in the second and fourth arguments, then these      |
+     * | tables will be used, but if not passed, then the current table will be |
+     * | used for the second argument and the table specified in the first      |
+     * | argument will be used for the fourth argument, but note that if you    |
+     * | specify a table only for the second or only for the fourth argument,   |
+     * | then it will be ignored and the method will be treated as the name of  |
+     * | the column and also for the second the current table will be used,     |
+     * | and for the fourth, the table passed in the first argument. If you     |
+     * | want to specify tables in a place with columns then you must pass      |
+     * | tables for both arguments (for both the second and fourth). By saying  |
+     * | “use table for column” we mean the column will be considered a column  |
+     * | of this table.                                                         |
+     * |                                                                        |
+     * | The first argument passed to the join method is the name of the table  |
+     * | you need to join to, while the remaining arguments specify the column  |
+     * | constraints for the join.                                              |
+     * |                                                                        |
+     * | If you don't pass the last argument then the default is "inner" but    |
+     * | you can also use "leftOuter", "rightOuter", "fullOuter" and "cross"    |
+     * | joins.                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | The method joins the current table with the table specified in the     |
+     * | first argument.                                                        |
+     * --------------------------------------------------------------------------
      * @param string|array $table
      * @param string $firstColumn
      * @param string $operator
@@ -2269,6 +2314,33 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for join tables.                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | leftJoin('tableForJoin', 'column1', '= or other operator', 'column2')  |
+     * |                                                                        |
+     * | Instead of columns you can pass the column along with the table        |
+     * | (table.column). In this case, if tables in a place with columns are    |
+     * | passed in the second and fourth arguments, then these tables will be   |
+     * | used, but if not passed, then the current table will be used for the   |
+     * | second argument and the table specified in the first argument will be  |
+     * | used for the fourth argument, but note that if you specify a table     |
+     * | only for the second or only for the fourth argument, then it will be   |
+     * | ignored and the method will be treated as the name of the column and   |
+     * | also for the second the current table will be used, and for the        |
+     * | fourth, the table passed in the first argument. If you want to specify |
+     * | tables in a place with columns then you must pass tables for both      |
+     * | arguments (for both the second and fourth). By saying “use table for   |
+     * | column” we mean the column will be considered a column of this table.  |
+     * |                                                                        |
+     * | The first argument passed to the join method is the name of the table  |
+     * | you need to join to, while the remaining arguments specify the column  |
+     * | constraints for the join.                                              |
+     * | ---------------------------------------------------------------------- |
+     * | The method joins the current table with the table specified in the     |
+     * | first argument.                                                        |
+     * | The same as "join" with the last argument passed as "leftOuter".       |
+     * --------------------------------------------------------------------------
      * @param string|array $table
      * @param string $firstColumn
      * @param string $operator
@@ -2283,6 +2355,33 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for join tables.                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | rightJoin('tableForJoin', 'column1', '= or other operator', 'column2') |
+     * |                                                                        |
+     * | Instead of columns you can pass the column along with the table        |
+     * | (table.column). In this case, if tables in a place with columns are    |
+     * | passed in the second and fourth arguments, then these tables will be   |
+     * | used, but if not passed, then the current table will be used for the   |
+     * | second argument and the table specified in the first argument will be  |
+     * | used for the fourth argument, but note that if you specify a table     |
+     * | only for the second or only for the fourth argument, then it will be   |
+     * | ignored and the method will be treated as the name of the column and   |
+     * | also for the second the current table will be used, and for the        |
+     * | fourth, the table passed in the first argument. If you want to specify |
+     * | tables in a place with columns then you must pass tables for both      |
+     * | arguments (for both the second and fourth). By saying “use table for   |
+     * | column” we mean the column will be considered a column of this table.  |
+     * |                                                                        |
+     * | The first argument passed to the join method is the name of the table  |
+     * | you need to join to, while the remaining arguments specify the column  |
+     * | constraints for the join.                                              |
+     * | ---------------------------------------------------------------------- |
+     * | The method joins the current table with the table specified in the     |
+     * | first argument.                                                        |
+     * | The same as "join" with the last argument passed as "rightOuter".      |
+     * --------------------------------------------------------------------------
      * @param string|array $table
      * @param string $firstColumn
      * @param string $operator
@@ -2297,6 +2396,33 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for join tables.                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | fullJoin('tableForJoin', 'column1', '= or other operator', 'column2')  |
+     * |                                                                        |
+     * | Instead of columns you can pass the column along with the table        |
+     * | (table.column). In this case, if tables in a place with columns are    |
+     * | passed in the second and fourth arguments, then these tables will be   |
+     * | used, but if not passed, then the current table will be used for the   |
+     * | second argument and the table specified in the first argument will be  |
+     * | used for the fourth argument, but note that if you specify a table     |
+     * | only for the second or only for the fourth argument, then it will be   |
+     * | ignored and the method will be treated as the name of the column and   |
+     * | also for the second the current table will be used, and for the        |
+     * | fourth, the table passed in the first argument. If you want to specify |
+     * | tables in a place with columns then you must pass tables for both      |
+     * | arguments (for both the second and fourth). By saying “use table for   |
+     * | column” we mean the column will be considered a column of this table.  |
+     * |                                                                        |
+     * | The first argument passed to the join method is the name of the table  |
+     * | you need to join to, while the remaining arguments specify the column  |
+     * | constraints for the join.                                              |
+     * | ---------------------------------------------------------------------- |
+     * | The method joins the current table with the table specified in the     |
+     * | first argument.                                                        |
+     * | The same as "join" with the last argument passed as "fullOuter".       |
+     * --------------------------------------------------------------------------
      * @param string|array $table
      * @param string $firstColumn
      * @param string $operator
@@ -2311,6 +2437,33 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for join tables.                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | crossJoin('tableForJoin', 'column1', '= or other operator', 'column2') |
+     * |                                                                        |
+     * | Instead of columns you can pass the column along with the table        |
+     * | (table.column). In this case, if tables in a place with columns are    |
+     * | passed in the second and fourth arguments, then these tables will be   |
+     * | used, but if not passed, then the current table will be used for the   |
+     * | second argument and the table specified in the first argument will be  |
+     * | used for the fourth argument, but note that if you specify a table     |
+     * | only for the second or only for the fourth argument, then it will be   |
+     * | ignored and the method will be treated as the name of the column and   |
+     * | also for the second the current table will be used, and for the        |
+     * | fourth, the table passed in the first argument. If you want to specify |
+     * | tables in a place with columns then you must pass tables for both      |
+     * | arguments (for both the second and fourth). By saying “use table for   |
+     * | column” we mean the column will be considered a column of this table.  |
+     * |                                                                        |
+     * | The first argument passed to the join method is the name of the table  |
+     * | you need to join to, while the remaining arguments specify the column  |
+     * | constraints for the join.                                              |
+     * | ---------------------------------------------------------------------- |
+     * | The method joins the current table with the table specified in the     |
+     * | first argument.                                                        |
+     * | The same as "join" with the last argument passed as "cross".           |
+     * --------------------------------------------------------------------------
      * @param string|array $table
      * @param string $firstColumn
      * @param string $operator
