@@ -1632,6 +1632,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | | | )                                                           | |    |
      * | | --------------------------------------------------------------- |    |
      * | -------------------------------------------------------------------    |
+     * | You can specify nested json elements via the "->" operator.            |
      * | ---------------------------------------------------------------------- |
      * | This clause only works for json type columns.                          |
      * | This clause is supported by: MySQL 8.0+, PostgreSQL 12.0+, SQL Server  |
@@ -1686,6 +1687,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | | second argument and not the operator, and in this case the      |    |
      * | | operator "=" will be used.                                      |    |
      * | -------------------------------------------------------------------    |
+     * | You can specify nested json elements via the "->" operator.            |
      * | ---------------------------------------------------------------------- |
      * | This clause only works for json type columns.                          |
      * | This clause is supported by: MySQL 8.0+, PostgreSQL 12.0+, SQL Server  |
@@ -2175,7 +2177,19 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for update a record.                                            |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | update(['column1' => 'value1', 'column2' => 'value2', ...])            |
+     * | update(['column1->nestedItem1' => 'value1', ...]) - you can also       |
+     * | update the json columns. You can specify nested json elements via the  |
+     * | "->" operator. Oracle DB driver doesn't support json update and you    |
+     * | can't use this variation.                                              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument must be an associative array (column => value).               |
+     * --------------------------------------------------------------------------
      * @param array $columnsWithValues
+     * @throws Exception
      */
     public function update(array $columnsWithValues)
     {
@@ -2185,6 +2199,42 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for updating an existing record or inserting a non-existent     |
+     * | record.                                                                |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | update(['column1' => 'value1', ...], ['column2' => 'value2', ...])     |
+     * | update(                                                                |
+     * |       ['column1->nestedItem1' => 'value1', ...],                       |
+     * |       ['column2->nestedItem2' => 'value2', ...]                        |
+     * | ) - You can also work with json in the first and second arguments. But |
+     * | keep in mind since the method under the hood works with methods        |
+     * | "where", "insert" and "update " that the "where" and "update" methods  |
+     * | support working with json, the "insert" method does not support such   |
+     * | a record since it creates a record from scratch and if you specify     |
+     * | this in the first argument, the method can check nested json and if    |
+     * | the record exists, it can update the nested json specified in the      |
+     * | second argument in this way, but if there is no record and the method  |
+     * | will insert data from the first and second argument by merging them    |
+     * | together, then the nested json record will be regarded as a column     |
+     * | name and not as nested json and the method will try to insert the      |
+     * | record in this way as insert does not support working with nested      |
+     * | json.                                                                  |
+     * | You can specify nested json elements via the "->" operator. Oracle DB  |
+     * | driver doesn't support json update and you can't use this variation.   |
+     * | All restrictions and rules that apply to methods "where", "insert" and |
+     * | "update" also apply to arguments since the method under the hood uses  |
+     * | these methods and passes arguments to them.                            |
+     * | ---------------------------------------------------------------------- |
+     * | The arguments must be associative arrays (column => value) since they  |
+     * | specify columns of values.                                             |
+     * |  If the method does not find a record that matches the conditions      |
+     * | passed in the first argument, then the method creates a record based   |
+     * | on the first and second arguments (merges them together and creates a  |
+     * | record), and if such a record exists, then the method updates the      |
+     * | record in accordance with the second arguments (updates the columns    |
+     * | and values that are specified in the second argument).                 |
+     * --------------------------------------------------------------------------
      * @param array $condition
      * @param array $forUpdate
      * @return bool|void
