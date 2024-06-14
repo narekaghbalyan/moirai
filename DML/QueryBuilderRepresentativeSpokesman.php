@@ -2619,6 +2619,34 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for deleting the record.                                        |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | delete() - you can call the "delete" method without arguments if you   |
+     * | previously specified a specific record(s) in the request in some way   |
+     * | (using the "where" function), in this case the record(s) that matches  |
+     * | the previously specified conditions will be deleted.                   |
+     * |                                                                        |
+     * | delete('value1') - the record(s) with the specified value of the "id"  |
+     * | column will be deleted, but other “where” will also be taken into      |
+     * | account if you also specified them in the request, since when deleting |
+     * | all conditions are combined and the record(s) is deleted in accordance |
+     * | with them.                                                             |
+     * |                                                                        |
+     * | delete('value1', 'column1') - you can also not specify the record(s)   |
+     * | separately in the query, but immediately call “delete” and specify a   |
+     * | separate record(s) in it. You must specify the value as the first      |
+     * | argument and the column and record(s) as the second argument. Will be  |
+     * | deleted in accordance with this condition. I you do not specify the    |
+     * | second argument, the column "id" will be used by default. If you used  |
+     * | other "where" functions then they will also be taken into account when |
+     * | deleting a record(s) and the condition that you specified in the       |
+     * | "delete" method will be added to the rest "where".                     |
+     * | ---------------------------------------------------------------------- |
+     * | The method can also delete several records if they meet the            |
+     * | conditions, that is, in addition to one record, it can also delete a   |
+     * | set of records.                                                        |
+     * --------------------------------------------------------------------------
      * @param string|null $uniqueValue
      * @param string $uniqueColumn
      */
