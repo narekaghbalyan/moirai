@@ -2535,6 +2535,24 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | In database management, the unary operation a mathematical operation   |
+     * | on one operand and returning one result, that is, an operation with a  |
+     * | single input and a single output.                                      |
+     * --------------------------------------------------------------------------
+     */
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause for incrementing the value of a column.                         |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | increment('column1')                                                   |
+     * |                                                                        |
+     * | increment('column1', '2 or other amount') - by passing a number as the |
+     * | second argument you can increment the value by that number, if you     |
+     * | don't pass a number then by default the value is incremented by 1.     |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param int|float|string $amount
      */
@@ -2546,6 +2564,13 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for incrementing the values of a columns.                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | incrementEach(['column1' => '1 or other amount', 'column2' => 2])      |
+     * | ---------------------------------------------------------------------- |
+     * | You must pass an associative array (column => amount) as an argument.  |
+     * --------------------------------------------------------------------------
      * @param array $columns
      */
     public function incrementEach(array $columns)
@@ -2556,6 +2581,16 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for decrementing the value of a column.                         |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | decrement('column1')                                                   |
+     * |                                                                        |
+     * | decrement('column1', '2 or other amount') - by passing a number as the |
+     * | second argument you can decrement the value by that number, if you     |
+     * | don't pass a number then by default the value is decremented by 1.     |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param int|float|string $amount
      */
@@ -2567,11 +2602,18 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for decrementing the values of a columns.                       |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | decrementEach(['column1' => '1 or other amount', 'column2' => 2])      |
+     * | ---------------------------------------------------------------------- |
+     * | You must pass an associative array (column => amount) as an argument.  |
+     * --------------------------------------------------------------------------
      * @param array $columns
      */
     public function decrementEach(array $columns)
     {
-        $this->unaryOperatorsClauseBinder($columns, 1, '-');
+        $this->unaryOperatorsClauseBinder($columns, null, '-');
 
         // TODO return update value
     }
