@@ -2478,6 +2478,25 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for union the queries.                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | union($query->...)                                                     |
+     * |                                                                        |
+     * | union($query->..., true) - if both sets being merged contain identical |
+     * | row values, then the duplicate rows are removed during the merge. If   |
+     * | you need to save everything when merging, including duplicate rows,    |
+     * | then you need to pass the "all" argument as true, in this case, all    |
+     * | data will be saved, including duplicate rows. If you dont pass the     |
+     * | last argument as true, by default false will be used and only one copy |
+     * | will be saved from duplicates.                                         |
+     * | ---------------------------------------------------------------------- |
+     * | The function "union" allows you to combine two samples of the same     |
+     * | type. These selections can be from different tables or from the same   |
+     * | table.                                                                 |
+     * | If one selection has more columns than another, they cannot be merged. |
+     * | The argument must be a query (a query builder object).                 |
+     * --------------------------------------------------------------------------
      * @param $query
      * @param bool $all
      * @return $this
@@ -2486,6 +2505,31 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     public function union($query, bool $all = false): self
     {
         $this->unionClauseBinder($query, $all);
+
+        return $this;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause for union the queries.                                          |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | unionAll($query->...)                                                  |
+     * | ---------------------------------------------------------------------- |
+     * | The function "unionAll" allows you to combine two samples of the same  |
+     * | type. These selections can be from different tables or from the same   |
+     * | table.                                                                 |
+     * | The function will save all data, including duplicate rows.             |
+     * | If one selection has more columns than another, they cannot be merged. |
+     * | The argument must be a query (a query builder object).                 |
+     * | The same as "union" with last argument passed as true.                 |
+     * --------------------------------------------------------------------------
+     * @param $query
+     * @return $this
+     * @throws Exception
+     */
+    public function unionAll($query): self
+    {
+        $this->unionClauseBinder($query, true);
 
         return $this;
     }
