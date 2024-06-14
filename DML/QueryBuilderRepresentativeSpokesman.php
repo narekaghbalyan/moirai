@@ -2625,7 +2625,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | delete() - you can call the "delete" method without arguments if you   |
      * | previously specified a specific record(s) in the request in some way   |
      * | (using the "where" function), in this case the record(s) that matches  |
-     * | the previously specified conditions will be deleted.                   |
+     * | the previously specified conditions will be deleted. If you have not   |
+     * | specified any record(s) using “where” function, all record(s) will be  |
+     * | deleted.                                                               |
      * |                                                                        |
      * | delete('value1') - the record(s) with the specified value of the "id"  |
      * | column will be deleted, but other “where” will also be taken into      |
@@ -2657,6 +2659,16 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         // TODO return delete response value
     }
 
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause for truncate the entire table.                                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | truncate()                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | The method will remove all records from the table and reset the        |
+     * | auto-incrementing identifier to zero.                                  |
+     * --------------------------------------------------------------------------
+     */
     public function truncate()
     {
         return $this->truncateClauseBinder();
