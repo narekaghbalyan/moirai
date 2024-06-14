@@ -2675,6 +2675,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for table pessimistic locking.                                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | sharedLock()                                                           |
+     * | ---------------------------------------------------------------------- |
+     * | A shared lock prevents the selected rows from being modified until     |
+     * | your transaction is committed, it means a shared lock allow            |
+     * | simultaneous reading, but prohibit modifying the selected rows.
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function sharedLock(): self
@@ -2685,6 +2694,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause for table pessimistic locking.                                  |
+     * | ------------------------------ Use cases ----------------------------- |
+     * | lockForUpdate()                                                        |
+     * | ---------------------------------------------------------------------- |
+     * | A "for update" lock prevents the selected records from being modified  |
+     * | or from being selected with another shared lock, it means a            |
+     * | "for update" lock prohibits both reading and writing.                  |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function lockForUpdate(): self
