@@ -16,7 +16,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | select('column1', 'column2', ..., 'columnN')                    |    |
+     * | |                                                                 |    |
      * | | select(['column1', 'column2', ..., 'columnN'])                  |    |
+     * | |                                                                 |    |
      * | | select(['column1', 'column2'], ['column3', ..., 'columnN'])     |    |
      * | -------------------------------------------------------------------    |
      * --------------------------------------------------------------------------
@@ -38,7 +40,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | distinct('column1', 'column2', ..., 'columnN')                  |    |
+     * | |                                                                 |    |
      * | | distinct(['column1', 'column2', ..., 'columnN'])                |    |
+     * | |                                                                 |    |
      * | | distinct(['column1', 'column2'], ['column3', ..., 'columnN'])   |    |
      * | -------------------------------------------------------------------    |
      * | ---------------------------------------------------------------------- |
@@ -64,7 +68,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * |                                                                        |
      * | -- The below variations select the listed columns from the table --    |
      * | | getColumn('column1', 'column2', ..., 'columnN')                 |    |
+     * | |                                                                 |    |
      * | | getColumn(['column1', 'column2', ..., 'columnN'])               |    |
+     * | |                                                                 |    |
      * | | getColumn(['column1', 'column2'], ['column3', ..., 'columnN'])  |    |
      * | -------------------------------------------------------------------    |
      * | ---------------------------------------------------------------------- |
@@ -80,24 +86,24 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         return $this;
     }
 
-    // TODO [implement]
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause for fragmentary processing of many records from a table.        |
-     * | ------------------------------ Use cases ------------------------------|
-     * | chunk(100, function () {                                               |
-     * |     // Process the records...                                          |
-     * | }) - selects all columns from a table                                  |
-     * --------------------------------------------------------------------------
-     * @param int|string $count
-     * @param callable $callback
-     * @return bool
-     * @throws \Exception
-     */
-    public function chunk(int|string $count, callable $callback): bool
-    {
-        return $this->chunkClauseBinder($count, $callback);
-    }
+//    // TODO [implement]
+//    /**
+//     * --------------------------------------------------------------------------
+//     * | Clause for fragmentary processing of many records from a table.        |
+//     * | ------------------------------ Use cases ------------------------------|
+//     * | chunk(100, function () {                                               |
+//     * |     // Process the records...                                          |
+//     * | }) - selects all columns from a table                                  |
+//     * --------------------------------------------------------------------------
+//     * @param int|string $count
+//     * @param callable $callback
+//     * @return bool
+//     * @throws \Exception
+//     */
+//    public function chunk(int|string $count, callable $callback): bool
+//    {
+//        return $this->chunkClauseBinder($count, $callback);
+//    }
 
     /**
      * --------------------------------------------------------------------------
@@ -1714,12 +1720,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | orderBy('column') - the default "asc" direction will be used if        |
      * | you do not specify a second argument and the first argument is not     |
      * | an associative array of the form column => direction.                  |
+     * |                                                                        |
      * | orderBy('column', 'direction (desc or asc for example)')               |
+     * |                                                                        |
      * | orderBy(                                                               |
      * |       ['column1', 'column2'],                                          |
      * |       'direction (desc or asc for example)'                            |
      * | ) - the direction specified in the second argument will be used for    |
      * | all columns listed in the first argument.                              |
+     * |                                                                        |
      * | orderBy(                                                               |
      * |       [                                                                |
      * |              'column1' => 'direction (desc or asc for example)',       |
@@ -1748,6 +1757,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | descending order).                                                     |
      * | ------------------------------ Use cases ----------------------------- |
      * | latest('column')                                                       |
+     * |                                                                        |
      * | latest(['column1', 'column2'])                                         |
      * | ---------------------------------------------------------------------- |
      * | The direction "desc" (descending order) will be used.                  |
@@ -1775,6 +1785,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ascending order).                                                      |
      * | ------------------------------ Use cases ----------------------------- |
      * | oldest('column')                                                       |
+     * |                                                                        |
      * | oldest(['column1', 'column2'])                                         |
      * | ---------------------------------------------------------------------- |
      * | The direction "asc" (ascending order) will be used.                    |
@@ -1819,8 +1830,11 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | specified column/columns.                                              |
      * | ------------------------------ Use cases ----------------------------- |
      * | groupBy('column')                                                      |
+     * |                                                                        |
      * | groupBy('column1', 'column2', ..., 'columnN')                          |
+     * |                                                                        |
      * | groupBy(['column'])                                                    |
+     * |                                                                        |
      * | groupBy(['column1', 'column2', ..., 'columnN'])                        |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
@@ -1841,11 +1855,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ------------------------------ Use cases ----------------------------- |
      * | -- The below variations retrieves records that match a condition --    |
      * | | having('column', '=', 'value')                                  |    |
+     * | |                                                                 |    |
      * | | having('column', 'value') - this expression uses the "="        |    |
      * | | operator for condition.                                         |    |
+     * | |                                                                 |    |
      * | | having(['column', '=', 'value'])                                |    |
+     * | |                                                                 |    |
      * | | having(['column' => 'value']) - this expression uses the "="    |    |
      * | | operator for condition.                                         |    |
+     * | |                                                                 |    |
      * | | having(['column1' => 'value1', 'column2' => 'value2']) - this   |    |
      * | | expression uses the "=" operator for condition and logical      |    |
      * | | "AND" operator for combine.                                     |    |
@@ -1875,6 +1893,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for specify the number of records to return.                    |
      * | ------------------------------ Use cases ----------------------------- |
      * | limit('5 for example or any count')                                    |
+     * |                                                                        |
      * | limit('5 for example or any count', true) - if you pass the second     |
      * | argument as true (by default it is false) then percentage mode is      |
      * | enabled. That is, the number in the first argument will indicate not   |
@@ -1902,6 +1921,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | Clause for specify the number of records to return.                    |
      * | ------------------------------ Use cases ----------------------------- |
      * | take('5 for example or any count')                                     |
+     * |                                                                        |
      * | take('5 for example or any count', true) - if you pass the second      |
      * | argument as true (by default it is false) then percentage mode is      |
      * | enabled. That is, the number in the first argument will indicate not   |
@@ -1974,6 +1994,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * |       }                                                                |
      * | ) - method executes the given closure when the first argument is true. |
      * | If the first argument is false, the closure will not be executed.      |
+     * |                                                                        |
      * | when(                                                                  |
      * |       'value',                                                         |
      * |       function ($query) {                                              |
@@ -2007,8 +2028,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     public function get()
     {
         return $this->getClause();
-
-//        return $this;
     }
 
     /**
@@ -2032,11 +2051,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param mixed ...$columnsWithValues
      * @throws Exception
      */
-    public function insert(array ...$columnsWithValues)
+    public function insert(array ...$columnsWithValues): void
     {
         $this->insertClauseBinder($columnsWithValues);
-
-        // TODO return value
     }
 
     /**
@@ -2065,11 +2082,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param mixed ...$columnsWithValues
      * @throws Exception
      */
-    public function insertOrIgnore(array ...$columnsWithValues)
+    public function insertOrIgnore(array ...$columnsWithValues): void
     {
         $this->insertClauseBinder($columnsWithValues, null, true);
-
-        // TODO return value
     }
 
     /**
@@ -2097,11 +2112,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param $query
      * @throws Exception
      */
-    public function insertUsing(array $columns, $query)
+    public function insertUsing(array $columns, $query): void
     {
         $this->insertClauseBinder($columns, $query);
-
-        // TODO return value
     }
 
     /**
@@ -2169,11 +2182,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param string|array|null $uniqueBy
      * @throws Exception
      */
-    public function upsert(array $values, string|array|null $update = null, string|array|null $uniqueBy = null)
+    public function upsert(array $values, string|array|null $update = null, string|array|null $uniqueBy = null): void
     {
         $this->insertClauseBinder($values, null, false, true, $uniqueBy, $update);
-
-        // TODO return value
     }
 
     /**
@@ -2193,11 +2204,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param array $columnsWithValues
      * @throws Exception
      */
-    public function update(array $columnsWithValues)
+    public function update(array $columnsWithValues): void
     {
         $this->updateClauseBinder($columnsWithValues);
-
-        // TODO return value
     }
 
     /**
@@ -2245,13 +2254,15 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @return bool|void
      * @throws Exception
      */
-    public function updateOrInsert(array $condition, array $forUpdate)
+    public function updateOrInsert(array $condition, array $forUpdate): void
     {
         if (!$this->where($condition)->exists()) {
-            return $this->insert(array_merge($condition, $forUpdate));
+            $this->insert(array_merge($condition, $forUpdate));
+
+            return;
         }
 
-        return (bool)$this->where($condition)->update($forUpdate);
+        $this->where($condition)->update($forUpdate);
     }
 
     /**
@@ -2556,11 +2567,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param string $column
      * @param int|float|string $amount
      */
-    public function increment(string $column, int|float|string $amount = 1)
+    public function increment(string $column, int|float|string $amount = 1): void
     {
         $this->unaryOperatorsClauseBinder($column, $amount);
-
-        // TODO return update value
     }
 
     /**
@@ -2573,11 +2582,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * @param array $columns
      */
-    public function incrementEach(array $columns)
+    public function incrementEach(array $columns): void
     {
         $this->unaryOperatorsClauseBinder($columns);
-
-        // TODO return update value
     }
 
     /**
@@ -2594,11 +2601,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param string $column
      * @param int|float|string $amount
      */
-    public function decrement(string $column, int|float|string $amount = 1)
+    public function decrement(string $column, int|float|string $amount = 1): void
     {
         $this->unaryOperatorsClauseBinder($column, $amount, '-');
-
-        // TODO return update value
     }
 
     /**
@@ -2611,11 +2616,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * --------------------------------------------------------------------------
      * @param array $columns
      */
-    public function decrementEach(array $columns)
+    public function decrementEach(array $columns): void
     {
         $this->unaryOperatorsClauseBinder($columns, null, '-');
-
-        // TODO return update value
     }
 
     /**
@@ -2652,11 +2655,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * @param string|null $uniqueValue
      * @param string $uniqueColumn
      */
-    public function delete(string|null $uniqueValue = null, string $uniqueColumn = 'id')
+    public function delete(string|null $uniqueValue = null, string $uniqueColumn = 'id'): void
     {
         $this->deleteClauseBinder($uniqueValue, $uniqueColumn);
-
-        // TODO return delete response value
     }
 
     /**
@@ -2668,8 +2669,9 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | The method will remove all records from the table and reset the        |
      * | auto-incrementing identifier to zero.                                  |
      * --------------------------------------------------------------------------
+     * @return string
      */
-    public function truncate()
+    public function truncate(): string
     {
         return $this->truncateClauseBinder();
     }
@@ -2682,7 +2684,7 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | ---------------------------------------------------------------------- |
      * | A shared lock prevents the selected rows from being modified until     |
      * | your transaction is committed, it means a shared lock allow            |
-     * | simultaneous reading, but prohibit modifying the selected rows.
+     * | simultaneous reading, but prohibit modifying the selected rows.        |
      * --------------------------------------------------------------------------
      * @return $this
      */

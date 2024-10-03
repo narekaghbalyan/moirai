@@ -1,97 +1,14 @@
 <?php
 
-namespace Moirai\DML;
+namespace Moirai\DML\Traits;
 
 use Exception;
+use Moirai\DML\FullTextSearchModifiers;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use ReflectionClass;
 
-trait ClauseBindersToolkit
+trait ClauseBindersToolkitTrait
 {
-    /**
-     * @var array|string[]
-     */
-    protected array $operators = [
-        '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
-        'like', 'like binary', 'not like', 'ilike',
-        '&', '|', '^', '<<', '>>', '&~', 'is', 'is not',
-        'rlike', 'not rlike', 'regexp', 'not regexp',
-        '~', '~*', '!~', '!~*', 'similar to',
-        'not similar to', 'not ilike', '~~*', '!~~*',
-        'in', 'between'
-    ];
-
-    /**
-     * @var array|string[]
-     */
-    protected array $bitwiseOperators = [
-        '&', '|', '^', '<<', '>>', '&~',
-    ];
-
-    /**
-     * @var array|string[]
-     */
-    protected array $logicalOperators = [
-        'and', 'or', 'not'
-    ];
-
-    /**
-     * @var array|string[]
-     */
-    protected array $orderDirections = [
-        'asc', 'desc'
-    ];
-
-    // left outer = left
-    // right outer = right
-    // full outer = full
-    /**
-     * @var array|string[]
-     */
-    protected array $joinTypes = [
-        'left outer', 'right outer', 'full outer', 'inner', 'cross'
-    ];
-
-    /**
-     * @return array
-     */
-    public function getOperators(): array
-    {
-        return $this->operators;
-    }
-
-    /**
-     * @return array
-     */
-    public function getBitwiseOperators(): array
-    {
-        return $this->bitwiseOperators;
-    }
-
-    /**
-     * @return array
-     */
-    public function getLogicalOperators(): array
-    {
-        return $this->logicalOperators;
-    }
-
-    /**
-     * @return array
-     */
-    public function getOrderDirections(): array
-    {
-        return $this->orderDirections;
-    }
-
-    /**
-     * @return array
-     */
-    public function getJoinTypes(): array
-    {
-        return $this->joinTypes;
-    }
-
     /**
      * @param string $bindingName
      * @param string $passedLogicalType
@@ -271,7 +188,6 @@ trait ClauseBindersToolkit
     {
         $this->bind($bindingName, ['(']);
 
-//        $virginInstance = new $this($this->connection);
         $virginInstance = new $this();
 
         $callback($virginInstance);
@@ -316,9 +232,7 @@ trait ClauseBindersToolkit
      */
     protected function isAssociative(array $array): bool
     {
-        $supposedKeys = range(0, count($array) - 1);
-
-        return array_keys($array) !== $supposedKeys;
+        return array_keys($array) !== range(0, count($array) - 1);
     }
 
     /**

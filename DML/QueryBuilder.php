@@ -3,27 +3,23 @@
 namespace Moirai\DML;
 
 use Exception;
+use Moirai\DML\Traits\ClauseBindersToolkitTrait;
 use Moirai\Drivers\AvailableDbmsDrivers;
-use Moirai\Drivers\MariaDbDriver;
-use Moirai\Drivers\MsSqlServerDriver;
-use Moirai\Drivers\MySqlDriver;
-use Moirai\Drivers\OracleDriver;
-use Moirai\Drivers\PostgreSqlDriver;
-use Moirai\Drivers\SqliteDriver;
+use Moirai\Drivers\Driver;
 
 class QueryBuilder
 {
-    use ClauseBindersToolkit;
+    use ClauseBindersToolkitTrait;
 
     /**
-     * @var \Moirai\Drivers\MySqlDriver
+     * @var Driver
      */
-    protected $driver;
+    private Driver $driver;
 
     /**
      * @var array|array[]
      */
-    protected array $bindings = [
+    private array $bindings = [
         'select' => [],
         'from' => [],
         'join' => [],
@@ -32,17 +28,63 @@ class QueryBuilder
         'groupBy' => [],
         'having' => [],
         'orderBy' => [],
-        'unionOrder' => [],
         'limit' => [],
         'offset' => []
     ];
 
     /**
-     * QueryBuilder constructor.
+     * @var array|string[]
      */
-    public function __construct()
+    private array $operators = [
+        '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
+        'like', 'like binary', 'not like', 'ilike',
+        '&', '|', '^', '<<', '>>', '&~', 'is', 'is not',
+        'rlike', 'not rlike', 'regexp', 'not regexp',
+        '~', '~*', '!~', '!~*', 'similar to',
+        'not similar to', 'not ilike', '~~*', '!~~*',
+        'in', 'between'
+    ];
+
+    /**
+     * @var array|string[]
+     */
+    private array $bitwiseOperators = [
+        '&', '|', '^', '<<', '>>', '&~',
+    ];
+
+    /**
+     * @var array|string[]
+     */
+    private array $logicalOperators = [
+        'and', 'or', 'not'
+    ];
+
+    /**
+     * @var array|string[]
+     */
+    private array $orderDirections = [
+        'asc', 'desc'
+    ];
+
+    /**
+     * left outer -> left
+     * right outer -> right
+     * full outer -> full
+     *
+     * @var array|string[]
+     */
+    private array $joinTypes = [
+        'left outer', 'right outer', 'full outer', 'inner', 'cross'
+    ];
+
+    /**
+     * QueryBuilder constructor.
+     *
+     * @param string $driver
+     */
+    public function __construct(string $driver)
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = new $driver();
 
         $this->useAdditionalAccessories();
     }
@@ -50,7 +92,7 @@ class QueryBuilder
     /**
      * @return string
      */
-    public function getDriverName(): string
+    protected function getDriverName(): string
     {
         return $this->driver->getDriverName();
     }
@@ -58,16 +100,56 @@ class QueryBuilder
     /**
      * @return array
      */
-    protected function getBindings(): array
+    private function getBindings(): array
     {
         return $this->bindings;
+    }
+
+    /**
+     * @return array
+     */
+    private function getOperators(): array
+    {
+        return $this->operators;
+    }
+
+    /**
+     * @return array
+     */
+    private function getBitwiseOperators(): array
+    {
+        return $this->bitwiseOperators;
+    }
+
+    /**
+     * @return array
+     */
+    private function getLogicalOperators(): array
+    {
+        return $this->logicalOperators;
+    }
+
+    /**
+     * @return array
+     */
+    private function getOrderDirections(): array
+    {
+        return $this->orderDirections;
+    }
+
+    /**
+     * @return array
+     */
+    private function getJoinTypes(): array
+    {
+        return $this->joinTypes;
     }
 
     /**
      * @param string $bindingName
      * @return mixed
      */
-    protected function getBinding(string $bindingName): mixed
+    private function getBinding(string $bindingName): mixed
     {
         return $this->bindings[$bindingName];
     }
@@ -75,7 +157,7 @@ class QueryBuilder
     /**
      * @return string
      */
-    protected function getTableBinding(): string
+    private function getTableBinding(): string
     {
         $fromBinding = $this->getBinding('from');
 
@@ -92,7 +174,7 @@ class QueryBuilder
      * @param string $bindingName
      * @param array $binding
      */
-    protected function replaceBind(string $bindingName, array $binding): void
+    private function replaceBind(string $bindingName, array $binding): void
     {
         $this->bindings[$bindingName] = $binding;
     }
@@ -102,7 +184,7 @@ class QueryBuilder
      * @param string $bindingNewName
      * @throws \Exception
      */
-    protected function renameBinding(string $bindingName, string $bindingNewName): void
+    private function renameBinding(string $bindingName, string $bindingNewName): void
     {
         if (!array_key_exists($bindingName, $this->bindings)) {
             throw new Exception('Binding called "' . $bindingName . '" doesnt exist.');
@@ -119,7 +201,7 @@ class QueryBuilder
      * @param string $bindingName
      * @param array $binding
      */
-    protected function bind(string $bindingName, array $binding): void
+    private function bind(string $bindingName, array $binding): void
     {
         $this->bindings[$bindingName][] = $binding;
     }
@@ -131,7 +213,7 @@ class QueryBuilder
      * @param string $operator
      * @param string|int|float $value
      */
-    protected function bindInWhereBeforeCheckingForThePresenceOfJson(string $conditionType,
+    private function bindInWhereBeforeCheckingForThePresenceOfJson(string $conditionType,
                                                                      string $whereLogicalType,
                                                                      string $column,
                                                                      string $operator,
@@ -192,22 +274,22 @@ class QueryBuilder
         ]);
     }
 
-    protected function changeQueryTypeToInsert(): void
+    private function changeQueryTypeToInsert(): void
     {
         $this->changeQueryType('insert');
     }
 
-    protected function changeQueryTypeToUpdate(): void
+    private function changeQueryTypeToUpdate(): void
     {
         $this->changeQueryType('update', false);
     }
 
-    protected function changeQueryTypeToDelete(): void
+    private function changeQueryTypeToDelete(): void
     {
         $this->changeQueryType('delete', false, true);
     }
 
-    protected function changeQueryTypeToTruncate(): void
+    private function changeQueryTypeToTruncate(): void
     {
         $this->changeQueryType('truncate', false, false, true);
     }
@@ -218,7 +300,7 @@ class QueryBuilder
      * @param bool $useFrom
      * @param bool $useTable
      */
-    protected function changeQueryType(string $bindingName,
+    private function changeQueryType(string $bindingName,
                                        bool $useInto = true,
                                        bool $useFrom = false,
                                        bool $useTable = false): void
@@ -240,7 +322,7 @@ class QueryBuilder
         }
     }
 
-    protected function resetBindingsToDefault(): void
+    private function resetBindingsToDefault(): void
     {
         $this->bindings = [
             'select' => [],
@@ -257,7 +339,7 @@ class QueryBuilder
         ];
     }
 
-    protected function devastateBindings(): void
+    private function devastateBindings(): void
     {
         $this->bindings = [];
     }
@@ -265,7 +347,7 @@ class QueryBuilder
     /**
      * @param string $bindingName
      */
-    protected function devastateBinding(string $bindingName): void
+    private function devastateBinding(string $bindingName): void
     {
         $this->bindings[$bindingName] = [];
     }
@@ -273,45 +355,10 @@ class QueryBuilder
     /**
      * @param string $bindingName
      */
-    protected function deleteBinding(string $bindingName): void
+    private function deleteBinding(string $bindingName): void
     {
         unset($this->bindings[$bindingName]);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * @param bool $distinct
@@ -2214,7 +2261,7 @@ class QueryBuilder
         return $this->executeQuery($this->pickUpThePieces($this->getBindings()));
     }
 
-    protected function truncateClauseBinder()
+    protected function truncateClauseBinder(): string
     {
         $driver = $this->getDriverName();
 
