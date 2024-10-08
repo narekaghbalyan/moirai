@@ -8,5 +8,7 @@
             "helpers.php"
         ]
     },
-    "require": {}
+    "require": {
+      "ext-pdo": "*"
+    }
 }
