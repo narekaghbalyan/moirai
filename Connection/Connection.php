@@ -3,9 +3,10 @@
 namespace Moirai\Connection;
 
 use Exception;
+use Moirai\Drivers\AvailableDbmsDrivers;
 use PDO;
 
-class Connection
+abstract class Connection
 {
     /**
      * @var array
@@ -20,7 +21,7 @@ class Connection
     /**
      * @var array|string[]
      */
-    private array $credentials = [
+    protected array $credentials = [
         'host' => [
             'config_key' => 'db_host',
             'required' => true,
@@ -38,8 +39,8 @@ class Connection
         ],
         'username' => [
             'config_key' => 'db_username',
-            'required' => true,
-            'value' => null
+            'required' => false,
+            'value' => ''
         ],
         'password' => [
             'config_key' => 'db_password',
@@ -49,9 +50,21 @@ class Connection
         'driver' => [
             'config_key' => 'db_driver',
             'required' => true,
-            'value' => null
+            'value' => AvailableDbmsDrivers::MYSQL
+        ],
+        'provider' => [
+            'config_key' => 'provider',
+            'required' => true,
+            'value' => ConnectionProviders::PDO
         ]
     ];
+
+    /**
+     * DBH - Database Handle
+     *
+     * @var mixed
+     */
+    protected mixed $dbh;
 
     /**
      * Connection constructor.
@@ -89,12 +102,30 @@ class Connection
         }
     }
 
+    private function resolveProvider()
+    {
+
+    }
+
     /**
      * @throws Exception
      */
     private function applyCredentials()
     {
         foreach ($this->credentials as $key => $credential) {
+            if (!isset($this->configs['connections'][$this->connectionKey][$credential['config_key']])) {
+                throw new Exception(
+                    'The connection '
+                    . $key
+                    . ' could not be found. It must be specified in the configs file under the key "'
+                    . $credential['config_key']
+                    . '" in the connection "'
+                    . $this->connectionKey
+                    . '". If it should not have a value then you can specify it with an empty value but you must be 
+                    sure to declare it in the above location.'
+                );
+            }
+
             $this->credentials[$key]['value'] = $this->configs['connections'][$this->connectionKey][$credential['config_key']];
 
             if (!$credential['required']) {
@@ -105,7 +136,7 @@ class Connection
                 throw new Exception(
                     'The connection '
                     . $key
-                    . ' could not be found or is empty. It should be in the configs file under the key "'
+                    . ' is required, but specified value is empty. It must be specified in the configs file under the key "'
                     . $credential['config_key']
                     . '" in the connection "'
                     . $this->connectionKey
@@ -116,13 +147,9 @@ class Connection
     }
 
     /**
+     *
      */
-    public function initialize()
-    {
-        $dbh = new PDO($this->sculptDsn(), $user, $pass);
-
-        dd();
-    }
+    abstract public function initialize(): void;
 
     /**
      * DSN - Data Source Name
@@ -130,9 +157,11 @@ class Connection
      *
      * @return string
      */
-    private function sculptDsn(): string
+    abstract protected function sculptDsn(): string;
+
+
+    public function disconnect(): void
     {
-        // mysql:dbname=testdb;host=127.0.0.1
-        return 'mysql:dbname=' . $this->configs[$this->credentials['database']['config_key']]
+        $this->dbh = null;
     }
 }
