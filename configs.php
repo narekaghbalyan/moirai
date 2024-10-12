@@ -1,6 +1,5 @@
 <?php
 
-use Moirai\Connection\ConnectionProviders;
 use Moirai\Drivers\AvailableDbmsDrivers;
 
 return [
@@ -11,6 +10,16 @@ return [
      *
      * If you not pass connection key, "default"
      * connection will be used by default.
+     *
+     * Not required parameters must be declared.
+     *
+     * For SQLite you must specify database file full path under key
+     * db_file_path. For SQLite you can use only db_file_path and
+     * db_driver attributes, other attributes will be ignored.
+     * If you use db_file_path attribute you must specify db_driver as
+     * SQLite (AvailableDbmsDrivers::SQLITE), because that attribute work
+     * only for SQLite. If you specify that attribute for other drivers,
+     * exception will be thrown.
      */
     'connections' => [
         'default' => [
@@ -19,9 +28,12 @@ return [
             'db_database' => 'moirai_db', // required
             'db_username' => 'root', // not required
             'db_password' => '', // not required
-            'db_driver' => AvailableDbmsDrivers::MYSQL, // not required, by default - MySQL
-            'provider' => ConnectionProviders::PDO, // not required, by default - PDO
+            'db_driver' => AvailableDbmsDrivers::MYSQL // required
         ],
+        // 'example_for_sqlite' => [
+        //     'db_file_path' => 'full_path',
+        //     'db_driver' => AvailableDbmsDrivers::SQLITE
+        //  ],
         // other connections ...
     ],
     /**
@@ -30,6 +42,8 @@ return [
      * credentials. The persistent connection cache allows you to avoid the overhead
      * of establishing a new connection every time a script needs to talk to a
      * database, resulting in a faster web application.
+     *
+     * If you not specify this option, it will be true by default.
      */
     'persistent' => true
 ];
