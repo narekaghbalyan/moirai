@@ -24,11 +24,11 @@ return [
     'connections' => [
         'default' => [
             'db_host' => '127.0.0.1', // required
-            'db_port' => '3306', // required
+            'db_port' => '3306', // not required, 3306 by default
             'db_database' => 'moirai_db', // required
             'db_username' => 'root', // not required
             'db_password' => '', // not required
-            'db_driver' => AvailableDbmsDrivers::MYSQL // required
+            'db_driver' => AvailableDbmsDrivers::MYSQL // not required, MySQL by default
         ],
         // 'example_for_sqlite' => [
         //     'db_file_path' => 'full_path',
