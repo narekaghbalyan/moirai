@@ -5,20 +5,21 @@ namespace Moirai\Connection;
 use Exception;
 use Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface;
 use Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface;
+use Moirai\Drivers\AvailableDbmsDrivers;
 use PDO;
 use PDOException;
 
 class DBH
 {
     /**
-     * @var \PDO
-     */
-    private PDO $dbh;
-
-    /**
      * @var \Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface|\Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface
      */
     private CredentialsDTOInterface|FileConnectionDTOInterface $dto;
+
+    /**
+     * @var \PDO
+     */
+    private PDO $dbh;
 
     /**
      * @var array|bool[]
@@ -45,6 +46,8 @@ class DBH
      */
     private function initialize(): void
     {
+        $this->checkDbmsDriver();
+
         try {
             if ($this->dto instanceof CredentialsDTOInterface) {
                 $this->dbh = new PDO(
@@ -65,6 +68,48 @@ class DBH
             $this->dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // ?
         } catch (PDOException $exception) {
             throw new Exception($exception->getMessage());
+        }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    private function checkDbmsDriver()
+    {
+        $localAvailableDbmsDrivers = AvailableDbmsDrivers::getDrivers();
+
+        if (!in_array($this->dto->dbmsDriver(), $localAvailableDbmsDrivers)) {
+            throw new Exception(
+                'Database management system driver "'
+                . $this->dto->dbmsDriver()
+                . '" is not supported. Only the following drivers are supported: "'
+                . implode('", "', $localAvailableDbmsDrivers)
+                . '".'
+            );
+        }
+
+        $localAndPdoDbmsDriversConformity = [
+            AvailableDbmsDrivers::MYSQL => 'mysql',
+            AvailableDbmsDrivers::POSTGRESQL => 'pgsql',
+            AvailableDbmsDrivers::SQLITE => 'sqlite',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'sqlsrv',
+            AvailableDbmsDrivers::MARIADB => 'mysql',
+            AvailableDbmsDrivers::ORACLE => 'oci'
+        ];
+
+        $pdoAvailableDbmsDrivers = PDO::getAvailableDrivers();
+
+        if (!in_array(
+            $localAndPdoDbmsDriversConformity[$this->dto->dbmsDriver()],
+            $pdoAvailableDbmsDrivers
+        )) {
+            throw new Exception(
+                'Database management system driver "'
+                . $this->dto->dbmsDriver()
+                . '" is not supported by PDO. Only the following drivers are supported: "'
+                . implode('", "', $pdoAvailableDbmsDrivers)
+                . '". The driver module may not be installed.'
+            );
         }
     }
 

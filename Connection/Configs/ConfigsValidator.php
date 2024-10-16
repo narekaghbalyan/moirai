@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\Connection;
+namespace Moirai\Connection\Configs;
 
 use Exception;
 

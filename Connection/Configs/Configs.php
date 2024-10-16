@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\Connection;
+namespace Moirai\Connection\Configs;
 
 use Exception;
 
@@ -37,7 +37,7 @@ class Configs
      * @return mixed
      * @throws \Exception
      */
-    public function getConfigValue(string $key, $required = false): mixed
+    public function getValue(string $key, $required = false): mixed
     {
         if ($required && empty($this->configs['connections'][$this->connectionKey][$key])) {
             throw new Exception(

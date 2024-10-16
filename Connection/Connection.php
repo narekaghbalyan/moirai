@@ -3,64 +3,31 @@
 namespace Moirai\Connection;
 
 use Exception;
+use Moirai\Connection\Configs\Configs;
+use Moirai\Connection\DTO\CredentialsDTO;
+use Moirai\Connection\DTO\FileConnectionDTO;
+use Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface;
+use Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface;
 use Moirai\Drivers\AvailableDbmsDrivers;
-use PDO;
 
 class Connection
 {
     /**
-     * @var \Moirai\Connection\Configs
+     * @var \Moirai\Connection\Configs\Configs
      */
     private Configs $configs;
 
     /**
-     * @var string
+     * @var \Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface|\Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface
      */
-    private string $connectionKey;
-
-    /**
-     * @var array|string[]
-     */
-    private array $localAndConfigsCredentialsKeysConformity = [
-        'host' => 'db_host',
-        'port' => 'db_port',
-        'database' => 'db_database',
-        'username' => 'db_username',
-        'password' => 'db_password',
-        'dbms_driver' => 'db_driver',
-        'file_path' => 'db_file_path'
-    ];
-
-    /**
-     * @var array
-     */
-    private array $localAvailableDbmsDrivers;
-
-    /**
-     * @var array
-     */
-    private array $pdoAvailableDbmsDrivers;
-
-    /**
-     * @var array|string[]
-     */
-    private array $localAndPdoDbmsDriversConformity = [
-        AvailableDbmsDrivers::MYSQL => 'mysql',
-        AvailableDbmsDrivers::POSTGRESQL => 'pgsql',
-        AvailableDbmsDrivers::SQLITE => 'sqlite',
-        AvailableDbmsDrivers::MS_SQL_SERVER => 'sqlsrv',
-        AvailableDbmsDrivers::MARIADB => 'mysql',
-        AvailableDbmsDrivers::ORACLE => 'oci',
-    ];
-
-
+    private CredentialsDTOInterface|FileConnectionDTOInterface $dto;
 
     /**
      * DBH - Database Handle
      *
-     * @var mixed
+     * @var \Moirai\Connection\DBH
      */
-    private mixed $dbh;
+    private DBH $dbh;
 
     /**
      * Connection constructor.
@@ -70,29 +37,36 @@ class Connection
      */
     public function __construct(string $connectionKey)
     {
-        $this->localAvailableDbmsDrivers = AvailableDbmsDrivers::getDrivers();
-        $this->pdoAvailableDbmsDrivers = PDO::getAvailableDrivers();
-
-
-
-
-
-
-
         $this->configs = new Configs('configs.php', $connectionKey);
-        $this->dbh->initializeConnection();
 
+        $this->initializeDTO();
 
-
-        $this->dbh = new DBH();
-
-
-        $this->applyCredentials();
-
-
+        $this->dbh = new DBH($this->dto);
     }
 
+    /**
+     * @throws \Exception
+     */
+    private function initializeDTO()
+    {
+        $dbmsDriver = $this->configs->getValue('db_driver') ?: AvailableDbmsDrivers::MYSQL;
 
+        if ($dbmsDriver !== AvailableDbmsDrivers::SQLITE) {
+            $this->dto = CredentialsDTO::create(
+                $this->configs->getValue('db_host', true),
+                $this->configs->getValue('db_port') ?? 3306,
+                $this->configs->getValue('db_database', true),
+                $this->configs->getValue('db_username') ?? '',
+                $this->configs->getValue('db_password') ?? '',
+                $dbmsDriver
+            );
 
+            return;
+        }
 
+        $this->dto = FileConnectionDTO::create(
+            $this->configs->getValue('db_file_path', true),
+            $dbmsDriver
+        );
+    }
 }
