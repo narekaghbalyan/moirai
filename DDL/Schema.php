@@ -6,12 +6,18 @@ use Closure;
 
 class Schema extends SchemaBuilder
 {
-    public static function create(string $table, Closure $callback)
+    /**
+     * @param string $table
+     * @param \Closure|\Moirai\DDL\Blueprint $blueprint
+     */
+    public static function create(string $table, Closure|Blueprint $blueprint): void
     {
-        $blueprint = new Blueprint($table, $callback);
+        if (!$blueprint instanceof Blueprint) {
+            $blueprint = new Blueprint($table, $blueprint);
+        }
 
-//        $ddlExpression = 'CREATE TABLE (' . $blueprint . ')';
-//
-//        dd($ddlExpression);
+        $tableCreationExpression = 'CREATE TABLE (' . $blueprint . ')';
+
+        dd($tableCreationExpression);
     }
 }

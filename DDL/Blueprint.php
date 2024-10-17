@@ -4,16 +4,27 @@ namespace Moirai\DDL;
 
 use Closure;
 use Moirai\Drivers\MySqlDriver;
-use Moirai\Drivers\PostgreSqlDriver;
 
 class Blueprint
 {
+    /**
+     * @var \Moirai\Drivers\PostgreSqlDriver
+     */
     protected $driver;
 
+    /**
+     * @var string
+     */
     public string $table;
 
+    /**
+     * @var array
+     */
     public array $columns = [];
 
+    /**
+     * @var array|array[]
+     */
     public array $tableAccessories = [
         'unique' => [
             'prefix' => 'UNIQUE',
@@ -21,14 +32,25 @@ class Blueprint
         ]
     ];
 
+    /**
+     * @var array
+     */
     public array $afterTableDefinition  = [];
 
+    /**
+     * @var int
+     */
     private int $defaultStringLength = 255;
 
+    /**
+     * Blueprint constructor.
+     *
+     * @param string $table
+     * @param \Closure|null $callback
+     */
     public function __construct(string $table, Closure|null $callback = null)
     {
-        $this->driver = new PostgreSqlDriver();
-
+        $this->driver = new MySqlDriver();
         $this->table = $table;
 
         if (!is_null($callback)) {
@@ -38,11 +60,25 @@ class Blueprint
         $this->sewDefinedColumns();
     }
 
+    /**
+     * @return string
+     */
     public function getDriver()
     {
         return $this->driver->getDriverName();
     }
 
+
+
+
+
+
+
+
+
+    /**
+     * @return string
+     */
     private function sewDefinedColumns(): string
     {
         if (empty($this->columns)) {
@@ -80,14 +116,7 @@ class Blueprint
         dd(implode(', ', $sewedColumns));
     }
 
-    private function bindColumn(string $column, string $dataType, array $parameters = []): DefinedColumnAccessories
-    {
-        $this->columns[$column] = array_merge(compact('dataType'), $parameters);
 
-        $this->columns[$column]['value'] = 'NOT NULL';
-
-        return new DefinedColumnAccessories($column, $this);
-    }
 
     private function resolveAutoIncrementAndUnsignedParametersUsing(bool $autoIncrement, bool $unsigned): array
     {
@@ -108,7 +137,7 @@ class Blueprint
                                     string $column,
                                     int|null $total = null,
                                     int|null $places = null,
-                                    bool $unsigned = false): void
+                                    bool $unsigned = false): DefinedColumnAccessories
     {
         $parameters = [];
 
@@ -121,253 +150,527 @@ class Blueprint
             $this->resolveAutoIncrementAndUnsignedParametersUsing(false, $unsigned)
         );
 
-        $this->bindColumn($column, $this->driver->getDataType($dataType), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType($dataType), $parameters);
     }
 
 
-    public function char(string $column, string|int|null $length = null)
+    /**
+     * @param string $column
+     * @param string $dataType
+     * @param array $parameters
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    private function bindColumn(string $column, string $dataType, array $parameters = []): DefinedColumnAccessories
     {
-        $length = $length ?: $this->defaultStringLength;
+        $this->columns[$column] = array_merge(compact('dataType'), $parameters);
+        $this->columns[$column]['value'] = 'NOT NULL';
+
+        return new DefinedColumnAccessories($column, $this);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        $length = $length ?? $this->defaultStringLength;
 
         return $this->bindColumn($column, $this->driver->getDataType('char'), compact('length'));
     }
 
-
-    public function string(string $column, string|int|null $length = null)
+    /**
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function string(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
         $length = $length ?: $this->defaultStringLength;
 
-        $this->bindColumn($column, $this->driver->getDataType('string'), compact('length'));
+        return $this->bindColumn($column, $this->driver->getDataType('string'), compact('length'));
     }
 
-    public function tinyText(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function tinyText(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('tinyText'));
+        return $this->bindColumn($column, $this->driver->getDataType('tinyText'));
     }
 
-    public function text(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function text(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('text'));
+        return $this->bindColumn($column, $this->driver->getDataType('text'));
     }
 
-    public function mediumText(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function mediumText(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('mediumText'));
+        return $this->bindColumn($column, $this->driver->getDataType('mediumText'));
     }
 
-    public function longText(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function longText(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('longText'));
+        return $this->bindColumn($column, $this->driver->getDataType('longText'));
     }
 
-    public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false)
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
-
-        return $this;
-    }
-
-    public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false)
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        $this->bindColumn($column, $this->driver->getDataType('tinyInteger'), $parameters);
-    }
-
-    public function smallInteger(string $column, bool $autoIncrement = false, bool $unsigned = false)
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        $this->bindColumn($column, $this->driver->getDataType('smallInteger'), $parameters);
-    }
-
-    public function mediumInteger(string $column, bool $autoIncrement = false, bool $unsigned = false)
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        $this->bindColumn($column, $this->driver->getDataType('mediumInteger'), $parameters);
-    }
-
-    public function bigInteger(string $column, bool $autoIncrement = false, bool $unsigned = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
-        $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
     }
 
-    public function unsignedInteger(string $column, bool $autoIncrement = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
-        $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType('tinyInteger'), $parameters);
     }
 
-    public function unsignedTinyInteger(string $column, bool $autoIncrement = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function smallInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
+    {
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
+
+        return $this->bindColumn($column, $this->driver->getDataType('smallInteger'), $parameters);
+    }
+
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function mediumInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
+    {
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
+
+        return $this->bindColumn($column, $this->driver->getDataType('mediumInteger'), $parameters);
+    }
+
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function bigInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
+    {
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
+
+        return $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
+    }
+
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function unsignedInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        $this->bindColumn($column, $this->driver->getDataType('tinyInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
     }
 
-    public function unsignedSmallInteger(string $column, bool $autoIncrement = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function unsignedTinyInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        $this->bindColumn($column, $this->driver->getDataType('smallInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType('tinyInteger'), $parameters);
     }
 
-    public function unsignedMediumInteger(string $column, bool $autoIncrement = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function unsignedSmallInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        $this->bindColumn($column, $this->driver->getDataType('mediumInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType('smallInteger'), $parameters);
     }
 
-    public function unsignedBigInteger(string $column, bool $autoIncrement = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function unsignedMediumInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType('mediumInteger'), $parameters);
     }
 
-    public function float(string $column, int $total = 8, int $places = 2, bool $unsigned = false)
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function unsignedBigInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
-        $this->floatBaseBinder('float', $column, $total, $places, $unsigned);
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+
+        return $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
     }
 
-    public function double(string $column, int|null $total = null, int|null $places = null, bool $unsigned = false)
+    /**
+     * @param string $column
+     * @param int $total
+     * @param int $places
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function float(string $column, int $total = 8, int $places = 2, bool $unsigned = false): DefinedColumnAccessories
     {
-        $this->floatBaseBinder('double', $column, $total, $places, $unsigned);
+        return $this->floatBaseBinder('float', $column, $total, $places, $unsigned);
     }
 
-    public function decimal(string $column, int $total = 8, int $places = 2, bool $unsigned = false)
+    /**
+     * @param string $column
+     * @param int|null $total
+     * @param int|null $places
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function double(string $column, int|null $total = null, int|null $places = null, bool $unsigned = false): DefinedColumnAccessories
     {
-        $this->floatBaseBinder('decimal', $column, $total, $places, $unsigned);
+        return $this->floatBaseBinder('double', $column, $total, $places, $unsigned);
     }
 
-    public function unsignedFloat(string $column, int $total = 8, int $places = 2)
+    /**
+     * @param string $column
+     * @param int $total
+     * @param int $places
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function decimal(string $column, int $total = 8, int $places = 2, bool $unsigned = false): DefinedColumnAccessories
     {
-        $this->floatBaseBinder('float', $column, $total, $places, true);
+        return $this->floatBaseBinder('decimal', $column, $total, $places, $unsigned);
     }
 
-    public function unsignedDouble(string $column, int|null $total = null, int|null $places = null)
+    /**
+     * @param string $column
+     * @param int $total
+     * @param int $places
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function unsignedFloat(string $column, int $total = 8, int $places = 2): DefinedColumnAccessories
     {
-        $this->floatBaseBinder('double', $column, $total, $places, true);
+        return $this->floatBaseBinder('float', $column, $total, $places, true);
     }
 
-    public function unsignedDecimal(string $column, int $total = 8, int $places = 2)
+    /**
+     * @param string $column
+     * @param int|null $total
+     * @param int|null $places
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function unsignedDouble(string $column, int|null $total = null, int|null $places = null): DefinedColumnAccessories
     {
-        $this->floatBaseBinder('decimal', $column, $total, $places, true);
+        return $this->floatBaseBinder('double', $column, $total, $places, true);
     }
 
-    public function boolean(string $column)
+    /**
+     * @param string $column
+     * @param int $total
+     * @param int $places
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function unsignedDecimal(string $column, int $total = 8, int $places = 2): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('boolean'));
+        return $this->floatBaseBinder('decimal', $column, $total, $places, true);
     }
 
-    public function bool(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function boolean(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('boolean'));
+        return $this->bindColumn($column, $this->driver->getDataType('boolean'));
     }
 
-    public function enum(string $column, array $whiteList)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function bool(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('enum'),
+        return $this->bindColumn($column, $this->driver->getDataType('boolean'));
+    }
+
+    /**
+     * @param string $column
+     * @param array $whiteList
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function enum(string $column, array $whiteList): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, $this->driver->getDataType('enum'),
             [implode(', ', $whiteList)]
         );
     }
 
-    public function set(string $column, array $whiteList)
+    /**
+     * @param string $column
+     * @param array $whiteList
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function set(string $column, array $whiteList): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('set'),
+        return $this->bindColumn($column, $this->driver->getDataType('set'),
             [implode(', ', $whiteList)]
         );
     }
 
-    public function json(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function json(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('json'));
+        return $this->bindColumn($column, $this->driver->getDataType('json'));
     }
 
-    public function jsonb(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function jsonb(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('jsonb'));
+        return $this->bindColumn($column, $this->driver->getDataType('jsonb'));
     }
 
-    public function date(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function date(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('date'));
+        return $this->bindColumn($column, $this->driver->getDataType('date'));
     }
 
-    public function dateTime(string $column, int $precision = 0)
+    /**
+     * @param string $column
+     * @param int $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function dateTime(string $column, int $precision = 0): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('dateTime'), ['(' . $precision . ')']);
+        return $this->bindColumn($column, $this->driver->getDataType('dateTime'), ['(' . $precision . ')']);
     }
 
-    public function time(string $column, int $precision = 0)
+    /**
+     * @param string $column
+     * @param int $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function time(string $column, int $precision = 0): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('time'), ['(' . $precision . ')']);
+        return $this->bindColumn($column, $this->driver->getDataType('time'), ['(' . $precision . ')']);
     }
 
-    public function timestamp(string $column, int $precision = 0)
+    /**
+     * @param string $column
+     * @param int $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function timestamp(string $column, int $precision = 0): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('timestamp'), ['(' . $precision . ')']);
+        return $this->bindColumn($column, $this->driver->getDataType('timestamp'), ['(' . $precision . ')']);
     }
 
-    public function year(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function year(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('year'));
+        return $this->bindColumn($column, $this->driver->getDataType('year'));
     }
 
-    public function binary(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function binary(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('binary'));
+        return $this->bindColumn($column, $this->driver->getDataType('binary'));
     }
 
-    public function varbinary(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function varbinary(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('varbinary'));
+        return $this->bindColumn($column, $this->driver->getDataType('varbinary'));
     }
 
-    public function geometry(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function geometry(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('geometry'));
+        return $this->bindColumn($column, $this->driver->getDataType('geometry'));
     }
 
-    public function point(string $column, null|int|string $srid = null)
+    /**
+     * @param string $column
+     * @param int|string|null $srid
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function point(string $column, null|int|string $srid = null): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('point'), compact('srid'));
+        return $this->bindColumn($column, $this->driver->getDataType('point'), compact('srid'));
     }
 
-    public function lineString(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function lineString(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('lineString'));
+        return $this->bindColumn($column, $this->driver->getDataType('lineString'));
     }
 
-    public function polygon(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function polygon(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('polygon'));
+        return $this->bindColumn($column, $this->driver->getDataType('polygon'));
     }
 
-    public function multipoint(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function multipoint(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('multipoint'));
+        return $this->bindColumn($column, $this->driver->getDataType('multipoint'));
     }
 
-    public function multiLineString(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function multiLineString(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('multiLineString'));
+        return $this->bindColumn($column, $this->driver->getDataType('multiLineString'));
     }
 
-    public function multiPolygon(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function multiPolygon(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('multiPolygon'));
+        return $this->bindColumn($column, $this->driver->getDataType('multiPolygon'));
     }
 
-    public function geometryCollection(string $column)
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function geometryCollection(string $column): DefinedColumnAccessories
     {
-        $this->bindColumn($column, $this->driver->getDataType('geometryCollection'));
+        return $this->bindColumn($column, $this->driver->getDataType('geometryCollection'));
     }
 }

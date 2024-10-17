@@ -26,7 +26,6 @@ class DefinedColumnAccessories
     public function __construct(string $column, Blueprint $blueprintInstance)
     {
         $this->column = $column;
-
         $this->blueprintInstance = $blueprintInstance;
     }
 
