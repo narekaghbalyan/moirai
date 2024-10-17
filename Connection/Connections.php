@@ -8,10 +8,16 @@ use Moirai\Connection\DTO\CredentialsDTO;
 use Moirai\Connection\DTO\FileConnectionDTO;
 use Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface;
 use Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface;
+use Moirai\Connection\DTO\OptionsDTO;
 use Moirai\Drivers\AvailableDbmsDrivers;
 
-class Connection
+class Connections
 {
+    /**
+     * @var array
+     */
+    private static array $instances = [];
+
     /**
      * @var \Moirai\Connection\Configs\Configs
      */
@@ -35,13 +41,39 @@ class Connection
      * @param string $connectionKey
      * @throws Exception
      */
-    public function __construct(string $connectionKey)
+    private function __construct(string $connectionKey)
     {
         $this->configs = new Configs('configs.php', $connectionKey);
 
         $this->initializeDTO();
 
-        $this->dbh = new DBH($this->dto);
+        $this->dbh = new DBH(
+            $this->dto,
+            OptionsDTO::create($this->configs->getValue('persistent'))
+        );
+    }
+
+    private function __clone()
+    {
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function __wakeup()
+    {
+        throw new Exception('Cannot unserialize a connections.');
+    }
+
+    /**
+     * @param string $connectionKey
+     * @return static
+     * @throws \Exception
+     */
+    public static function getInstance(string $connectionKey): self
+    {
+        return static::$instances[$connectionKey]
+            ?? (static::$instances[$connectionKey] = new static($connectionKey));
     }
 
     /**

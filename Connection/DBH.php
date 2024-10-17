@@ -5,6 +5,7 @@ namespace Moirai\Connection;
 use Exception;
 use Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface;
 use Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface;
+use Moirai\Connection\DTO\Interfaces\OptionsDTOInterface;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use PDO;
 use PDOException;
@@ -17,26 +18,26 @@ class DBH
     private CredentialsDTOInterface|FileConnectionDTOInterface $dto;
 
     /**
+     * @var \Moirai\Connection\DTO\Interfaces\OptionsDTOInterface
+     */
+    private OptionsDTOInterface $optionsDTO;
+
+    /**
      * @var \PDO
      */
     private PDO $dbh;
 
     /**
-     * @var array|bool[]
-     */
-    private array $options = [
-        PDO::ATTR_EMULATE_PREPARES => true,
-        PDO::ATTR_PERSISTENT => true
-    ];
-
-    /**
      * DBH constructor.
+     *
      * @param \Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface|\Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface $dto
+     * @param \Moirai\Connection\DTO\Interfaces\OptionsDTOInterface $optionsDTO
      * @throws \Exception
      */
-    public function __construct(CredentialsDTOInterface|FileConnectionDTOInterface $dto)
+    public function __construct(CredentialsDTOInterface|FileConnectionDTOInterface $dto, OptionsDTOInterface $optionsDTO)
     {
         $this->dto = $dto;
+        $this->optionsDTO = $optionsDTO;
 
         $this->initialize();
     }
@@ -48,20 +49,25 @@ class DBH
     {
         $this->checkDbmsDriver();
 
+        $options = [
+            PDO::ATTR_EMULATE_PREPARES => true,
+            PDO::ATTR_PERSISTENT => $this->optionsDTO->persistent() ?? true
+        ];
+
         try {
             if ($this->dto instanceof CredentialsDTOInterface) {
                 $this->dbh = new PDO(
                     $this->sculptDsn(),
                     $this->dto->username(),
                     $this->dto->password(),
-                    $this->options
+                    $options
                 );
             } else {
                 $this->dbh = new PDO(
                     $this->dto->dbmsDriver() . ':' . $this->dto->filePath(),
                     null,
                     null,
-                    $this->options
+                    $options
                 );
             }
 
@@ -74,7 +80,7 @@ class DBH
     /**
      * @throws \Exception
      */
-    private function checkDbmsDriver()
+    private function checkDbmsDriver(): void
     {
         $localAvailableDbmsDrivers = AvailableDbmsDrivers::getDrivers();
 
