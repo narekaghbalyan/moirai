@@ -24,46 +24,28 @@ class OracleDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        'char'               => 'CHAR',
-        'string'             => 'VARCHAR',
-        'tinyText'           => 'TINYTEXT',
-        'text'               => 'TEXT',
-        'mediumText'         => 'MEDIUMTEXT',
-        'longText'           => 'LONGTEXT',
-        'tinyblob'           => 'TINYBLOB',
-        'blob'               => 'BLOB',
-        'mediumBlob'         => 'MEDIUMBLOB',
-        'longBlob'           => 'LONGBLOB',
-        'bit'                => 'BIT',
-        'integer'            => 'INT',
-        'tinyInteger'        => 'TINYINT',
-        'smallInteger'       => 'SMALLINT',
-        'mediumInteger'      => 'MEDIUMINT',
-        'bigInteger'         => 'BIGINT',
-        'float'              => 'FLOAT',
-        'double'             => 'DOUBLE',
-        'decimal'            => 'DECIMAL',
-        'boolean'            => 'BOOLEAN',
-        'enum'               => 'ENUM',
-        'set'                => 'SET',
-        'json'               => 'JSON',
-        'jsonb'              => 'JSONB',
-        'date'               => 'DATE',
-        'dateTime'           => 'DATETIME',
-        'time'               => 'TIME',
-        'timestamp'          => 'TIMESTAMP',
-        'year'               => 'YEAR',
-        'binary'             => 'BINARY',
-        'varbinary'          => 'VARBINARY',
-        'geometry'           => 'GEOMETRY',
-        'point'              => 'POINT',
-        'lineString'         => 'LINESTRING',
-        'polygon'            => 'POLYGON',
-        'multipoint'         => 'MULTIPOINT',
-        'multiLineString'    => 'MULTILINESTRING',
-        'multiPolygon'       => 'MULTIPOLYGON',
-        'geometryCollection' => 'GEOMETRYCOLLECTION'
+        'NUMBER' => 'NUMBER(p, s)',  // Precision and scale can be specified
+        'FLOAT' => 'FLOAT',           // Synonym for NUMBER
+        'BINARY_FLOAT' => 'BINARY_FLOAT',
+        'BINARY_DOUBLE' => 'BINARY_DOUBLE',
+        'CHAR' => 'CHAR(n)',         // Fixed-length character data
+        'VARCHAR2' => 'VARCHAR2(n)', // Variable-length character data
+        'NCHAR' => 'NCHAR(n)',       // Fixed-length Unicode character data
+        'NVARCHAR2' => 'NVARCHAR2(n)', // Variable-length Unicode character data
+        'CLOB' => 'CLOB',             // Character Large Object
+        'NCLOB' => 'NCLOB',           // National Character Large Object
+        'BLOB' => 'BLOB',             // Binary Large Object
+        'RAW' => 'RAW(n)',            // Fixed-length binary data
+        'LONG' => 'LONG',             // Variable-length character data (deprecated)
+        'DATE' => 'DATE',             // Date and time
+        'TIMESTAMP' => 'TIMESTAMP',   // Date and time with fractional seconds
+        'TIMESTAMP WITH TIME ZONE' => 'TIMESTAMP WITH TIME ZONE',
+        'TIMESTAMP WITH LOCAL TIME ZONE' => 'TIMESTAMP WITH LOCAL TIME ZONE',
+        'INTERVAL YEAR TO MONTH' => 'INTERVAL YEAR TO MONTH',
+        'INTERVAL DAY TO SECOND' => 'INTERVAL DAY TO SECOND',
+        'UROWID' => 'UROWID',         // Universal row identifier
     ];
+
 
     /**
      * OracleDriver constructor.

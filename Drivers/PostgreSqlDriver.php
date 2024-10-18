@@ -24,46 +24,41 @@ class PostgreSqlDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        'char'               => 'CHAR',
-        'string'             => 'VARCHAR',
-        'tinyText'           => 'TINYTEXT',
-        'text'               => 'TEXT',
-        'mediumText'         => 'MEDIUMTEXT',
-        'longText'           => 'LONGTEXT',
-        'tinyblob'           => 'TINYBLOB',
-        'blob'               => 'BLOB',
-        'mediumBlob'         => 'MEDIUMBLOB',
-        'longBlob'           => 'LONGBLOB',
-        'bit'                => 'BIT',
-        'integer'            => 'INT',
-        'tinyInteger'        => 'TINYINT',
-        'smallInteger'       => 'SMALLINT',
-        'mediumInteger'      => 'MEDIUMINT',
-        'bigInteger'         => 'BIGINT',
-        'float'              => 'FLOAT',
-        'double'             => 'DOUBLE',
-        'decimal'            => 'DECIMAL',
-        'boolean'            => 'BOOLEAN',
-        'enum'               => 'ENUM',
-        'set'                => 'SET',
-        'json'               => 'JSON',
-        'jsonb'              => 'JSONB',
-        'date'               => 'DATE',
-        'dateTime'           => 'DATETIME',
-        'time'               => 'TIME',
-        'timestamp'          => 'TIMESTAMP',
-        'year'               => 'YEAR',
-        'binary'             => 'BINARY',
-        'varbinary'          => 'VARBINARY',
-        'geometry'           => 'GEOMETRY',
-        'point'              => 'POINT',
-        'lineString'         => 'LINESTRING',
-        'polygon'            => 'POLYGON',
-        'multipoint'         => 'MULTIPOINT',
-        'multiLineString'    => 'MULTILINESTRING',
-        'multiPolygon'       => 'MULTIPOLYGON',
-        'geometryCollection' => 'GEOMETRYCOLLECTION'
+        'SMALLINT' => 'SMALLINT',                // 2 bytes
+        'INTEGER' => 'INTEGER',                  // 4 bytes
+        'BIGINT' => 'BIGINT',                    // 8 bytes
+        'DECIMAL' => 'DECIMAL(precision, scale)', // Exact numeric with selectable precision
+        'NUMERIC' => 'NUMERIC(precision, scale)', // Exact numeric
+        'REAL' => 'REAL',                        // 4 bytes floating point
+        'DOUBLE PRECISION' => 'DOUBLE PRECISION', // 8 bytes floating point
+        'MONEY' => 'MONEY',                      // Currency type
+        'CHAR' => 'CHAR(n)',                     // Fixed-length character
+        'VARCHAR' => 'VARCHAR(n)',                // Variable-length character
+        'TEXT' => 'TEXT',                        // Variable-length character with no specific length
+        'BYTEA' => 'BYTEA',                      // Binary data
+        'DATE' => 'DATE',                        // Date type
+        'TIME' => 'TIME',                        // Time without time zone
+        'TIMETZ' => 'TIME WITH TIME ZONE',      // Time with time zone
+        'TIMESTAMP' => 'TIMESTAMP',              // Timestamp without time zone
+        'TIMESTAMPTZ' => 'TIMESTAMP WITH TIME ZONE', // Timestamp with time zone
+        'INTERVAL' => 'INTERVAL',                // Time interval
+        'BOOLEAN' => 'BOOLEAN',                   // Boolean type
+        'UUID' => 'UUID',                        // Universally Unique Identifier
+        'JSON' => 'JSON',                        // JSON data type
+        'JSONB' => 'JSONB',                      // Binary JSON data type
+        'XML' => 'XML',                          // XML data type
+        'ARRAY' => 'ARRAY[type]',                // Array type (e.g., INTEGER[])
+        'HSTORE' => 'HSTORE',                    // Key-value pairs
+        'INET' => 'INET',                        // IP address
+        'CIDR' => 'CIDR',                        // IP subnet
+        'POINT' => 'POINT',                      // Geometric point
+        'LINE' => 'LINE',                        // Geometric line
+        'LSEG' => 'LSEG',                        // Line segment
+        'BOX' => 'BOX',                          // Geometric box
+        'POLYGON' => 'POLYGON',                  // Geometric polygon
+        'CIRCLE' => 'CIRCLE',                    // Geometric circle
     ];
+
 
     /**
      * @var array|int[]

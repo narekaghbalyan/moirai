@@ -19,6 +19,8 @@ final class DataTypes
     public const FLOAT = 'float';
     public const DOUBLE = 'double';
     public const DECIMAL = 'decimal';
+    public const DECIMAL = 'decimal';
+    public const DECIMAL = 'decimal';
 
     /**
      * String types
