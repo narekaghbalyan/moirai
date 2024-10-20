@@ -2,6 +2,8 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\DataTypes;
+
 class OracleDriver extends Driver
 {
     /**
@@ -24,26 +26,26 @@ class OracleDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        'NUMBER' => 'NUMBER(p, s)',  // Precision and scale can be specified
-        'FLOAT' => 'FLOAT',           // Synonym for NUMBER
-        'BINARY_FLOAT' => 'BINARY_FLOAT',
-        'BINARY_DOUBLE' => 'BINARY_DOUBLE',
-        'CHAR' => 'CHAR(n)',         // Fixed-length character data
-        'VARCHAR2' => 'VARCHAR2(n)', // Variable-length character data
-        'NCHAR' => 'NCHAR(n)',       // Fixed-length Unicode character data
-        'NVARCHAR2' => 'NVARCHAR2(n)', // Variable-length Unicode character data
-        'CLOB' => 'CLOB',             // Character Large Object
-        'NCLOB' => 'NCLOB',           // National Character Large Object
-        'BLOB' => 'BLOB',             // Binary Large Object
-        'RAW' => 'RAW(n)',            // Fixed-length binary data
-        'LONG' => 'LONG',             // Variable-length character data (deprecated)
-        'DATE' => 'DATE',             // Date and time
-        'TIMESTAMP' => 'TIMESTAMP',   // Date and time with fractional seconds
-        'TIMESTAMP WITH TIME ZONE' => 'TIMESTAMP WITH TIME ZONE',
-        'TIMESTAMP WITH LOCAL TIME ZONE' => 'TIMESTAMP WITH LOCAL TIME ZONE',
-        'INTERVAL YEAR TO MONTH' => 'INTERVAL YEAR TO MONTH',
-        'INTERVAL DAY TO SECOND' => 'INTERVAL DAY TO SECOND',
-        'UROWID' => 'UROWID',         // Universal row identifier
+        DataTypes::NUMBER => 'NUMBER(p, s)',  // Precision and scale can be specified
+        DataTypes::FLOAT => 'FLOAT',           // Synonym for NUMBER
+        DataTypes::BINARY_FLOAT => 'BINARY_FLOAT',
+        DataTypes::BINARY_DOUBLE => 'BINARY_DOUBLE',
+        DataTypes::CHAR => 'CHAR(n)',         // Fixed-length character data
+        DataTypes::VARCHAR_2 => 'VARCHAR2(n)', // Variable-length character data
+        DataTypes::N_CHAR => 'NCHAR(n)',       // Fixed-length Unicode character data
+        DataTypes::N_VARCHAR_2 => 'NVARCHAR2(n)', // Variable-length Unicode character data
+        DataTypes::CLOB => 'CLOB',             // Character Large Object
+        DataTypes::N_CLOB => 'NCLOB',           // National Character Large Object
+        DataTypes::BLOB => 'BLOB',             // Binary Large Object
+        DataTypes::RAW => 'RAW(n)',            // Fixed-length binary data
+        DataTypes::LONG => 'LONG',             // Variable-length character data (deprecated)
+        DataTypes::DATE => 'DATE',             // Date and time
+        DataTypes::TIMESTAMP => 'TIMESTAMP',   // Date and time with fractional seconds
+        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP WITH TIME ZONE',
+        DataTypes::TIMESTAMP_LTZ => 'TIMESTAMP WITH LOCAL TIME ZONE',
+        DataTypes::INTERVAL_YEAR_TO_MONTH => 'INTERVAL YEAR TO MONTH',
+        DataTypes::INTERVAL_DAY_TO_SECOND => 'INTERVAL DAY TO SECOND',
+        DataTypes::UROWID => 'UROWID',         // Universal row identifier
     ];
 
 

@@ -2,6 +2,8 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\DataTypes;
+
 class PostgreSqlDriver extends Driver
 {
     /**
@@ -24,39 +26,39 @@ class PostgreSqlDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        'SMALLINT' => 'SMALLINT',                // 2 bytes
-        'INTEGER' => 'INTEGER',                  // 4 bytes
-        'BIGINT' => 'BIGINT',                    // 8 bytes
-        'DECIMAL' => 'DECIMAL(precision, scale)', // Exact numeric with selectable precision
-        'NUMERIC' => 'NUMERIC(precision, scale)', // Exact numeric
-        'REAL' => 'REAL',                        // 4 bytes floating point
-        'DOUBLE PRECISION' => 'DOUBLE PRECISION', // 8 bytes floating point
-        'MONEY' => 'MONEY',                      // Currency type
-        'CHAR' => 'CHAR(n)',                     // Fixed-length character
-        'VARCHAR' => 'VARCHAR(n)',                // Variable-length character
-        'TEXT' => 'TEXT',                        // Variable-length character with no specific length
-        'BYTEA' => 'BYTEA',                      // Binary data
-        'DATE' => 'DATE',                        // Date type
-        'TIME' => 'TIME',                        // Time without time zone
-        'TIMETZ' => 'TIME WITH TIME ZONE',      // Time with time zone
-        'TIMESTAMP' => 'TIMESTAMP',              // Timestamp without time zone
-        'TIMESTAMPTZ' => 'TIMESTAMP WITH TIME ZONE', // Timestamp with time zone
-        'INTERVAL' => 'INTERVAL',                // Time interval
-        'BOOLEAN' => 'BOOLEAN',                   // Boolean type
-        'UUID' => 'UUID',                        // Universally Unique Identifier
-        'JSON' => 'JSON',                        // JSON data type
-        'JSONB' => 'JSONB',                      // Binary JSON data type
-        'XML' => 'XML',                          // XML data type
-        'ARRAY' => 'ARRAY[type]',                // Array type (e.g., INTEGER[])
-        'HSTORE' => 'HSTORE',                    // Key-value pairs
-        'INET' => 'INET',                        // IP address
-        'CIDR' => 'CIDR',                        // IP subnet
-        'POINT' => 'POINT',                      // Geometric point
-        'LINE' => 'LINE',                        // Geometric line
-        'LSEG' => 'LSEG',                        // Line segment
-        'BOX' => 'BOX',                          // Geometric box
-        'POLYGON' => 'POLYGON',                  // Geometric polygon
-        'CIRCLE' => 'CIRCLE',                    // Geometric circle
+        DataTypes::SMALL_INTEGER => 'SMALLINT',                // 2 bytes
+        DataTypes::INTEGER => 'INTEGER',                  // 4 bytes
+        DataTypes::BIG_INTEGER => 'BIGINT',                    // 8 bytes
+        DataTypes::DECIMAL => 'DECIMAL(precision, scale)', // Exact numeric with selectable precision
+        DataTypes::NUMERIC => 'NUMERIC(precision, scale)', // Exact numeric
+        DataTypes::REAL => 'REAL',                        // 4 bytes floating point
+        DataTypes::DOUBLE => 'DOUBLE PRECISION', // 8 bytes floating point
+        DataTypes::MONEY => 'MONEY',                      // Currency type
+        DataTypes::CHAR => 'CHAR(n)',                     // Fixed-length character
+        DataTypes::VARCHAR => 'VARCHAR(n)',                // Variable-length character
+        DataTypes::TEXT => 'TEXT',                        // Variable-length character with no specific length
+        DataTypes::BYTEA => 'BYTEA',                      // Binary data
+        DataTypes::DATE => 'DATE',                        // Date type
+        DataTypes::TIME => 'TIME',                        // Time without time zone
+        DataTypes::TIME_TZ => 'TIME WITH TIME ZONE',      // Time with time zone
+        DataTypes::TIMESTAMP => 'TIMESTAMP',              // Timestamp without time zone
+        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP WITH TIME ZONE', // Timestamp with time zone
+        DataTypes::INTERVAL => 'INTERVAL',                // Time interval
+        DataTypes::BOOLEAN => 'BOOLEAN',                   // Boolean type
+        DataTypes::UUID => 'UUID',                        // Universally Unique Identifier
+        DataTypes::JSON => 'JSON',                        // JSON data type
+        DataTypes::JSONB => 'JSONB',                      // Binary JSON data type
+        DataTypes::XML => 'XML',                          // XML data type
+        DataTypes::ARRAY => 'ARRAY[type]',                // Array type (e.g., INTEGER[])
+        DataTypes::HSTORE => 'HSTORE',                    // Key-value pairs
+        DataTypes::INET => 'INET',                        // IP address
+        DataTypes::CIDR => 'CIDR',                        // IP subnet
+        DataTypes::POINT => 'POINT',                      // Geometric point
+        DataTypes::LINE => 'LINE',                        // Geometric line
+        DataTypes::LSEG => 'LSEG',                        // Line segment
+        DataTypes::BOX => 'BOX',                          // Geometric box
+        DataTypes::POLYGON => 'POLYGON',                  // Geometric polygon
+        DataTypes::CIRCLE => 'CIRCLE',                    // Geometric circle
     ];
 
 

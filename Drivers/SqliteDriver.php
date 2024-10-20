@@ -2,6 +2,8 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\DataTypes;
+
 class SqliteDriver extends Driver
 {
     /**
@@ -24,18 +26,18 @@ class SqliteDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        'NULL' => 'NULL',                      // NULL value
-        'INTEGER' => 'INTEGER',                // Signed integer
-        'REAL' => 'REAL',                      // Floating point
-        'TEXT' => 'TEXT',                      // Text string
-        'BLOB' => 'BLOB',                      // Binary large object
-        'BOOLEAN' => 'BOOLEAN',                // Boolean value (stored as INTEGER 0 or 1)
-        'NUMERIC' => 'NUMERIC',                // Numeric value
-        'CHAR' => 'CHAR(n)',                   // Fixed-length character string
-        'VARCHAR' => 'VARCHAR(n)',              // Variable-length character string
-        'DECIMAL' => 'DECIMAL(p, s)',          // Exact numeric with precision
-        'DATE' => 'DATE',                      // Date value
-        'DATETIME' => 'DATETIME',              // Date and time value
+        DataTypes::NULL => 'NULL',                      // NULL value
+        DataTypes::INTEGER => 'INTEGER',                // Signed integer
+        DataTypes::REAL => 'REAL',                      // Floating point
+        DataTypes::TEXT => 'TEXT',                      // Text string
+        DataTypes::BLOB => 'BLOB',                      // Binary large object
+        DataTypes::BOOLEAN => 'BOOLEAN',                // Boolean value (stored as INTEGER 0 or 1)
+        DataTypes::NUMERIC => 'NUMERIC',                // Numeric value
+        DataTypes::CHAR => 'CHAR(n)',                   // Fixed-length character string
+        DataTypes::VARCHAR => 'VARCHAR(n)',              // Variable-length character string
+        DataTypes::DECIMAL => 'DECIMAL(p, s)',          // Exact numeric with precision
+        DataTypes::DATE => 'DATE',                      // Date value
+        DataTypes::DATE_TIME => 'DATETIME',              // Date and time value
     ];
 
 
