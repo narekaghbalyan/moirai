@@ -3,6 +3,7 @@
 namespace Moirai\DDL;
 
 use Closure;
+use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\MySqlDriver;
 
 class Blueprint
@@ -63,18 +64,10 @@ class Blueprint
     /**
      * @return string
      */
-    public function getDriver()
+    public function getDriverName()
     {
         return $this->driver->getDriverName();
     }
-
-
-
-
-
-
-
-
 
     /**
      * @return string
@@ -184,40 +177,31 @@ class Blueprint
 
 
 
-    /**
-     * @param string $column
-     * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
-    {
-        $length = $length ?? $this->defaultStringLength;
 
-        return $this->bindColumn($column, $this->driver->getDataType('char'), compact('length'));
-    }
+
+
+
+
+
+
+
+
+
 
     /**
-     * @param string $column
-     * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function string(string $column, string|int|null $length = null): DefinedColumnAccessories
-    {
-        $length = $length ?: $this->defaultStringLength;
-
-        return $this->bindColumn($column, $this->driver->getDataType('string'), compact('length'));
-    }
-
-    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define boolean data type column.                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, SQLite                                                     |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function tinyText(string $column): DefinedColumnAccessories
+    public function boolean(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('tinyText'));
+        return $this->bindColumn($column, DataTypes::BOOLEAN);
     }
 
     /**
@@ -225,43 +209,40 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function text(string $column): DefinedColumnAccessories
+    public function bool(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('text'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BOOLEAN));
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define bit data type column.                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Size parameters works only for MySQL and MariaDB, it can be in         |
+     * | interval from 1 to 64. In MS SQL Server bit is a logical type and can  |
+     * | be 0, 1 or NULL (can not take size parameter, if you pass that for     |
+     * | MS SQL Server, parameter will be ignored).                             |
+     * --------------------------------------------------------------------------
      * @param string $column
+     * @param int $size
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function mediumText(string $column): DefinedColumnAccessories
+    public function bit(string $column, int $size = 1): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('mediumText'));
-    }
+        $parameters = [];
 
-    /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function longText(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType('longText'));
-    }
+        if (in_array($this->getDriverName(), [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
+            $parameters = ['(' . $size . ')'];
+        }
 
-    /**
-     * @param string $column
-     * @param bool $autoIncrement
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        return $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::BIT,
+            $parameters
+        );
     }
 
     /**
@@ -275,7 +256,7 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
-        return $this->bindColumn($column, $this->driver->getDataType('tinyInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TINY_INTEGER), $parameters);
     }
 
     /**
@@ -289,7 +270,7 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
-        return $this->bindColumn($column, $this->driver->getDataType('smallInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::SMALL_INTEGER), $parameters);
     }
 
     /**
@@ -303,7 +284,21 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
-        return $this->bindColumn($column, $this->driver->getDataType('mediumInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MEDIUM_INTEGER), $parameters);
+    }
+
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
+    {
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
+
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::INTEGER), $parameters);
     }
 
     /**
@@ -317,20 +312,7 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
 
-        return $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
-    }
-
-    /**
-     * @param string $column
-     * @param bool $autoIncrement
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function unsignedInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
-    {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
-
-        return $this->bindColumn($column, $this->driver->getDataType('integer'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BIG_INTEGER), $parameters);
     }
 
     /**
@@ -343,7 +325,7 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        return $this->bindColumn($column, $this->driver->getDataType('tinyInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TINY_INTEGER), $parameters);
     }
 
     /**
@@ -356,7 +338,7 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        return $this->bindColumn($column, $this->driver->getDataType('smallInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::SMALL_INTEGER), $parameters);
     }
 
     /**
@@ -369,7 +351,20 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        return $this->bindColumn($column, $this->driver->getDataType('mediumInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MEDIUM_INTEGER), $parameters);
+    }
+
+    /**
+     * @param string $column
+     * @param bool $autoIncrement
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function unsignedInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
+    {
+        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::INTEGER), $parameters);
     }
 
     /**
@@ -382,7 +377,7 @@ class Blueprint
     {
         $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
 
-        return $this->bindColumn($column, $this->driver->getDataType('bigInteger'), $parameters);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BIG_INTEGER), $parameters);
     }
 
     /**
@@ -394,7 +389,19 @@ class Blueprint
      */
     public function float(string $column, int $total = 8, int $places = 2, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder('float', $column, $total, $places, $unsigned);
+        return $this->floatBaseBinder(DataTypes::FLOAT, $column, $total, $places, $unsigned);
+    }
+
+    /**
+     * @param string $column
+     * @param int $total
+     * @param int $places
+     * @param bool $unsigned
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function binaryFloat(string $column, int $total = 8, int $places = 2, bool $unsigned = false): DefinedColumnAccessories
+    {
+        return $this->floatBaseBinder(DataTypes::BINARY_FLOAT, $column, $total, $places, $unsigned);
     }
 
     /**
@@ -406,7 +413,7 @@ class Blueprint
      */
     public function double(string $column, int|null $total = null, int|null $places = null, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder('double', $column, $total, $places, $unsigned);
+        return $this->floatBaseBinder(DataTypes::DOUBLE, $column, $total, $places, $unsigned);
     }
 
     /**
@@ -418,7 +425,7 @@ class Blueprint
      */
     public function decimal(string $column, int $total = 8, int $places = 2, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder('decimal', $column, $total, $places, $unsigned);
+        return $this->floatBaseBinder(DataTypes::DECIMAL, $column, $total, $places, $unsigned);
     }
 
     /**
@@ -429,7 +436,7 @@ class Blueprint
      */
     public function unsignedFloat(string $column, int $total = 8, int $places = 2): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder('float', $column, $total, $places, true);
+        return $this->floatBaseBinder(DataTypes::FLOAT, $column, $total, $places, true);
     }
 
     /**
@@ -440,7 +447,7 @@ class Blueprint
      */
     public function unsignedDouble(string $column, int|null $total = null, int|null $places = null): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder('double', $column, $total, $places, true);
+        return $this->floatBaseBinder(DataTypes::DOUBLE, $column, $total, $places, true);
     }
 
     /**
@@ -451,7 +458,61 @@ class Blueprint
      */
     public function unsignedDecimal(string $column, int $total = 8, int $places = 2): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder('decimal', $column, $total, $places, true);
+        return $this->floatBaseBinder(DataTypes::DECIMAL, $column, $total, $places, true);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        $length = $length ?? $this->defaultStringLength;
+
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::CHAR), compact('length'));
+    }
+
+    /**
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function varchar(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        $length = $length ?? $this->defaultStringLength;
+
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::VARCHAR), compact('length'));
     }
 
     /**
@@ -459,9 +520,9 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function boolean(string $column): DefinedColumnAccessories
+    public function tinyText(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('boolean'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TINY_TEXT));
     }
 
     /**
@@ -469,10 +530,32 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function bool(string $column): DefinedColumnAccessories
+    public function text(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('boolean'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TEXT));
     }
+
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function mediumText(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MEDIUM_TEXT));
+    }
+
+    /**
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function longText(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::LONG_TEXT));
+    }
+
+
 
     /**
      * @param string $column
@@ -482,7 +565,7 @@ class Blueprint
      */
     public function enum(string $column, array $whiteList): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('enum'),
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::ENUM),
             [implode(', ', $whiteList)]
         );
     }
@@ -495,7 +578,7 @@ class Blueprint
      */
     public function set(string $column, array $whiteList): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('set'),
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::SET),
             [implode(', ', $whiteList)]
         );
     }
@@ -507,7 +590,7 @@ class Blueprint
      */
     public function json(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('json'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::JSON));
     }
 
     /**
@@ -517,7 +600,7 @@ class Blueprint
      */
     public function jsonb(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('jsonb'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::JSONB));
     }
 
     /**
@@ -527,7 +610,7 @@ class Blueprint
      */
     public function date(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('date'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::DATE));
     }
 
     /**
@@ -538,7 +621,7 @@ class Blueprint
      */
     public function dateTime(string $column, int $precision = 0): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('dateTime'), ['(' . $precision . ')']);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::DATE_TIME), ['(' . $precision . ')']);
     }
 
     /**
@@ -549,7 +632,7 @@ class Blueprint
      */
     public function time(string $column, int $precision = 0): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('time'), ['(' . $precision . ')']);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TIME), ['(' . $precision . ')']);
     }
 
     /**
@@ -560,7 +643,7 @@ class Blueprint
      */
     public function timestamp(string $column, int $precision = 0): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('timestamp'), ['(' . $precision . ')']);
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TIMESTAMP), ['(' . $precision . ')']);
     }
 
     /**
@@ -570,7 +653,7 @@ class Blueprint
      */
     public function year(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('year'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::YEAR));
     }
 
     /**
@@ -580,7 +663,7 @@ class Blueprint
      */
     public function binary(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('binary'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BINARY));
     }
 
     /**
@@ -590,7 +673,7 @@ class Blueprint
      */
     public function varbinary(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('varbinary'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::VARBINARY));
     }
 
     /**
@@ -600,7 +683,7 @@ class Blueprint
      */
     public function geometry(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('geometry'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::GEOMETRY));
     }
 
     /**
@@ -611,7 +694,7 @@ class Blueprint
      */
     public function point(string $column, null|int|string $srid = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('point'), compact('srid'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::POINT), compact('srid'));
     }
 
     /**
@@ -621,7 +704,7 @@ class Blueprint
      */
     public function lineString(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('lineString'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::LINE_STRING));
     }
 
     /**
@@ -631,7 +714,7 @@ class Blueprint
      */
     public function polygon(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('polygon'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::POLYGON));
     }
 
     /**
@@ -641,7 +724,7 @@ class Blueprint
      */
     public function multipoint(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('multipoint'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MULTI_POINT));
     }
 
     /**
@@ -651,7 +734,7 @@ class Blueprint
      */
     public function multiLineString(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('multiLineString'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MULTI_LINE_STRING));
     }
 
     /**
@@ -661,7 +744,7 @@ class Blueprint
      */
     public function multiPolygon(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('multiPolygon'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MULTI_POLYGON));
     }
 
     /**
@@ -671,6 +754,6 @@ class Blueprint
      */
     public function geometryCollection(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType('geometryCollection'));
+        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::GEOMETRY_COLLECTION));
     }
 }
