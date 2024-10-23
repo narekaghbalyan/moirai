@@ -360,9 +360,11 @@ class Blueprint
      * | because these drivers do not have unsigned behavior supporting, so     |
      * | statement will simulate that behavior by using "CHECK". And for this   |
      * | reason, the upper limit of the value does not change (remains          |
-     * | 2147483647), we only include a check that the number is not negative.  |
-     * | For other drivers the upper limit increases (becomes 4294967295). For  |
-     * | all drivers the lower limit will be 0 if "unsigned" parameter is true. |
+     * | 2147483647 for Postgre SQL and MS SQL Server and for SQLite remains    |
+     * | 9223372036854775807), we only include a check that the number is not   |
+     * | negative. For other drivers the upper limit increases (becomes         |
+     * | 4294967295). For all drivers the lower limit will be 0 if "unsigned"   |
+     * | parameter is true.                                                     |
      * | It can store values from -2147483648 to 2147483647 (or 0 to 4294967295 |
      * | if unsigned except MS SQL Server and Postgre SQL. For these drivers    |
      * | unsigned values can be from 0 to 2147483647) except SQLite, for SQLite |
@@ -385,6 +387,25 @@ class Blueprint
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define big integer data type column.                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, Postgre SQL, MS SQL Server                             |
+     * | ---------------------------------------------------------------------- |
+     * | If driver is Postgre SQL or MS SQL Server and parameter "unsigned" is  |
+     * | true unsigned will work by using CHECK(value >= 0), because these      |
+     * | drivers do not have unsigned behavior supporting, so statement will    |
+     * | simulate that behavior by using "CHECK". And for this reason, the      |
+     * | upper limit of the value does not change (remains                      |
+     * | 9223372036854775807), we only include a check that the number is not   |
+     * | negative. For other drivers the upper limit increases (becomes         |
+     * | 18446744073709551615). For all drivers the lower limit will be 0 if    |
+     * | "unsigned" parameter is true.                                          |
+     * | It can store values from -9223372036854775808 to 9223372036854775807   |
+     * | (or 0 to 18446744073709551615 if unsigned except Postgre SQL and MS    |
+     * | SQL Server, for these drivers unsigned values can be from 0 to         |
+     * | 9223372036854775807).                                                  |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
@@ -393,9 +414,11 @@ class Blueprint
      */
     public function bigInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveParametersUsing($autoIncrement, $unsigned);
-
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BIG_INTEGER), $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::BIG_INTEGER,
+            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+        );
     }
 
     /**
