@@ -111,12 +111,22 @@ class Blueprint
 
 
 
-    private function resolveAutoIncrementAndUnsignedParametersUsing(bool $autoIncrement, bool $unsigned): array
+    private function resolveParametersUsing(string $column, bool $autoIncrement, bool $unsigned): array
     {
         $parameters = [];
 
         if ($unsigned) {
-            $parameters[] = 'UNSIGNED';
+            if (in_array(
+                $this->getDriverName(),
+                [
+                    AvailableDbmsDrivers::POSTGRESQL,
+                    AvailableDbmsDrivers::MS_SQL_SERVER,
+                    AvailableDbmsDrivers::SQLITE]
+            )) {
+                $parameters[] = 'CHECK (' . $column . ' >= 0)';
+            } else {
+                $parameters[] = 'UNSIGNED';
+            }
         }
 
         if ($autoIncrement) {
@@ -192,8 +202,9 @@ class Blueprint
      * --------------------------------------------------------------------------
      * | Clause to define boolean data type column.                             |
      * | -------------- DBMS drivers that support this data type -------------- |
-     * | PostgreSQL, SQLite                                                     |
+     * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
+     * | It can store 0 or 1.                                                   |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
@@ -205,13 +216,21 @@ class Blueprint
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define boolean data type column.                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | It can store 0 or 1.                                                   |
+     * | Same as "boolean".                                                     |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function bool(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BOOLEAN));
+        return $this->bindColumn($column, DataTypes::BOOLEAN);
     }
 
     /**
@@ -232,20 +251,28 @@ class Blueprint
      */
     public function bit(string $column, int $size = 1): DefinedColumnAccessories
     {
-        $parameters = [];
-
-        if (in_array($this->getDriverName(), [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
-            $parameters = ['(' . $size . ')'];
-        }
-
         return $this->bindColumn(
             $column,
             DataTypes::BIT,
-            $parameters
+            in_array($this->getDriverName(), [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
+                ? ['(' . $size . ')']
+                : []
         );
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define tiny integer data type column.                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server                                          |
+     * | ---------------------------------------------------------------------- |
+     * | If driver is MS SQL Server parameter "unsigned" will be ignored,       |
+     * | because MS SQL Server not support "unsigned" parameter, tiny integer   |
+     * | is unsigned by default.                                                |
+     * | For MS SQL Server it can store values from 0 to 255 and for other      |
+     * | drivers it can store values from -128 to 127 (or 0 to 255 if           |
+     * | unsigned).                                                             |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
@@ -254,12 +281,35 @@ class Blueprint
      */
     public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TINY_INTEGER), $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::TINY_INTEGER,
+            $this->resolveParametersUsing(
+                $column,
+                $autoIncrement,
+                $this->getDriverName() !== AvailableDbmsDrivers::MS_SQL_SERVER ? $unsigned : false
+            )
+        );
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define small integer data type column.                       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, Postgre SQL, MS SQL Server                             |
+     * | ---------------------------------------------------------------------- |
+     * | If driver is Postgre SQL or MS SQL Server and parameter "unsigned" is  |
+     * | true unsigned will work by using CHECK(value >= 0), because these      |
+     * | drivers do not have unsigned behavior supporting, so statement will    |
+     * | simulate that behavior by using "CHECK". And for this reason, the      |
+     * | upper limit of the value does not change (remains 32767), we only      |
+     * | include a check that the number is not negative. For other drivers the |
+     * | upper limit increases (becomes 65535). For all drivers the lower limit |
+     * | will be 0 if "unsigned" parameter is true.                             |
+     * | It can store values from -32768 to 32767 (or 0 to 65535 if unsigned    |
+     * | except MS SQL Server, for MS SQL Server unsigned values can be from 0  |
+     * | to 32767).                                                             |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
@@ -268,12 +318,22 @@ class Blueprint
      */
     public function smallInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::SMALL_INTEGER), $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::SMALL_INTEGER,
+            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+        );
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define medium integer data type column.                      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * | It can store values from -8388608 to 8388607 (or 0 to 16777215 if      |
+     * | unsigned).                                                             |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
@@ -282,12 +342,33 @@ class Blueprint
      */
     public function mediumInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MEDIUM_INTEGER), $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::MEDIUM_INTEGER,
+            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+        );
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define integer data type column.                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, Postgre SQL, MS SQL Server, SQLite                     |
+     * | ---------------------------------------------------------------------- |
+     * | If driver is Postgre SQL or MS SQL Server or SQLite and parameter      |
+     * | "unsigned" is true unsigned will work by using CHECK(value >= 0),      |
+     * | because these drivers do not have unsigned behavior supporting, so     |
+     * | statement will simulate that behavior by using "CHECK". And for this   |
+     * | reason, the upper limit of the value does not change (remains          |
+     * | 2147483647), we only include a check that the number is not negative.  |
+     * | For other drivers the upper limit increases (becomes 4294967295). For  |
+     * | all drivers the lower limit will be 0 if "unsigned" parameter is true. |
+     * | It can store values from -2147483648 to 2147483647 (or 0 to 4294967295 |
+     * | if unsigned except MS SQL Server and Postgre SQL. For these drivers    |
+     * | unsigned values can be from 0 to 2147483647) except SQLite, for SQLite |
+     * | it can store from -9223372036854775808 to 9223372036854775807 (or 0    |
+     * | to 9223372036854775807 if unsigned).                                   |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
@@ -296,9 +377,11 @@ class Blueprint
      */
     public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
-
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::INTEGER), $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::INTEGER,
+            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+        );
     }
 
     /**
@@ -310,7 +393,7 @@ class Blueprint
      */
     public function bigInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, $unsigned);
+        $parameters = $this->resolveParametersUsing($autoIncrement, $unsigned);
 
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BIG_INTEGER), $parameters);
     }
@@ -323,7 +406,7 @@ class Blueprint
      */
     public function unsignedTinyInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+        $parameters = $this->resolveParametersUsing($autoIncrement, true);
 
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TINY_INTEGER), $parameters);
     }
@@ -336,7 +419,7 @@ class Blueprint
      */
     public function unsignedSmallInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+        $parameters = $this->resolveParametersUsing($autoIncrement, true);
 
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::SMALL_INTEGER), $parameters);
     }
@@ -349,7 +432,7 @@ class Blueprint
      */
     public function unsignedMediumInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+        $parameters = $this->resolveParametersUsing($autoIncrement, true);
 
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MEDIUM_INTEGER), $parameters);
     }
@@ -362,7 +445,7 @@ class Blueprint
      */
     public function unsignedInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+        $parameters = $this->resolveParametersUsing($autoIncrement, true);
 
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::INTEGER), $parameters);
     }
@@ -375,7 +458,7 @@ class Blueprint
      */
     public function unsignedBigInteger(string $column, bool $autoIncrement = false): DefinedColumnAccessories
     {
-        $parameters = $this->resolveAutoIncrementAndUnsignedParametersUsing($autoIncrement, true);
+        $parameters = $this->resolveParametersUsing($autoIncrement, true);
 
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BIG_INTEGER), $parameters);
     }

@@ -26,12 +26,10 @@ class SqliteDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        DataTypes::NULL => 'NULL',                      // NULL value
         DataTypes::INTEGER => 'INTEGER',                // Signed integer
         DataTypes::REAL => 'REAL',                      // Floating point
         DataTypes::TEXT => 'TEXT',                      // Text string
         DataTypes::BLOB => 'BLOB',                      // Binary large object
-        DataTypes::BOOLEAN => 'BOOLEAN',                // Boolean value (stored as INTEGER 0 or 1)
         DataTypes::NUMERIC => 'NUMERIC',                // Numeric value
         DataTypes::CHAR => 'CHAR(n)',                   // Fixed-length character string
         DataTypes::VARCHAR => 'VARCHAR(n)',              // Variable-length character string

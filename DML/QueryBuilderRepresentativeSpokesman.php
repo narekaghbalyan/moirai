@@ -145,7 +145,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | the max() function returns the maximum value of the distinct values.   |
      * | This means that DISTINCT has no effect on the max() function.          |
      * | ---------------------------------------------------------------------- |
-     * | The same as "max".                                                     |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
@@ -189,7 +188,6 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
      * | the min() function returns the minimum value of the distinct values.   |
      * | This means that DISTINCT has no effect on the min() function.          |
      * | ---------------------------------------------------------------------- |
-     * | The same as "min".                                                     |
      * --------------------------------------------------------------------------
      * @param string $column
      * @return $this
