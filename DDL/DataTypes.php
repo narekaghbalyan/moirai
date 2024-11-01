@@ -17,8 +17,8 @@ final class DataTypes
     public const DOUBLE = 11;
     public const BINARY_DOUBLE = 12;
     public const DECIMAL = 13;
-    public const REAL = 14;
-    public const NUMERIC = 15;
+    public const NUMERIC = 14;
+    public const REAL = 15;
     public const MONEY = 16;
     public const SMALL_MONEY = 17;
     public const NUMBER = 18;
