@@ -120,13 +120,13 @@ class Blueprint
             if (in_array(
                 $this->getDriverName(),
                 [
-                    AvailableDbmsDrivers::POSTGRESQL,
-                    AvailableDbmsDrivers::MS_SQL_SERVER,
-                    AvailableDbmsDrivers::SQLITE]
+                    AvailableDbmsDrivers::MYSQL,
+                    AvailableDbmsDrivers::MARIADB
+                ]
             )) {
-                $parameters[] = 'CHECK (' . $column . ' >= 0)';
-            } else {
                 $parameters[] = 'UNSIGNED';
+            } else {
+                $parameters[] = 'CHECK (' . $column . ' >= 0)';
             }
         }
 
@@ -707,8 +707,6 @@ class Blueprint
      * | Argument "scale" - represents the number of digits that can be stored  |
      * | to the right of the decimal point.                                     |
      * |     Required - No                                                      |
-     * |                                                                        |
-     * | Same as "decimal".                                                     |
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
@@ -719,7 +717,7 @@ class Blueprint
      */
     public function numeric(string $column, bool $unsigned = false, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
     {
-        return $this->decimal($column, $unsigned, $precision, $scale);
+        return $this->floatBaseBinder(DataTypes::NUMERIC, $column, $precision, $scale, $unsigned);
     }
 
     /**
@@ -904,55 +902,17 @@ class Blueprint
         return $this->money($column, true);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define char data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - no                                                      |
+     * |     Default - for all drivers "defaultStringLength", for SQLite there  |
+     * |               is no default value                                      |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
      * @return \Moirai\DDL\DefinedColumnAccessories
@@ -960,9 +920,17 @@ class Blueprint
      */
     public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
-        $length = $length ?? $this->defaultStringLength;
+        $parameters = [];
 
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::CHAR), compact('length'));
+        if (is_null($length)) {
+            if ($this->getDriverName() !== AvailableDbmsDrivers::SQLITE) {
+                $parameters['length'] = $this->defaultStringLength;
+            }
+        } else {
+            $parameters['length'] = $length;
+        }
+
+        return $this->bindColumn($column, DataTypes::CHAR, $parameters);
     }
 
     /**
@@ -1065,6 +1033,21 @@ class Blueprint
     {
         return $this->bindColumn($column, $this->driver->getDataType(DataTypes::JSONB));
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string $column
