@@ -31,6 +31,7 @@ class PostgreSqlDriver extends Driver
         DataTypes::BIG_INTEGER => 'BIGINT',                    // 8 bytes
         DataTypes::DECIMAL => 'DECIMAL(precision, scale)', // Exact numeric with selectable precision
         DataTypes::NUMERIC => 'NUMERIC(precision, scale)', // Exact numeric
+        DataTypes::FLOAT => 'FLOAT',
         DataTypes::REAL => 'REAL',                        // 4 bytes floating point
         DataTypes::DOUBLE => 'DOUBLE PRECISION', // 8 bytes floating point
         DataTypes::MONEY => 'MONEY',                      // Currency type
