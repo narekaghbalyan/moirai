@@ -40,11 +40,6 @@ class Blueprint
     public array $afterTableDefinition  = [];
 
     /**
-     * @var int
-     */
-    private int $defaultStringLength = 255;
-
-    /**
      * Blueprint constructor.
      *
      * @param string $table
@@ -182,6 +177,11 @@ class Blueprint
     {
         $this->columns[$column] = array_merge(compact('dataType'), $parameters);
         $this->columns[$column]['value'] = 'NOT NULL';
+
+//        $this->columns[$column] = [
+//            'data_type' => $dataType,
+//            'parameters' => $parameters
+//        ]
 
         return new DefinedColumnAccessories($column, $this);
     }
@@ -909,6 +909,29 @@ class Blueprint
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "length" - represents length.                                 |
+     * |     Required - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle       |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn(
+            $column,
+            DataTypes::CHAR,
+            !is_null($length) ? [$length] : []
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define n_char data type column.                              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server, Oracle                                                  |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
      * |     Required - no                                                      |
      * |     Default - for all drivers "defaultStringLength", for SQLite there  |
      * |               is no default value                                      |
@@ -918,19 +941,13 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
+    public function nChar(string $column, string|int $length = null): DefinedColumnAccessories
     {
-        $parameters = [];
-
-        if (is_null($length)) {
-            if ($this->getDriverName() !== AvailableDbmsDrivers::SQLITE) {
-                $parameters['length'] = $this->defaultStringLength;
-            }
-        } else {
-            $parameters['length'] = $length;
-        }
-
-        return $this->bindColumn($column, DataTypes::CHAR, $parameters);
+        return $this->bindColumn(
+            $column,
+            DataTypes::N_CHAR,
+            !is_null($length) ? [$length] : []
+        );
     }
 
     /**
