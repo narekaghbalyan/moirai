@@ -54,7 +54,7 @@ class Blueprint
             $callback($this);
         }
 
-        $this->sewDefinedColumns();
+//        $this->sewDefinedColumns();
     }
 
     /**
@@ -66,45 +66,64 @@ class Blueprint
     }
 
     /**
-     * @return string
+     * @param string $column
+     * @param int $dataType
+     * @param int|string|array|null $parameters
+     * @return \Moirai\DDL\DefinedColumnAccessories
      */
-    private function sewDefinedColumns(): string
+    private function bindColumn(string $column, int $dataType, int|string|array|null $parameters = null): DefinedColumnAccessories
     {
-        if (empty($this->columns)) {
-            return '';
+        $this->columns[$column] = [
+            'data_type' => $dataType,
+            'value' => 'NOT NULL'
+        ];
+
+        if (!is_null($parameters)) {
+            $this->columns[$column]['parameters'] = $parameters;
         }
 
-        $sewedColumns = [];
-
-        foreach ($this->columns as $column => $parameters) {
-            $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
-        }
-
-        $tableSewedAccessories = [];
-
-        foreach ($this->tableAccessories as $parameters) {
-            $accessoryExpression = $parameters;
-
-            if (is_array($parameters)) {
-                if (!empty($parameters['columns'])) {
-                    if (!empty($parameters['prefix'])) {
-                        $accessoryExpression = $parameters['prefix'];
-                    }
-
-                    $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
-                } else {
-                    continue;
-                }
-            }
-
-            $tableSewedAccessories[] = $accessoryExpression;
-        }
-
-        $sewedColumns[] = implode(', ', $tableSewedAccessories);
-
-        dd(implode(', ', $sewedColumns));
+        return new DefinedColumnAccessories($column, $this);
     }
 
+//    /**
+//     * @return string
+//     */
+//    private function sewDefinedColumns(): string
+//    {
+//        if (empty($this->columns)) {
+//            return '';
+//        }
+//
+//        $sewedColumns = [];
+//
+//        foreach ($this->columns as $column => $parameters) {
+//            $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
+//        }
+//
+//        $tableSewedAccessories = [];
+//
+//        foreach ($this->tableAccessories as $parameters) {
+//            $accessoryExpression = $parameters;
+//
+//            if (is_array($parameters)) {
+//                if (!empty($parameters['columns'])) {
+//                    if (!empty($parameters['prefix'])) {
+//                        $accessoryExpression = $parameters['prefix'];
+//                    }
+//
+//                    $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
+//                } else {
+//                    continue;
+//                }
+//            }
+//
+//            $tableSewedAccessories[] = $accessoryExpression;
+//        }
+//
+//        $sewedColumns[] = implode(', ', $tableSewedAccessories);
+//
+//        dd(implode(', ', $sewedColumns));
+//    }
 
 
     private function resolveParametersUsing(string $column, bool $autoIncrement, bool $unsigned): array
@@ -135,24 +154,24 @@ class Blueprint
     /**
      * @param string $dataType
      * @param string $column
-     * @param int|null $total
-     * @param int|null $places
+     * @param int|null $precision
+     * @param int|null $scale
      * @param bool $unsigned
      * @return \Moirai\DDL\DefinedColumnAccessories
      */
     public function floatBaseBinder(string $dataType,
                                     string $column,
-                                    int|null $total = null,
-                                    int|null $places = null,
+                                    int|null $precision = null,
+                                    int|null $scale = null,
                                     bool $unsigned = false): DefinedColumnAccessories
     {
         $parameters = [];
 
-        if (!is_null($total)) {
-            $parameters = '(' . $total;
+        if (!is_null($precision)) {
+            $parameters = '(' . $precision;
 
-            if (!is_null($places)) {
-                $parameters .= ', ' . $places;
+            if (!is_null($scale)) {
+                $parameters .= ', ' . $scale;
             }
 
             $parameters = [$parameters . ')'];
@@ -167,24 +186,7 @@ class Blueprint
     }
 
 
-    /**
-     * @param string $column
-     * @param string $dataType
-     * @param array $parameters
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     */
-    private function bindColumn(string $column, string $dataType, array $parameters = []): DefinedColumnAccessories
-    {
-        $this->columns[$column] = array_merge(compact('dataType'), $parameters);
-        $this->columns[$column]['value'] = 'NOT NULL';
 
-//        $this->columns[$column] = [
-//            'data_type' => $dataType,
-//            'parameters' => $parameters
-//        ]
-
-        return new DefinedColumnAccessories($column, $this);
-    }
 
 
 
@@ -266,8 +268,8 @@ class Blueprint
             $column,
             DataTypes::BIT,
             in_array($this->getDriverName(), [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
-                ? ['(' . $size . ')']
-                : []
+                ? $size
+                : null
         );
     }
 
@@ -927,14 +929,12 @@ class Blueprint
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to define n_char data type column.                              |
+     * | Clause to define n char data type column.                              |
      * | -------------- DBMS drivers that support this data type -------------- |
      * | MS SQL Server, Oracle                                                  |
      * | ---------------------------------------------------------------------- |
      * | Argument "length" - represents length.                                 |
-     * |     Required - no                                                      |
-     * |     Default - for all drivers "defaultStringLength", for SQLite there  |
-     * |               is no default value                                      |
+     * |     Required - yes                                                     |
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
@@ -943,14 +943,18 @@ class Blueprint
      */
     public function nChar(string $column, string|int $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::N_CHAR,
-            !is_null($length) ? [$length] : []
-        );
+        return $this->bindColumn($column, DataTypes::N_CHAR, $length);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define varchar data type column.                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, SQLite                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - MySQL, MariaDB, MS SQL Server                           |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
      * @return \Moirai\DDL\DefinedColumnAccessories
@@ -958,67 +962,217 @@ class Blueprint
      */
     public function varchar(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
-        $length = $length ?? $this->defaultStringLength;
-
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::VARCHAR), compact('length'));
+        return $this->bindColumn($column, DataTypes::VARCHAR, $length);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define varchar 2 data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - no                                                      |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function varchar2(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::VARCHAR_2, $length);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define n varchar data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - no                                                      |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function nVarchar(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::N_VARCHAR, $length);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define nvarchar2 data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - no                                                      |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function nVarchar2(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::N_VARCHAR_2, $length);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define tiny text data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function tinyText(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TINY_TEXT));
+        return $this->bindColumn($column, DataTypes::TINY_TEXT);
     }
 
     /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function text(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TEXT));
-    }
-
-    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define medium text data type column.                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function mediumText(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MEDIUM_TEXT));
+        return $this->bindColumn($column, DataTypes::MEDIUM_TEXT);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define text data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, SQLite                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function text(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::TEXT);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define long text data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function longText(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::LONG_TEXT));
+        return $this->bindColumn($column, DataTypes::LONG_TEXT);
     }
 
-
-
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define n text data type column.                              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
-     * @param array $whiteList
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function enum(string $column, array $whiteList): DefinedColumnAccessories
+    public function nText(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::ENUM),
-            [implode(', ', $whiteList)]
-        );
+        return $this->bindColumn($column, DataTypes::N_TEXT);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define tiny blob data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function tinyBlob(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::TINY_BLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define medium blob data type column.                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function mediumBlob(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::MEDIUM_BLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define blob data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, Oracle, SQLite                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function blob(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::BLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define long blob data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function longBlob(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::LONG_BLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define set data type column.                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @param array $whiteList
      * @return \Moirai\DDL\DefinedColumnAccessories
@@ -1026,118 +1180,687 @@ class Blueprint
      */
     public function set(string $column, array $whiteList): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::SET),
-            [implode(', ', $whiteList)]
-        );
+        return $this->bindColumn($column, DataTypes::SET, $whiteList);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define enum data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param array $whiteList
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function enum(string $column, array $whiteList): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::ENUM, $whiteList);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define json data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server                              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function json(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::JSON));
+        return $this->bindColumn($column, DataTypes::JSON);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define jsonb data type column.                               |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function jsonb(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::JSONB));
+        return $this->bindColumn($column, DataTypes::JSONB);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define binary data type column.                              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - MS SQL Server                                           |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function binary(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::BINARY, $length);
+    }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define varbinary data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - MS SQL Server                                           |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function varbinary(string $column, string|int|null $length = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::VARBINARY, $length);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define uuid data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, MS SQL Server                                              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function uuid(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::UUID);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define unique identifier data type column.                   |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, MS SQL Server                                              |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "uuid".                                                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function uniqueIdentifier(string $column): DefinedColumnAccessories
+    {
+        return $this->uuid($column);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define xml data type column.                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, MS SQL Server, Oracle                                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function xml(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::XML);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define xmlType data type column.                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, MS SQL Server, Oracle                                      |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "xml".                                                         |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function xmlType(string $column): DefinedColumnAccessories
+    {
+        return $this->xml($column);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define image data type column.                               |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function image(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::IMAGE);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define sql_variant data type column.                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function sqlVariant(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::SQL_VARIANT);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define rowversion data type column.                          |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function rowVersion(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::ROW_VERSION);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define clob (Character Large Object) data type column.       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function clob(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::CLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define nclob (National Character Large Object) data type     |
+     * | column.                                                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function nclob(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::NCLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define raw data type column.                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "length" - represents length.                                 |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int $length
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function raw(string $column, string|int $length): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::RAW, $length);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define long data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function long(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::LONG);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define urowid data type column.                              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function urowid(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::UROWID);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define bytea data type column.                               |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function bytea(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::BYTEA);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define hstore data type column.                              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function hstore(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::HSTORE);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define inet data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function inet(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::INET);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define cidr (Classless Inter-Domain Routing notation) data   |
+     * | type column.                                                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function cidr(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::CIDR);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define date data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function date(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::DATE));
+        return $this->bindColumn($column, DataTypes::DATE);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define datetime data type column.                            |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server, SQLite                                  |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
-     * @param int $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function dateTime(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::DATE_TIME);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define datetime2 data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function dateTime2(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::DATE_TIME_2, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define smalldatetime data type column.                       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function smallDateTime(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::SMALL_DATE_TIME);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define datetimeoffset data type column.                      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string|int|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function dateTimeOffset(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::DATE_TIME_OFFSET, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define time data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server                              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function dateTime(string $column, int $precision = 0): DefinedColumnAccessories
+    public function time(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::DATE_TIME), ['(' . $precision . ')']);
+        return $this->bindColumn($column, DataTypes::TIME, $precision);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define timestamp data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * |     Unavailable - MS SQL Server                                        |
+     * --------------------------------------------------------------------------
      * @param string $column
-     * @param int $precision
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function time(string $column, int $precision = 0): DefinedColumnAccessories
+    public function timestamp(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TIME), ['(' . $precision . ')']);
+        return $this->bindColumn($column, DataTypes::TIMESTAMP, $precision);
     }
 
     /**
-     * @param string $column
-     * @param int $precision
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function timestamp(string $column, int $precision = 0): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::TIMESTAMP), ['(' . $precision . ')']);
-    }
-
-    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define year data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
     public function year(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::YEAR));
+        return $this->bindColumn($column, DataTypes::YEAR);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define time with time zone data type column.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * --------------------------------------------------------------------------
      * @param string $column
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function binary(string $column): DefinedColumnAccessories
+    public function timeTz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::BINARY));
+        return $this->bindColumn($column, DataTypes::TIME_TZ, $precision);
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define time with time zone data type column.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * |                                                                        |
+     * | Same as "timeTz".                                                      |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function timeWithTimezone(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->timeTz($column, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define timestamp with time zone data type column.            |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, Oracle                                                     |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * |     Unavailable - PostgreSQL                                           |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function timestampTz(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::TIMESTAMP_TZ, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define timestamp with time zone data type column.            |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, Oracle                                                     |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * |     Unavailable - PostgreSQL                                           |
+     * |                                                                        |
+     * | Same as "timestampTz".                                                 |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function timestampWithTimezone(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->timestampTz($column, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define timestamp with local time zone data type column.      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function timestampLtz(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::TIMESTAMP_LTZ, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define timestamp with local time zone data type column.      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "precision" - represents  the precision of the fractional     |
+     * | seconds (determines how many digits are stored for the fractional      |
+     * | seconds part of the value).                                            |
+     * |                                                                        |
+     * | Same as "timestampLtz".                                                |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $precision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function timestampWithLocalTimeZone(string $column, int|string|null $precision = null): DefinedColumnAccessories
+    {
+        return $this->timestampLtz($column, $precision);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define interval year to month data type column.              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function varbinary(string $column): DefinedColumnAccessories
+    public function intervalYearToMonth(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::VARBINARY));
+        return $this->bindColumn($column, DataTypes::INTERVAL_YEAR_TO_MONTH);
     }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define interval day to second data type column.              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "dayPrecision" - represents  the precision of the day         |
+     * | (determines how many digits are stored).                               |
+     * |                                                                        |
+     * | Argument "secondPrecision" - represents  the precision of the second   |
+     * | (determines how many digits are stored).                               |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string|null $dayPrecision
+     * @param int|string|null $secondPrecision
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function intervalDayToSecond(
+        string $column,
+        int|string|null $dayPrecision = null,
+        int|string|null $secondPrecision = null
+    ): DefinedColumnAccessories
+    {
+        return $this->bindColumn(
+            $column,
+            DataTypes::INTERVAL_DAY_TO_SECOND,
+            [
+                'day_precision' => $dayPrecision,
+                'second_precision' => $secondPrecision
+            ]
+        );
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @param string $column

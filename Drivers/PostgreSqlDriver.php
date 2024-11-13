@@ -50,7 +50,7 @@ class PostgreSqlDriver extends Driver
         DataTypes::JSON => 'JSON',                        // JSON data type
         DataTypes::JSONB => 'JSONB',                      // Binary JSON data type
         DataTypes::XML => 'XML',                          // XML data type
-        DataTypes::ARRAY => 'ARRAY[type]',                // Array type (e.g., INTEGER[])
+        DataTypes::ARRAY => '[]',                // Array type (e.g., INTEGER[])
         DataTypes::HSTORE => 'HSTORE',                    // Key-value pairs
         DataTypes::INET => 'INET',                        // IP address
         DataTypes::CIDR => 'CIDR',                        // IP subnet
