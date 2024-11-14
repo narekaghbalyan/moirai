@@ -1828,118 +1828,243 @@ class Blueprint
         );
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define geometry data type column.                            |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function geometry(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::GEOMETRY));
+        return $this->bindColumn($column, DataTypes::GEOMETRY);
     }
 
     /**
-     * @param string $column
-     * @param int|string|null $srid
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function point(string $column, null|int|string $srid = null): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::POINT), compact('srid'));
-    }
-
-    /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function lineString(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::LINE_STRING));
-    }
-
-    /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function polygon(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::POLYGON));
-    }
-
-    /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function multipoint(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MULTI_POINT));
-    }
-
-    /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function multiLineString(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MULTI_LINE_STRING));
-    }
-
-    /**
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
-     */
-    public function multiPolygon(string $column): DefinedColumnAccessories
-    {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::MULTI_POLYGON));
-    }
-
-    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define geometry collection data type column.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
     public function geometryCollection(string $column): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, $this->driver->getDataType(DataTypes::GEOMETRY_COLLECTION));
+        return $this->bindColumn($column, DataTypes::GEOMETRY_COLLECTION);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define point data type column.                               |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     */
+    public function point(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::POINT);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define multipoint data type column.                          |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function multipoint(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::MULTI_POINT);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define line data type column.                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function line(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::LINE);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define linestring data type column.                          |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function linestring(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::LINE_STRING);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define multilinestring data type column.                     |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function multilinestring(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::MULTI_LINE_STRING);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define polygon data type column.                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function polygon(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::POLYGON);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define multipolygon data type column.                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function multipolygon(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::MULTI_POLYGON);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define geography data type column.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function geography(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::GEOGRAPHY);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define hierarchyid data type column.                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function hierarchyId(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::HIERARYCHYID);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define lseg (line segment) data type column.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function lSeg(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::LSEG);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define lseg (line segment) data type column.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "lSeg".                                                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function lineSegment(string $column): DefinedColumnAccessories
+    {
+        return $this->lSeg($column);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define box data type column.                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function box(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::BOX);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define circle data type column.                              |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @throws \Exception
+     */
+    public function circle(string $column): DefinedColumnAccessories
+    {
+        return $this->bindColumn($column, DataTypes::CIRCLE);
     }
 }
