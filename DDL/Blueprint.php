@@ -53,8 +53,6 @@ class Blueprint
         if (!is_null($callback)) {
             $callback($this);
         }
-
-//        $this->sewDefinedColumns();
     }
 
     /**
@@ -64,6 +62,7 @@ class Blueprint
     {
         return $this->driver->getDriverName();
     }
+
 
     /**
      * @param string $column
@@ -75,145 +74,90 @@ class Blueprint
     {
         $this->columns[$column] = [
             'data_type' => $dataType,
-            'value' => 'NOT NULL'
+            'parameters' => $parameters,
+            'accessories' => [
+                'nullable' => false
+            ]
         ];
-
-        if (!is_null($parameters)) {
-            $this->columns[$column]['parameters'] = $parameters;
-        }
 
         return new DefinedColumnAccessories($column, $this);
     }
 
-//    /**
-//     * @return string
-//     */
-//    private function sewDefinedColumns(): string
-//    {
-//        if (empty($this->columns)) {
-//            return '';
-//        }
-//
-//        $sewedColumns = [];
-//
-//        foreach ($this->columns as $column => $parameters) {
-//            $sewedColumns[] = $column . ' ' . implode(' ', $parameters);
-//        }
-//
-//        $tableSewedAccessories = [];
-//
-//        foreach ($this->tableAccessories as $parameters) {
-//            $accessoryExpression = $parameters;
-//
-//            if (is_array($parameters)) {
-//                if (!empty($parameters['columns'])) {
-//                    if (!empty($parameters['prefix'])) {
-//                        $accessoryExpression = $parameters['prefix'];
-//                    }
-//
-//                    $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
-//                } else {
-//                    continue;
-//                }
-//            }
-//
-//            $tableSewedAccessories[] = $accessoryExpression;
-//        }
-//
-//        $sewedColumns[] = implode(', ', $tableSewedAccessories);
-//
-//        dd(implode(', ', $sewedColumns));
-//    }
-
-
-    private function resolveParametersUsing(string $column, bool $autoIncrement, bool $unsigned): array
-    {
-        $parameters = [];
-
-        if ($unsigned) {
-            if (in_array(
-                $this->getDriverName(),
-                [
-                    AvailableDbmsDrivers::MYSQL,
-                    AvailableDbmsDrivers::MARIADB
-                ]
-            )) {
-                $parameters[] = 'UNSIGNED';
-            } else {
-                $parameters[] = 'CHECK (' . $column . ' >= 0)';
-            }
-        }
-
-        if ($autoIncrement) {
-            $parameters[] = 'AUTO_INCREMENT';
-        }
-
-        return $parameters;
-    }
-
     /**
-     * @param string $dataType
-     * @param string $column
-     * @param int|null $precision
-     * @param int|null $scale
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnAccessories
+     * @return string
+     * @throws \Exception
      */
-    public function floatBaseBinder(string $dataType,
-                                    string $column,
-                                    int|null $precision = null,
-                                    int|null $scale = null,
-                                    bool $unsigned = false): DefinedColumnAccessories
+    private function sewDefinedColumns(): string
     {
-        $parameters = [];
-
-        if (!is_null($precision)) {
-            $parameters = '(' . $precision;
-
-            if (!is_null($scale)) {
-                $parameters .= ', ' . $scale;
-            }
-
-            $parameters = [$parameters . ')'];
+        if (empty($this->columns)) {
+            return '';
         }
 
-        $parameters = array_merge(
-            $parameters,
-            $this->resolveParametersUsing($column, false, $unsigned)
-        );
+        $sewedColumns = [];
 
-        return $this->bindColumn($column, $dataType, $parameters);
+        //  'DECIMAL'
+        //  'DECIMAL({precision}, {scale})'
+        //  'VARCHAR({length})'
+        //  'DAY({precision} TO MONTH'
+
+        /*
+         * DECIMAL{precision_and_scale}
+         */
+
+        foreach ($this->columns as $column => $options) {
+            $definitionSignature = $this->driver->getDataType($options['data_type']);
+
+            if (!is_null($options['parameters'])) {
+                foreach ($options['parameters'] as $parameterKey => $parameterValue) {
+                    $definitionSignature = str_replace(
+                        '{' . $parameterKey . '}',
+                        !is_null($parameterValue) ? '(' . $parameterValue . ')' : '',
+                        $definitionSignature
+                    );
+                }
+            }
+
+            $sewedColumns[] = $column . ' ' . $definitionSignature;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        $tableSewedAccessories = [];
+
+        foreach ($this->tableAccessories as $parameters) {
+            $accessoryExpression = $parameters;
+
+            if (is_array($parameters)) {
+                if (!empty($parameters['columns'])) {
+                    if (!empty($parameters['prefix'])) {
+                        $accessoryExpression = $parameters['prefix'];
+                    }
+
+                    $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
+                } else {
+                    continue;
+                }
+            }
+
+            $tableSewedAccessories[] = $accessoryExpression;
+        }
+
+        $sewedColumns[] = implode(', ', $tableSewedAccessories);
+
+        dd(implode(', ', $sewedColumns));
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * --------------------------------------------------------------------------
@@ -258,17 +202,16 @@ class Blueprint
      * |     Unavailable - MS SQL Server                                        |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param int $size
+     * @param int|string $size
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function bit(string $column, int $size = 1): DefinedColumnAccessories
+    public function bit(string $column, int|string $size = 1): DefinedColumnAccessories
     {
         return $this->bindColumn(
             $column,
             DataTypes::BIT,
             in_array($this->getDriverName(), [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
-                ? $size
+                ? compact('size')
                 : null
         );
     }
@@ -298,7 +241,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::TINY_INTEGER,
-            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+            [
+                'auto_increment' => $autoIncrement,
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -339,7 +285,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::SMALL_INTEGER,
-            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+            [
+                'auto_increment' => $autoIncrement,
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -380,7 +329,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::MEDIUM_INTEGER,
-            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+            [
+                'auto_increment' => $autoIncrement,
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -421,7 +373,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::INTEGER,
-            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+            [
+                'auto_increment' => $autoIncrement,
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -461,7 +416,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::BIG_INTEGER,
-            $this->resolveParametersUsing($column, $autoIncrement, $unsigned)
+            [
+                'auto_increment' => $autoIncrement,
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -496,13 +454,16 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
-     * @param int|null $precision
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function float(string $column, bool $unsigned = false, int|null $precision = null): DefinedColumnAccessories
+    public function float(string $column, bool $unsigned = false, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::FLOAT, $column, $precision, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::FLOAT,
+            compact('unsigned', 'precision')
+        );
     }
 
     /**
@@ -519,11 +480,11 @@ class Blueprint
      * | Same as "float" with the "unsigned" argument specified as "true".      |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param int|null $precision
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function unsignedFloat(string $column, int|null $precision = null): DefinedColumnAccessories
+    public function unsignedFloat(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
         return $this->float($column, true, $precision);
     }
@@ -542,7 +503,11 @@ class Blueprint
      */
     public function binaryFloat(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::BINARY_FLOAT, $column, null, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::BINARY_FLOAT,
+            compact('unsigned')
+        );
     }
 
     /**
@@ -576,13 +541,16 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
-     * @param int|null $precision
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function double(string $column,  bool $unsigned = false, int|null $precision = null): DefinedColumnAccessories
+    public function double(string $column, bool $unsigned = false, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::DOUBLE, $column, $precision, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::DOUBLE,
+            compact('unsigned', 'precision')
+        );
     }
 
     /**
@@ -599,11 +567,11 @@ class Blueprint
      * | Same as "double" with the "unsigned" argument specified as "true".     |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param int|null $precision
+     * @param int|string|null $precision
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function unsignedDouble(string $column, int|null $precision = null): DefinedColumnAccessories
+    public function unsignedDouble(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
         return $this->double($column, true, $precision);
     }
@@ -622,7 +590,11 @@ class Blueprint
      */
     public function binaryDouble(string $column,  bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::BINARY_DOUBLE, $column, null, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::BINARY_DOUBLE,
+            compact('unsigned')
+        );
     }
 
     /**
@@ -659,14 +631,22 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
-     * @param int|null $precision
-     * @param int|null $scale
+     * @param int|string|null $precision
+     * @param int|string|null $scale
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function decimal(string $column, bool $unsigned = false, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
+    public function decimal(
+        string $column,
+        bool $unsigned = false,
+        int|string|null $precision = null,
+        int|string|null $scale = null
+    ): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::DECIMAL, $column, $precision, $scale, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::DECIMAL,
+            compact('unsigned', 'precision', 'scale')
+        );
     }
 
     /**
@@ -686,12 +666,12 @@ class Blueprint
      * | Same as "decimal" with the "unsigned" argument specified as "true".    |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param int|null $precision
-     * @param int|null $scale
+     * @param int|string|null $precision
+     * @param int|string|null $scale
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function unsignedDecimal(string $column, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
+    public function unsignedDecimal(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnAccessories
     {
         return $this->decimal($column, true, $precision, $scale);
     }
@@ -712,14 +692,22 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
-     * @param int|null $precision
-     * @param int|null $scale
+     * @param int|string|null $precision
+     * @param int|string|null $scale
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function numeric(string $column, bool $unsigned = false, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
+    public function numeric(
+        string $column,
+        bool $unsigned = false,
+        int|string|null $precision = null,
+        int|string|null $scale = null
+    ): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::NUMERIC, $column, $precision, $scale, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::NUMERIC,
+            compact('unsigned', 'precision', 'scale')
+        );
     }
 
     /**
@@ -739,12 +727,12 @@ class Blueprint
      * | Same as "numeric" with the "unsigned" argument specified as "true".    |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param int|null $precision
-     * @param int|null $scale
+     * @param int|string|null $precision
+     * @param int|string|null $scale
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function unsignedNumeric(string $column, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
+    public function unsignedNumeric(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnAccessories
     {
         return $this->numeric($column, true, $precision, $scale);
     }
@@ -765,14 +753,22 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
-     * @param int|null $precision
-     * @param int|null $scale
+     * @param int|string|null $precision
+     * @param int|string|null $scale
      * @return \Moirai\DDL\DefinedColumnAccessories
-     * @throws \Exception
      */
-    public function number(string $column, bool $unsigned = false, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
+    public function number(
+        string $column,
+        bool $unsigned = false,
+        int|string|null $precision = null,
+        int|string|null $scale = null
+    ): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::NUMBER, $column, $precision, $scale, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::NUMBER,
+            compact('unsigned', 'precision', 'scale')
+        );
     }
 
     /**
@@ -792,12 +788,12 @@ class Blueprint
      * | Same as "number" with the "unsigned" argument specified as "true".     |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param int|null $precision
-     * @param int|null $scale
+     * @param int|string|null $precision
+     * @param int|string|null $scale
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function unsignedNumber(string $column, int|null $precision = null, int|null $scale = null): DefinedColumnAccessories
+    public function unsignedNumber(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnAccessories
     {
         return $this->number($column, true, $precision, $scale);
     }
@@ -816,7 +812,11 @@ class Blueprint
      */
     public function real(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::REAL, $column, null, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::REAL,
+            compact('unsigned')
+        );
     }
 
     /**
@@ -850,7 +850,11 @@ class Blueprint
      */
     public function smallMoney(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::SMALL_MONEY, $column, null, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::SMALL_MONEY,
+            compact('unsigned')
+        );
     }
 
     /**
@@ -884,7 +888,11 @@ class Blueprint
      */
     public function money(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->floatBaseBinder(DataTypes::MONEY, $column, null, null, $unsigned);
+        return $this->bindColumn(
+            $column,
+            DataTypes::MONEY,
+            compact('unsigned')
+        );
     }
 
     /**
@@ -918,12 +926,12 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function char(string $column, string|int|null $length = null): DefinedColumnAccessories
+    public function char(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
         return $this->bindColumn(
             $column,
             DataTypes::CHAR,
-            !is_null($length) ? [$length] : []
+            !is_null($length) ? compact('length') : null
         );
     }
 
@@ -941,9 +949,13 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function nChar(string $column, string|int $length = null): DefinedColumnAccessories
+    public function nChar(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::N_CHAR, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::N_CHAR,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -960,9 +972,13 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function varchar(string $column, string|int|null $length = null): DefinedColumnAccessories
+    public function varchar(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::VARCHAR, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::VARCHAR,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -979,9 +995,13 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function varchar2(string $column, string|int|null $length = null): DefinedColumnAccessories
+    public function varchar2(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::VARCHAR_2, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::VARCHAR_2,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -998,9 +1018,13 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function nVarchar(string $column, string|int|null $length = null): DefinedColumnAccessories
+    public function nVarchar(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::N_VARCHAR, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::N_VARCHAR,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -1017,9 +1041,13 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function nVarchar2(string $column, string|int|null $length = null): DefinedColumnAccessories
+    public function nVarchar2(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::N_VARCHAR_2, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::N_VARCHAR_2,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -1180,7 +1208,13 @@ class Blueprint
      */
     public function set(string $column, array $whiteList): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::SET, $whiteList);
+        return $this->bindColumn(
+            $column,
+            DataTypes::SET,
+            [
+                'white_list' => $whiteList
+            ]
+        );
     }
 
     /**
@@ -1197,7 +1231,13 @@ class Blueprint
      */
     public function enum(string $column, array $whiteList): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::ENUM, $whiteList);
+        return $this->bindColumn(
+            $column,
+            DataTypes::ENUM,
+            [
+                'white_list' => $whiteList
+            ]
+        );
     }
 
     /**
@@ -1248,7 +1288,11 @@ class Blueprint
      */
     public function binary(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::BINARY, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::BINARY,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -1267,7 +1311,11 @@ class Blueprint
      */
     public function varbinary(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::VARBINARY, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::VARBINARY,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -1424,7 +1472,11 @@ class Blueprint
      */
     public function raw(string $column, string|int $length): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::RAW, $length);
+        return $this->bindColumn(
+            $column,
+            DataTypes::RAW,
+            !is_null($length) ? compact('length') : null
+        );
     }
 
     /**
@@ -1565,7 +1617,11 @@ class Blueprint
      */
     public function dateTime2(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::DATE_TIME_2, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::DATE_TIME_2,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**
@@ -1599,7 +1655,11 @@ class Blueprint
      */
     public function dateTimeOffset(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::DATE_TIME_OFFSET, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::DATE_TIME_OFFSET,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**
@@ -1619,7 +1679,11 @@ class Blueprint
      */
     public function time(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::TIME, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::TIME,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**
@@ -1640,7 +1704,11 @@ class Blueprint
      */
     public function timestamp(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::TIMESTAMP, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::TIMESTAMP,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**
@@ -1674,7 +1742,11 @@ class Blueprint
      */
     public function timeTz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::TIME_TZ, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::TIME_TZ,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**
@@ -1715,7 +1787,11 @@ class Blueprint
      */
     public function timestampTz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::TIMESTAMP_TZ, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::TIMESTAMP_TZ,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**
@@ -1756,7 +1832,11 @@ class Blueprint
      */
     public function timestampLtz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn($column, DataTypes::TIMESTAMP_LTZ, $precision);
+        return $this->bindColumn(
+            $column,
+            DataTypes::TIMESTAMP_LTZ,
+            !is_null($precision) ? compact('precision') : null
+        );
     }
 
     /**

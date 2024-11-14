@@ -10,12 +10,12 @@ class DefinedColumnAccessories
     /**
      * @var string
      */
-    protected string $column;
+    private string $column;
 
     /**
      * @var Blueprint
      */
-    protected Blueprint $blueprintInstance;
+    private Blueprint $blueprintInstance;
 
     /**
      * DefinedColumnAccessories constructor.
@@ -30,53 +30,24 @@ class DefinedColumnAccessories
     }
 
     /**
-     * @param string $accessoryKey
-     * @return string|array
-     */
-    public function getAccessory(string $accessoryKey): string|array
-    {
-        return $this->blueprintInstance->columns[$this->column][$accessoryKey];
-    }
-
-    /**
-     * @param string $accessoryKey
-     * @return string|array
-     */
-    public function getTableAccessory(string $accessoryKey): string|array
-    {
-        return $this->blueprintInstance->tableAccessories[$accessoryKey];
-    }
-
-    /**
-     * @param string $accessory
-     * @param string|null $accessoryKey
-     * @param bool $isTableAccessory
+     * @param string $key
+     * @param string $value
+     * @param bool $belongsTable
      * @param bool $append
      */
-    public function bindAccessory(string $accessory,
-                                  string $accessoryKey = null,
-                                  bool $isTableAccessory = false,
-                                  bool $append = false): void
+    public function bindAccessory(string $key, string $value, bool $belongsTable = false, bool $append = false): void
     {
-        if (!$isTableAccessory) {
-            if (!is_null($accessoryKey)) {
-                if (!$append) {
-                    $this->blueprintInstance->columns[$this->column][$accessoryKey] = $accessory;
-                } else {
-                    $this->blueprintInstance->columns[$this->column][$accessoryKey][] = $accessory;
-                }
+        if (!$belongsTable) {
+            if (!$append) {
+                $this->blueprintInstance->columns[$this->column][$key] = $value;
             } else {
-                $this->blueprintInstance->columns[$this->column][] = $accessory;
+                $this->blueprintInstance->columns[$this->column][$key][] = $value;
             }
         } else {
-            if (!is_null($accessoryKey)) {
-                if (!$append) {
-                    $this->blueprintInstance->tableAccessories[$accessoryKey] = $accessory;
-                } else {
-                    $this->blueprintInstance->tableAccessories[$accessoryKey][] = $accessory;
-                }
+            if (!$append) {
+                $this->blueprintInstance->tableAccessories[$key] = $value;
             } else {
-                $this->blueprintInstance->tableAccessories[] = $accessory;
+                $this->blueprintInstance->tableAccessories[$key][] = $value;
             }
         }
     }
@@ -113,7 +84,7 @@ class DefinedColumnAccessories
      */
     public function nullable(): self
     {
-        $this->deleteAccessory('value');
+        $this->deleteAccessory('nullable');
 
         return $this;
     }
@@ -219,6 +190,13 @@ class DefinedColumnAccessories
 
         return $this;
     }
+
+
+
+
+
+
+
 
     /**
      * @param string $comment

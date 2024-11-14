@@ -33,7 +33,7 @@ class MySqlDriver extends Driver
         DataTypes::BIG_INTEGER => 'BIGINT',
         DataTypes::FLOAT => 'FLOAT',
         DataTypes::DOUBLE => 'DOUBLE',
-        DataTypes::DECIMAL => 'DECIMAL(p, s)',
+        DataTypes::DECIMAL => 'DECIMAL{precision_and_scale}',
         DataTypes::NUMERIC => 'NUMERIC(p, s)',
         DataTypes::BIT => 'BIT',
         DataTypes::CHAR => 'CHAR(n)',
