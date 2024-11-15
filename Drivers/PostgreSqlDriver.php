@@ -15,35 +15,31 @@ class PostgreSqlDriver extends Driver
     ];
 
     /**
-     * @var array
-     */
-    protected array $pitaForStrings = [
-        'opening' => '\'',
-        'closing' => '\''
-    ];
-
-    /**
      * @var array|string[]
      */
     protected array $dataTypes = [
         DataTypes::SMALL_INTEGER => 'SMALLINT',                // 2 bytes
         DataTypes::INTEGER => 'INTEGER',                  // 4 bytes
         DataTypes::BIG_INTEGER => 'BIGINT',                    // 8 bytes
-        DataTypes::DECIMAL => 'DECIMAL(precision, scale)', // Exact numeric with selectable precision
-        DataTypes::NUMERIC => 'NUMERIC(precision, scale)', // Exact numeric
+        DataTypes::DECIMAL => 'DECIMAL{precision_and_scale}', // Exact numeric with selectable precision
+        DataTypes::NUMERIC => 'NUMERIC{precision_and_scale}', // Exact numeric
         DataTypes::FLOAT => 'FLOAT',
         DataTypes::REAL => 'REAL',                        // 4 bytes floating point
         DataTypes::DOUBLE => 'DOUBLE PRECISION', // 8 bytes floating point
         DataTypes::MONEY => 'MONEY',                      // Currency type
-        DataTypes::CHAR => 'CHAR(n)',                     // Fixed-length character
-        DataTypes::VARCHAR => 'VARCHAR(n)',                // Variable-length character
+        DataTypes::CHAR => 'CHAR{length}',                     // Fixed-length character
+        DataTypes::VARCHAR => 'VARCHAR{length}',                // Variable-length character
         DataTypes::TEXT => 'TEXT',                        // Variable-length character with no specific length
         DataTypes::BYTEA => 'BYTEA',                      // Binary data
+
+
         DataTypes::DATE => 'DATE',                        // Date type
-        DataTypes::TIME => 'TIME',                        // Time without time zone
-        DataTypes::TIME_TZ => 'TIME WITH TIME ZONE',      // Time with time zone
-        DataTypes::TIMESTAMP => 'TIMESTAMP',              // Timestamp without time zone
-        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP WITH TIME ZONE', // Timestamp with time zone
+        DataTypes::TIME => 'TIME{precision}',                        // Time without time zone
+        DataTypes::TIMESTAMP => 'TIMESTAMP{precision}',              // Timestamp without time zone
+        DataTypes::TIME_TZ => 'TIME{precision} WITH TIME ZONE',      // Time with time zone
+        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP{precision} WITH TIME ZONE', // Timestamp with time zone
+
+
         DataTypes::INTERVAL => 'INTERVAL',                // Time interval
         DataTypes::BOOLEAN => 'BOOLEAN',                   // Boolean type
         DataTypes::UUID => 'UUID',                        // Universally Unique Identifier
@@ -60,6 +56,14 @@ class PostgreSqlDriver extends Driver
         DataTypes::BOX => 'BOX',                          // Geometric box
         DataTypes::POLYGON => 'POLYGON',                  // Geometric polygon
         DataTypes::CIRCLE => 'CIRCLE',                    // Geometric circle
+    ];
+
+    /**
+     * @var array
+     */
+    protected array $pitaForStrings = [
+        'opening' => '\'',
+        'closing' => '\''
     ];
 
 

@@ -68,16 +68,25 @@ class Blueprint
      * @param string $column
      * @param int $dataType
      * @param int|string|array|null $parameters
+     * @param array $accessories
      * @return \Moirai\DDL\DefinedColumnAccessories
      */
-    private function bindColumn(string $column, int $dataType, int|string|array|null $parameters = null): DefinedColumnAccessories
+    private function bindColumn(
+        string $column,
+        int $dataType,
+        int|string|array|null $parameters = null,
+        array $accessories = []
+    ): DefinedColumnAccessories
     {
         $this->columns[$column] = [
             'data_type' => $dataType,
             'parameters' => $parameters,
-            'accessories' => [
-                'nullable' => false
-            ]
+            'accessories' => array_merge(
+                $accessories,
+                [
+                    'nullable' => false
+                ]
+            )
         ];
 
         return new DefinedColumnAccessories($column, $this);
@@ -95,15 +104,6 @@ class Blueprint
 
         $sewedColumns = [];
 
-        //  'DECIMAL'
-        //  'DECIMAL({precision}, {scale})'
-        //  'VARCHAR({length})'
-        //  'DAY({precision} TO MONTH'
-
-        /*
-         * DECIMAL{precision_and_scale}
-         */
-
         foreach ($this->columns as $column => $options) {
             $definitionSignature = $this->driver->getDataType($options['data_type']);
 
@@ -117,17 +117,14 @@ class Blueprint
                 }
             }
 
+            if (!empty($options['accessories'])) {
+                foreach ($options['accessories'] as $accessory) {
+                    
+                }
+            }
+
             $sewedColumns[] = $column . ' ' . $definitionSignature;
         }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -241,8 +238,9 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::TINY_INTEGER,
+            null,
             [
-                'auto_increment' => $autoIncrement,
+                'autoincrement' => $autoIncrement,
                 'unsigned' => $unsigned
             ]
         );
@@ -285,8 +283,9 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::SMALL_INTEGER,
+            null,
             [
-                'auto_increment' => $autoIncrement,
+                'autoincrement' => $autoIncrement,
                 'unsigned' => $unsigned
             ]
         );
@@ -329,8 +328,9 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::MEDIUM_INTEGER,
+            null,
             [
-                'auto_increment' => $autoIncrement,
+                'autoincrement' => $autoIncrement,
                 'unsigned' => $unsigned
             ]
         );
@@ -373,8 +373,9 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::INTEGER,
+            null,
             [
-                'auto_increment' => $autoIncrement,
+                'autoincrement' => $autoIncrement,
                 'unsigned' => $unsigned
             ]
         );
@@ -416,8 +417,9 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::BIG_INTEGER,
+            null,
             [
-                'auto_increment' => $autoIncrement,
+                'autoincrement' => $autoIncrement,
                 'unsigned' => $unsigned
             ]
         );
@@ -462,7 +464,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::FLOAT,
-            compact('unsigned', 'precision')
+            compact('precision'),
+            [
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -503,11 +508,7 @@ class Blueprint
      */
     public function binaryFloat(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::BINARY_FLOAT,
-            compact('unsigned')
-        );
+        return $this->bindColumn($column, DataTypes::BINARY_FLOAT, null, ['unsigned' => $unsigned]);
     }
 
     /**
@@ -549,7 +550,10 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::DOUBLE,
-            compact('unsigned', 'precision')
+            compact('precision'),
+            [
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -590,11 +594,7 @@ class Blueprint
      */
     public function binaryDouble(string $column,  bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::BINARY_DOUBLE,
-            compact('unsigned')
-        );
+        return $this->bindColumn($column, DataTypes::BINARY_DOUBLE, null, ['unsigned' => $unsigned]);
     }
 
     /**
@@ -624,10 +624,12 @@ class Blueprint
      * | Argument "precision" - represents the total number of digits that can  |
      * | be stored.                                                             |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * |                                                                        |
      * | Argument "scale" - represents the number of digits that can be stored  |
      * | to the right of the decimal point.                                     |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
@@ -645,7 +647,12 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::DECIMAL,
-            compact('unsigned', 'precision', 'scale')
+            [
+                'precision_and_scale' => !is_null($scale) ? $precision . ', ' . $scale : $precision
+            ],
+            [
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -658,10 +665,12 @@ class Blueprint
      * | Argument "precision" - represents the total number of digits that can  |
      * | be stored.                                                             |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * |                                                                        |
      * | Argument "scale" - represents the number of digits that can be stored  |
      * | to the right of the decimal point.                                     |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * |                                                                        |
      * | Same as "decimal" with the "unsigned" argument specified as "true".    |
      * --------------------------------------------------------------------------
@@ -685,10 +694,12 @@ class Blueprint
      * | Argument "precision" - represents the total number of digits that can  |
      * | be stored.                                                             |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * |                                                                        |
      * | Argument "scale" - represents the number of digits that can be stored  |
      * | to the right of the decimal point.                                     |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $unsigned
@@ -706,7 +717,12 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::NUMERIC,
-            compact('unsigned', 'precision', 'scale')
+            [
+                'precision_and_scale' => !is_null($scale) ? $precision . ', ' . $scale : $precision
+            ],
+            [
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -719,10 +735,12 @@ class Blueprint
      * | Argument "precision" - represents the total number of digits that can  |
      * | be stored.                                                             |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * |                                                                        |
      * | Argument "scale" - represents the number of digits that can be stored  |
      * | to the right of the decimal point.                                     |
      * |     Required - No                                                      |
+     * |     Unavailable - SQLite                                               |
      * |                                                                        |
      * | Same as "numeric" with the "unsigned" argument specified as "true".    |
      * --------------------------------------------------------------------------
@@ -767,7 +785,12 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::NUMBER,
-            compact('unsigned', 'precision', 'scale')
+            [
+                'precision_and_scale' => !is_null($scale) ? $precision . ', ' . $scale : $precision
+            ],
+            [
+                'unsigned' => $unsigned
+            ]
         );
     }
 
@@ -812,11 +835,7 @@ class Blueprint
      */
     public function real(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::REAL,
-            compact('unsigned')
-        );
+        return $this->bindColumn($column, DataTypes::REAL, null, ['unsigned' => $unsigned]);
     }
 
     /**
@@ -850,11 +869,7 @@ class Blueprint
      */
     public function smallMoney(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::SMALL_MONEY,
-            compact('unsigned')
-        );
+        return $this->bindColumn($column, DataTypes::SMALL_MONEY, null, ['unsigned' => $unsigned]);
     }
 
     /**
@@ -888,11 +903,7 @@ class Blueprint
      */
     public function money(string $column, bool $unsigned = false): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::MONEY,
-            compact('unsigned')
-        );
+        return $this->bindColumn($column, DataTypes::MONEY, null, ['unsigned' => $unsigned]);
     }
 
     /**
@@ -928,16 +939,12 @@ class Blueprint
      */
     public function char(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::CHAR,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::CHAR, compact('length'));
     }
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to define n char data type column.                              |
+     * | Clause to define nchar data type column.                               |
      * | -------------- DBMS drivers that support this data type -------------- |
      * | MS SQL Server, Oracle                                                  |
      * | ---------------------------------------------------------------------- |
@@ -949,13 +956,9 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function nChar(string $column, int|string|null $length = null): DefinedColumnAccessories
+    public function nchar(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::N_CHAR,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::N_CHAR, compact('length'));
     }
 
     /**
@@ -974,16 +977,12 @@ class Blueprint
      */
     public function varchar(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::VARCHAR,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::VARCHAR, compact('length'));
     }
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to define varchar 2 data type column.                           |
+     * | Clause to define varchar2 data type column.                            |
      * | -------------- DBMS drivers that support this data type -------------- |
      * | Oracle                                                                 |
      * | ---------------------------------------------------------------------- |
@@ -997,16 +996,12 @@ class Blueprint
      */
     public function varchar2(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::VARCHAR_2,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::VARCHAR_2, compact('length'));
     }
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to define n varchar data type column.                           |
+     * | Clause to define nvarchar data type column.                            |
      * | -------------- DBMS drivers that support this data type -------------- |
      * | MS SQL Server                                                          |
      * | ---------------------------------------------------------------------- |
@@ -1018,13 +1013,9 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function nVarchar(string $column, int|string|null $length = null): DefinedColumnAccessories
+    public function nvarchar(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::N_VARCHAR,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::N_VARCHAR, compact('length'));
     }
 
     /**
@@ -1041,13 +1032,9 @@ class Blueprint
      * @return \Moirai\DDL\DefinedColumnAccessories
      * @throws \Exception
      */
-    public function nVarchar2(string $column, int|string|null $length = null): DefinedColumnAccessories
+    public function nvarchar2(string $column, int|string|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::N_VARCHAR_2,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::N_VARCHAR_2, compact('length'));
     }
 
     /**
@@ -1212,7 +1199,7 @@ class Blueprint
             $column,
             DataTypes::SET,
             [
-                'white_list' => $whiteList
+                'white_list' => implode(', ', $whiteList)
             ]
         );
     }
@@ -1235,7 +1222,7 @@ class Blueprint
             $column,
             DataTypes::ENUM,
             [
-                'white_list' => $whiteList
+                'white_list' => implode(', ', $whiteList)
             ]
         );
     }
@@ -1288,11 +1275,7 @@ class Blueprint
      */
     public function binary(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::BINARY,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::BINARY, compact('length'));
     }
 
     /**
@@ -1311,11 +1294,7 @@ class Blueprint
      */
     public function varbinary(string $column, string|int|null $length = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::VARBINARY,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::VARBINARY, compact('length'));
     }
 
     /**
@@ -1472,11 +1451,7 @@ class Blueprint
      */
     public function raw(string $column, string|int $length): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::RAW,
-            !is_null($length) ? compact('length') : null
-        );
+        return $this->bindColumn($column, DataTypes::RAW, compact('length'));
     }
 
     /**
@@ -1617,11 +1592,7 @@ class Blueprint
      */
     public function dateTime2(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::DATE_TIME_2,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::DATE_TIME_2, compact('precision'));
     }
 
     /**
@@ -1655,11 +1626,7 @@ class Blueprint
      */
     public function dateTimeOffset(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::DATE_TIME_OFFSET,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::DATE_TIME_OFFSET, compact('precision'));
     }
 
     /**
@@ -1679,18 +1646,14 @@ class Blueprint
      */
     public function time(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::TIME,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::TIME, compact('precision'));
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to define timestamp data type column.                           |
      * | -------------- DBMS drivers that support this data type -------------- |
-     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | MySQL, MariaDB, PostgreSQL, Oracle                                     |
      * | ---------------------------------------------------------------------- |
      * | Argument "precision" - represents  the precision of the fractional     |
      * | seconds (determines how many digits are stored for the fractional      |
@@ -1704,11 +1667,7 @@ class Blueprint
      */
     public function timestamp(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::TIMESTAMP,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::TIMESTAMP, compact('precision'));
     }
 
     /**
@@ -1742,11 +1701,7 @@ class Blueprint
      */
     public function timeTz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::TIME_TZ,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::TIME_TZ, compact('precision'));
     }
 
     /**
@@ -1787,11 +1742,7 @@ class Blueprint
      */
     public function timestampTz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::TIMESTAMP_TZ,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::TIMESTAMP_TZ, compact('precision'));
     }
 
     /**
@@ -1832,11 +1783,7 @@ class Blueprint
      */
     public function timestampLtz(string $column, int|string|null $precision = null): DefinedColumnAccessories
     {
-        return $this->bindColumn(
-            $column,
-            DataTypes::TIMESTAMP_LTZ,
-            !is_null($precision) ? compact('precision') : null
-        );
+        return $this->bindColumn($column, DataTypes::TIMESTAMP_LTZ, compact('precision'));
     }
 
     /**

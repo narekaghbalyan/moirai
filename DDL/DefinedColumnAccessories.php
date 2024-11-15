@@ -65,19 +65,60 @@ class DefinedColumnAccessories
         }
     }
 
-    /**
-     * @param string $accessoryKey
-     * @param bool $isTableAccessory
-     * @return bool
-     */
-    public function checkAccessoryExistence(string $accessoryKey, bool $isTableAccessory = false): bool
-    {
-        if (!$isTableAccessory) {
-            return !empty($this->blueprintInstance->columns[$this->column][$accessoryKey]);
-        }
 
-        return !empty($this->blueprintInstance->tableAccessories[$accessoryKey]);
+
+
+
+    /**
+     * @return $this
+     */
+    public function unsigned(): self
+    {
+        $this->bindAccessory(Accessories::UNSIGNED, 'UNSIGNED');
+
+        return $this;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * @return $this
@@ -198,30 +239,7 @@ class DefinedColumnAccessories
 
 
 
-    /**
-     * @param string $comment
-     * @return $this
-     * @throws Exception
-     */
-    public function comment(string $comment): self
-    {
-        $driver = $this->blueprintInstance->getDriver();
 
-        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
-            $this->bindAccessory('COMMENT ' . $comment);
-        } elseif ($driver === AvailableDbmsDrivers::POSTGRESQL) {
-            $this->blueprintInstance->afterTableDefinition[] = 'COMMENT ON COLUMN '
-                . $this->blueprintInstance->table
-                . '.'
-                . $this->column
-                . ' is '
-                . $comment;
-        } else {
-            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
-        }
-
-        return $this;
-    }
 
 
 
@@ -242,15 +260,7 @@ class DefinedColumnAccessories
         return $this;
     }
 
-    /**
-     * @return $this
-     */
-    public function unsigned(): self
-    {
-        $this->bindAccessory('UNSIGNED');
 
-        return $this;
-    }
 
     /**
      * TODO
@@ -279,6 +289,40 @@ class DefinedColumnAccessories
     public function primary(): self
     {
         $this->bindAccessory('PRIMARY KEY');
+
+        return $this;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * @param string $comment
+     * @return $this
+     * @throws Exception
+     */
+    public function comment(string $comment): self
+    {
+        $driver = $this->blueprintInstance->getDriver();
+
+        if ($driver === AvailableDbmsDrivers::MYSQL || $driver === AvailableDbmsDrivers::MARIADB) {
+            $this->bindAccessory('COMMENT ' . $comment);
+        } elseif ($driver === AvailableDbmsDrivers::POSTGRESQL) {
+            $this->blueprintInstance->afterTableDefinition[] = 'COMMENT ON COLUMN '
+                . $this->blueprintInstance->table
+                . '.'
+                . $this->column
+                . ' is '
+                . $comment;
+        } else {
+            throw new Exception('DriverInterface ' . $driver . ' does not support this function.');
+        }
 
         return $this;
     }

@@ -31,9 +31,9 @@ class SqliteDriver extends Driver
         DataTypes::TEXT => 'TEXT',                      // Text string
         DataTypes::BLOB => 'BLOB',                      // Binary large object
         DataTypes::NUMERIC => 'NUMERIC',                // Numeric value
-        DataTypes::CHAR => 'CHAR(n)',                   // Fixed-length character string
-        DataTypes::VARCHAR => 'VARCHAR(n)',              // Variable-length character string
-        DataTypes::DECIMAL => 'DECIMAL(p, s)',          // Exact numeric with precision
+        DataTypes::CHAR => 'CHAR{length}',                   // Fixed-length character string
+        DataTypes::VARCHAR => 'VARCHAR{length}',              // Variable-length character string
+        DataTypes::DECIMAL => 'DECIMAL',          // Exact numeric with precision
         DataTypes::DATE => 'DATE',                      // Date value
         DataTypes::DATE_TIME => 'DATETIME',              // Date and time value
     ];
