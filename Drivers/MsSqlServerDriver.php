@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\Accessories;
 use Moirai\DDL\DataTypes;
 
 class MsSqlServerDriver extends Driver
@@ -65,8 +66,16 @@ class MsSqlServerDriver extends Driver
         DataTypes::HIERARYCHYID => 'hierarchyid'
     ];
 
-
-
+    private array $accessories = [
+        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
+        Accessories::AUTOINCREMENT => 'IDENTITY',
+        Accessories::PRIMARY => 'PRIMARY KEY',
+        Accessories::NULLABLE => 'NULL',
+        Accessories::UNIQUE => 'UNIQUE',
+        Accessories::DEFAULT => 'DEFAULT "{value}"',
+        Accessories::COLLATION => 'COLLATE {value}',
+        Accessories::INDEX => 'INDEX {name} ({column})'
+    ];
 
 
     /**

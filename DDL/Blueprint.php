@@ -119,7 +119,7 @@ class Blueprint
 
             if (!empty($options['accessories'])) {
                 foreach ($options['accessories'] as $accessory) {
-                    
+
                 }
             }
 
@@ -216,7 +216,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Only MySQL and MariaDB directly support unsigned types, other drivers  |
-     * | simulate unsigned behavior by using CHECK(value > 0) constraint.       |
+     * | simulate unsigned behavior by using CHECK(value >= 0) constraint.      |
      * --------------------------------------------------------------------------
      */
 

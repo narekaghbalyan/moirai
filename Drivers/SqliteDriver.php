@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\Accessories;
 use Moirai\DDL\DataTypes;
 
 class SqliteDriver extends Driver
@@ -36,6 +37,17 @@ class SqliteDriver extends Driver
         DataTypes::DECIMAL => 'DECIMAL',          // Exact numeric with precision
         DataTypes::DATE => 'DATE',                      // Date value
         DataTypes::DATE_TIME => 'DATETIME',              // Date and time value
+    ];
+
+    private array $accessories = [
+        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
+        Accessories::AUTOINCREMENT => 'AUTOINCREMENT',
+        Accessories::PRIMARY => 'PRIMARY KEY',
+        Accessories::NULLABLE => 'NULL',
+        Accessories::UNIQUE => 'UNIQUE',
+        Accessories::DEFAULT => 'DEFAULT "{value}"',
+        Accessories::COLLATION => 'COLLATE {value}',
+        Accessories::INDEX => 'INDEX {name} ({column})'
     ];
 
 

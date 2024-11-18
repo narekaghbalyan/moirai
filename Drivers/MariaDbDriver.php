@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\Accessories;
 use Moirai\DDL\DataTypes;
 
 class MariaDbDriver extends Driver
@@ -68,6 +69,20 @@ class MariaDbDriver extends Driver
         DataTypes::MULTI_POINT => 'MULTIPOINT',
         DataTypes::MULTI_LINE_STRING => 'MULTILINESTRING',
         DataTypes::MULTI_POLYGON => 'MULTIPOLYGON'
+    ];
+
+    private array $accessories = [
+        Accessories::UNSIGNED => 'UNSIGNED',
+        Accessories::AUTOINCREMENT => 'AUTO_INCREMENT',
+        Accessories::PRIMARY => 'PRIMARY KEY',
+        Accessories::NULLABLE => 'NULL',
+        Accessories::UNIQUE => 'UNIQUE',
+        Accessories::DEFAULT => 'DEFAULT "{value}"',
+        Accessories::COLLATION => 'COLLATE {value}',
+        Accessories::CHARSET => 'CHARACTER SET {value}',
+        Accessories::COMMENT => 'COMMENT "{value}"',
+        Accessories::INDEX => 'INDEX {name} ({column})',
+        Accessories::INVISIBLE => 'INVISIBLE'
     ];
 
     /**

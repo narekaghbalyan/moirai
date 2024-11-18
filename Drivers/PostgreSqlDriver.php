@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\Accessories;
 use Moirai\DDL\DataTypes;
 
 class PostgreSqlDriver extends Driver
@@ -56,6 +57,18 @@ class PostgreSqlDriver extends Driver
         DataTypes::BOX => 'BOX',                          // Geometric box
         DataTypes::POLYGON => 'POLYGON',                  // Geometric polygon
         DataTypes::CIRCLE => 'CIRCLE',                    // Geometric circle
+    ];
+
+    private array $accessories = [
+        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
+        Accessories::AUTOINCREMENT => 'SERIAL',
+        Accessories::PRIMARY => 'PRIMARY KEY',
+        Accessories::NULLABLE => 'NULL',
+        Accessories::UNIQUE => 'UNIQUE',
+        Accessories::DEFAULT => 'DEFAULT "{value}"',
+        Accessories::COLLATION => 'COLLATE {value}',
+        Accessories::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\'',
+        Accessories::INDEX => 'INDEX {name} ({column})'
     ];
 
     /**

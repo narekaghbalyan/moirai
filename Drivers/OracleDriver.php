@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers;
 
+use Moirai\DDL\Accessories;
 use Moirai\DDL\DataTypes;
 
 class OracleDriver extends Driver
@@ -53,6 +54,18 @@ class OracleDriver extends Driver
         DataTypes::UROWID => 'UROWID',
 
         DataTypes::XML => 'XMLType'
+    ];
+
+    private array $accessories = [
+        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
+        Accessories::AUTOINCREMENT => 'GENERATED AS IDENTITY',
+        Accessories::PRIMARY => 'PRIMARY KEY',
+        Accessories::NULLABLE => 'NULL',
+        Accessories::UNIQUE => 'UNIQUE',
+        Accessories::DEFAULT => 'DEFAULT "{value}"',
+        Accessories::COLLATION => 'COLLATE {value}',
+        Accessories::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\'',
+        Accessories::INDEX => 'INDEX {name} ({column})'
     ];
 
 
