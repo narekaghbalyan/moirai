@@ -18,7 +18,7 @@ class DefinedColumnAccessories
      * DefinedColumnAccessories constructor.
      *
      * @param string $column
-     * @param Blueprint $blueprintInstance
+     * @param \Moirai\DDL\Blueprint $blueprintInstance
      */
     public function __construct(string $column, Blueprint $blueprintInstance)
     {
@@ -28,10 +28,14 @@ class DefinedColumnAccessories
 
     /**
      * @param string $key
+     * @param array $parameters
+     * @return $this
      */
-    public function bindAccessory(string $key): void
+    public function bindAccessory(string $key, array $parameters = []): self
     {
-        $this->blueprintInstance->columns[$this->column][$key] = $value;
+        $this->blueprintInstance->columns[$this->column][$key] = $parameters;
+
+        return $this;
     }
 
     /**
@@ -39,9 +43,7 @@ class DefinedColumnAccessories
      */
     public function unsigned(): self
     {
-        $this->bindAccessory(Accessories::UNSIGNED);
-
-        return $this;
+        return $this->bindAccessory(Accessories::UNSIGNED);
     }
 
     /**
@@ -49,9 +51,7 @@ class DefinedColumnAccessories
      */
     public function autoincrement(): self
     {
-        $this->bindAccessory(Accessories::AUTOINCREMENT);
-
-        return $this;
+        return $this->bindAccessory(Accessories::AUTOINCREMENT);
     }
 
     /**
@@ -59,9 +59,7 @@ class DefinedColumnAccessories
      */
     public function primary(): self
     {
-        $this->bindAccessory(Accessories::PRIMARY);
-
-        return $this;
+        return $this->bindAccessory(Accessories::PRIMARY);
     }
 
     /**
@@ -69,9 +67,7 @@ class DefinedColumnAccessories
      */
     public function nullable(): self
     {
-        $this->deleteAccessory(Accessories::NULLABLE,);
-
-        return $this;
+        return $this->bindAccessory(Accessories::NULLABLE);
     }
 
     /**
@@ -79,73 +75,69 @@ class DefinedColumnAccessories
      */
     public function unique(): self
     {
-        $this->bindAccessory(Accessories::PRIMARY);
-
-        return $this;
+        return $this->bindAccessory(Accessories::PRIMARY);
     }
 
     /**
+     * @param int|string|float $value
      * @return $this
      */
-    public function default(): self
+    public function default(int|string|float $value): self
     {
-        $this->bindAccessory(Accessories::DEFAULT);
-
-        return $this;
+        return $this->bindAccessory(Accessories::DEFAULT, compact('value'));
     }
 
     /**
+     * @param int|string|float $value
      * @return $this
-     * @throws \Exception
      */
-    public function collation(): self
+    public function collation(int|string|float $value): self
     {
-        $this->bindAccessory(Accessories::COLLATION);
-
-        return $this;
+        return $this->bindAccessory(Accessories::COLLATION, compact('value'));
     }
 
     /**
+     * @param int|string|float $value
      * @return $this
-     * @throws \Exception
      */
-    public function charset(): self
+    public function collate(int|string|float $value): self
     {
-        $this->bindAccessory(Accessories::CHARSET);
-
-        return $this;
+        return $this->collation($value);
     }
 
     /**
+     * @param int|string|float $value
      * @return $this
-     * @throws \Exception
      */
-    public function comment(): self
+    public function charset(int|string|float $value): self
     {
-        $this->bindAccessory(Accessories::COMMENT);
-
-        return $this;
+        return $this->bindAccessory(Accessories::CHARSET, compact('value'));
     }
 
     /**
+     * @param string $value
      * @return $this
-     * @throws \Exception
      */
-    public function index(): self
+    public function comment(string $value): self
     {
-        $this->bindAccessory(Accessories::INDEX);
+        return $this->bindAccessory(Accessories::COMMENT, compact('value'));
+    }
 
-        return $this;
+    /**
+     * @param string $name
+     * @param string $column
+     * @return $this
+     */
+    public function index(string $name, string $column): self
+    {
+        return $this->bindAccessory(Accessories::INDEX, compact('name', 'column'));
     }
 
     /**
      * @return $this
-     * @throws \Exception
      */
     public function invisible(): self
     {
-        $this->bindAccessory(Accessories::INVISIBLE);
-
-        return $this;
+        return $this->bindAccessory(Accessories::INVISIBLE);
     }
 }

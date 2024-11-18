@@ -63,7 +63,6 @@ class OracleDriver extends Driver
         Accessories::NULLABLE => 'NULL',
         Accessories::UNIQUE => 'UNIQUE',
         Accessories::DEFAULT => 'DEFAULT "{value}"',
-        Accessories::COLLATION => 'COLLATE {value}',
         Accessories::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\'',
         Accessories::INDEX => 'INDEX {name} ({column})'
     ];
