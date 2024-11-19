@@ -39,11 +39,11 @@ class SqliteDriver extends Driver
         DataTypes::DATE_TIME => 'DATETIME',              // Date and time value
     ];
 
-    private array $accessories = [
+    private array $ddlAccessories = [
         Accessories::UNSIGNED => 'CHECK({column} >= 0)',
         Accessories::AUTOINCREMENT => 'AUTOINCREMENT',
         Accessories::PRIMARY => 'PRIMARY KEY',
-        Accessories::NULLABLE => 'NULL',
+        Accessories::NOT_NULL => 'NOT NULL',
         Accessories::UNIQUE => 'UNIQUE',
         Accessories::DEFAULT => 'DEFAULT "{value}"',
         Accessories::COLLATION => 'COLLATE {value}',

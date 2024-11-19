@@ -4,6 +4,10 @@ use Moirai\Drivers\AvailableDbmsDrivers;
 
 return [
     /**
+     * Connection configs
+     */
+
+    /**
      * You can use one or more then one connection.
      *
      * In queries you can specify the connection.
@@ -45,5 +49,11 @@ return [
      *
      * If you not specify this option, it will be true by default.
      */
-    'persistent' => true
+    'persistent' => true,
+
+    /**
+     * DDL configs
+     */
+
+//    'nullable' => false // by default all columns are nullable
 ];

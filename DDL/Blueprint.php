@@ -81,12 +81,7 @@ class Blueprint
         $this->columns[$column] = [
             'data_type' => $dataType,
             'parameters' => $parameters,
-            'accessories' => array_merge(
-                $accessories,
-                [
-                    'nullable' => false
-                ]
-            )
+            'accessories' => $accessories
         ];
 
         return new DefinedColumnAccessories($column, $this);
@@ -107,19 +102,31 @@ class Blueprint
         foreach ($this->columns as $column => $options) {
             $definitionSignature = $this->driver->getDataType($options['data_type']);
 
-            if (!is_null($options['parameters'])) {
-                foreach ($options['parameters'] as $parameterKey => $parameterValue) {
-                    $definitionSignature = str_replace(
-                        '{' . $parameterKey . '}',
-                        !is_null($parameterValue) ? '(' . $parameterValue . ')' : '',
-                        $definitionSignature
-                    );
-                }
+            foreach ($options['parameters'] as $parameterKey => $parameterValue) {
+                $definitionSignature = str_replace(
+                    '{' . $parameterKey . '}',
+                    !is_null($parameterValue) ? '(' . $parameterValue . ')' : '',
+                    $definitionSignature
+                );
             }
 
             if (!empty($options['accessories'])) {
-                foreach ($options['accessories'] as $accessory) {
+                foreach ($options['accessories'] as $accessoryKey => $accessoryParameters) {
+                    $accessory = $this->driver->getDdlAccessory($accessoryKey);
 
+                    //'CHECK({column} >= 0)
+
+                    if (!empty($accessoryParameters)) {
+                        foreach ($accessoryParameters as $accessoryParameterKey => $accessoryParameterValue) {
+                            $accessory = str_replace(
+                                '{' . $accessoryParameterKey . '}',
+                                $accessoryParameterValue,
+                                $accessory
+                            );
+                        }
+                    }
+
+                    $definitionSignature .= ' ' . $accessory;
                 }
             }
 

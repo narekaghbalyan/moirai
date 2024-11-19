@@ -27,13 +27,13 @@ class DefinedColumnAccessories
     }
 
     /**
-     * @param string $key
+     * @param int $key
      * @param array $parameters
      * @return $this
      */
-    public function bindAccessory(string $key, array $parameters = []): self
+    public function bindAccessory(int $key, array $parameters = []): self
     {
-        $this->blueprintInstance->columns[$this->column][$key] = $parameters;
+        $this->blueprintInstance->columns[$this->column]['accessories'][$key] = $parameters;
 
         return $this;
     }
@@ -65,9 +65,9 @@ class DefinedColumnAccessories
     /**
      * @return $this
      */
-    public function nullable(): self
+    public function notNull(): self
     {
-        return $this->bindAccessory(Accessories::NULLABLE);
+        return $this->bindAccessory(Accessories::NOT_NULL);
     }
 
     /**

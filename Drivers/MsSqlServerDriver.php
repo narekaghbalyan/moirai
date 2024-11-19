@@ -66,11 +66,12 @@ class MsSqlServerDriver extends Driver
         DataTypes::HIERARYCHYID => 'hierarchyid'
     ];
 
-    private array $accessories = [
+    private array $ddlAccessories = [
         Accessories::UNSIGNED => 'CHECK({column} >= 0)',
         Accessories::AUTOINCREMENT => 'IDENTITY',
         Accessories::PRIMARY => 'PRIMARY KEY',
         Accessories::NULLABLE => 'NULL',
+        Accessories::NOT_NULL => 'NOT NULL',
         Accessories::UNIQUE => 'UNIQUE',
         Accessories::DEFAULT => 'DEFAULT "{value}"',
         Accessories::COLLATION => 'COLLATE {value}',

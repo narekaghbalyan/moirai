@@ -108,7 +108,7 @@ trait ClauseBindersToolkitTrait
 
     private function useAdditionalAccessories(): void
     {
-        $additionalAccessories = $this->driver->getAdditionalAccessories();
+        $additionalAccessories = $this->driver->getDmlAdditionalAccessories();
 
         if (!empty($additionalAccessories)) {
             foreach ($additionalAccessories as $accessoryName => $accessory) {

@@ -71,11 +71,12 @@ class MariaDbDriver extends Driver
         DataTypes::MULTI_POLYGON => 'MULTIPOLYGON'
     ];
 
-    private array $accessories = [
+    private array $ddlAccessories = [
         Accessories::UNSIGNED => 'UNSIGNED',
         Accessories::AUTOINCREMENT => 'AUTO_INCREMENT',
         Accessories::PRIMARY => 'PRIMARY KEY',
         Accessories::NULLABLE => 'NULL',
+        Accessories::NOT_NULL => 'NOT NULL',
         Accessories::UNIQUE => 'UNIQUE',
         Accessories::DEFAULT => 'DEFAULT "{value}"',
         Accessories::COLLATION => 'COLLATE {value}',

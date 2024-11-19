@@ -57,25 +57,47 @@ abstract class Driver
     }
 
     /**
-     * @return array|null
+     * @return array
      */
-    public function getAdditionalAccessories(): array|null
+    public function getDdlAccessories(): array
     {
-        return $this->additionalAccessories ?? null;
+        return $this->ddlAccessories;
     }
 
     /**
-     * @param string $dataTypeKey
-     * @return string
-     * @throws Exception
+     * @return array|null
      */
-    public function getDataType(string $dataTypeKey): string
+    public function getDmlAdditionalAccessories(): array|null
     {
-        if (!isset($this->dataTypes[$dataTypeKey])) {
+        return $this->dmlAdditionalAccessories ?? null;
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     * @throws \Exception
+     */
+    public function getDataType(string $key): string
+    {
+        if (!isset($this->dataTypes[$key])) {
             throw new Exception('This data type is not supported by this driver.');
         }
 
-        return $this->dataTypes[$dataTypeKey];
+        return $this->dataTypes[$key];
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     * @throws \Exception
+     */
+    public function getDdlAccessory(string $key): string
+    {
+        if (!isset($this->ddlAccessories[$key])) {
+            throw new Exception('This column accessory is not supported by this driver.');
+        }
+
+        return $this->ddlAccessories[$key];
     }
 
     /**

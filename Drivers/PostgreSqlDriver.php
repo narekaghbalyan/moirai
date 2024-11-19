@@ -59,11 +59,12 @@ class PostgreSqlDriver extends Driver
         DataTypes::CIRCLE => 'CIRCLE',                    // Geometric circle
     ];
 
-    private array $accessories = [
+    private array $ddlAccessories = [
         Accessories::UNSIGNED => 'CHECK({column} >= 0)',
         Accessories::AUTOINCREMENT => 'SERIAL',
         Accessories::PRIMARY => 'PRIMARY KEY',
         Accessories::NULLABLE => 'NULL',
+        Accessories::NOT_NULL => 'NOT NULL',
         Accessories::UNIQUE => 'UNIQUE',
         Accessories::DEFAULT => 'DEFAULT "{value}"',
         Accessories::COLLATION => 'COLLATE {value}',
@@ -106,7 +107,7 @@ class PostgreSqlDriver extends Driver
     /**
      * @var array|\string[][]
      */
-    protected array $additionalAccessories = [
+    protected array $dmlAdditionalAccessories = [
         'orderDirections' => ['nulls last', 'nulls first']
     ];
 
