@@ -25,21 +25,6 @@ class Blueprint
     public array $columns = [];
 
     /**
-     * @var array|array[]
-     */
-    public array $tableAccessories = [
-        'unique' => [
-            'prefix' => 'UNIQUE',
-            'columns' => []
-        ]
-    ];
-
-    /**
-     * @var array
-     */
-    public array $afterTableDefinition  = [];
-
-    /**
      * Blueprint constructor.
      *
      * @param string $table
@@ -58,7 +43,7 @@ class Blueprint
     /**
      * @return string
      */
-    public function getDriverName()
+    public function getDriverName(): string
     {
         return $this->driver->getDriverName();
     }
@@ -132,33 +117,6 @@ class Blueprint
 
             $sewedColumns[] = $column . ' ' . $definitionSignature;
         }
-
-
-
-
-
-
-        $tableSewedAccessories = [];
-
-        foreach ($this->tableAccessories as $parameters) {
-            $accessoryExpression = $parameters;
-
-            if (is_array($parameters)) {
-                if (!empty($parameters['columns'])) {
-                    if (!empty($parameters['prefix'])) {
-                        $accessoryExpression = $parameters['prefix'];
-                    }
-
-                    $accessoryExpression .= '(' . implode(', ', $parameters['columns']) . ')';
-                } else {
-                    continue;
-                }
-            }
-
-            $tableSewedAccessories[] = $accessoryExpression;
-        }
-
-        $sewedColumns[] = implode(', ', $tableSewedAccessories);
 
         dd(implode(', ', $sewedColumns));
     }

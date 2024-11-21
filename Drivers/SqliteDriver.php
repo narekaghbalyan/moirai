@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Accessories;
+use Moirai\DDL\Constraints;
 use Moirai\DDL\DataTypes;
 
 class SqliteDriver extends Driver
@@ -38,16 +38,18 @@ class SqliteDriver extends Driver
         DataTypes::DATE => 'DATE',                      // Date value
         DataTypes::DATE_TIME => 'DATETIME',              // Date and time value
     ];
-
-    private array $ddlAccessories = [
-        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
-        Accessories::AUTOINCREMENT => 'AUTOINCREMENT',
-        Accessories::PRIMARY => 'PRIMARY KEY',
-        Accessories::NOT_NULL => 'NOT NULL',
-        Accessories::UNIQUE => 'UNIQUE',
-        Accessories::DEFAULT => 'DEFAULT "{value}"',
-        Accessories::COLLATION => 'COLLATE {value}',
-        Accessories::INDEX => 'INDEX {name} ({column})'
+    
+    private array $constraints = [
+        Constraints::CHECK => 'CHECK({column} >= 0)',
+        Constraints::AUTOINCREMENT => 'AUTOINCREMENT',
+        Constraints::NOT_NULL => 'NOT NULL',
+        Constraints::UNIQUE => 'UNIQUE',
+        Constraints::DEFAULT => 'DEFAULT "{value}"',
+        Constraints::COLLATION => 'COLLATE {value}',
+        Constraints::PRIMARY_KEY => 'PRIMARY KEY',
+        Constraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
+        Constraints::ON_DELETE => 'ON DELETE {action}',
+        Constraints::INDEX => 'INDEX {name} ({column})',
     ];
 
 

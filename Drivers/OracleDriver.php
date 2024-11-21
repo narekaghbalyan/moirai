@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Accessories;
+use Moirai\DDL\Constraints;
 use Moirai\DDL\DataTypes;
 
 class OracleDriver extends Driver
@@ -56,16 +56,16 @@ class OracleDriver extends Driver
         DataTypes::XML => 'XMLType'
     ];
 
-    private array $ddlAccessories = [
-        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
-        Accessories::AUTOINCREMENT => 'GENERATED AS IDENTITY',
-        Accessories::PRIMARY => 'PRIMARY KEY',
-        Accessories::NULLABLE => 'NULL',
-        Accessories::NOT_NULL => 'NOT NULL',
-        Accessories::UNIQUE => 'UNIQUE',
-        Accessories::DEFAULT => 'DEFAULT "{value}"',
-        Accessories::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\'',
-        Accessories::INDEX => 'INDEX {name} ({column})'
+    private array $constraints = [
+        Constraints::CHECK => 'CHECK({column} >= 0)',
+        Constraints::NOT_NULL => 'NOT NULL',
+        Constraints::UNIQUE => 'UNIQUE',
+        Constraints::DEFAULT => 'DEFAULT "{value}"',
+        Constraints::PRIMARY_KEY => 'PRIMARY KEY',
+        Constraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
+        Constraints::ON_DELETE => 'ON DELETE {action}',
+        Constraints::INDEX => 'INDEX {name} ({column})',
+        Constraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
     ];
 
 

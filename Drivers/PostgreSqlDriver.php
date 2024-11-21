@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Accessories;
+use Moirai\DDL\Constraints;
 use Moirai\DDL\DataTypes;
 
 class PostgreSqlDriver extends Driver
@@ -59,17 +59,19 @@ class PostgreSqlDriver extends Driver
         DataTypes::CIRCLE => 'CIRCLE',                    // Geometric circle
     ];
 
-    private array $ddlAccessories = [
-        Accessories::UNSIGNED => 'CHECK({column} >= 0)',
-        Accessories::AUTOINCREMENT => 'SERIAL',
-        Accessories::PRIMARY => 'PRIMARY KEY',
-        Accessories::NULLABLE => 'NULL',
-        Accessories::NOT_NULL => 'NOT NULL',
-        Accessories::UNIQUE => 'UNIQUE',
-        Accessories::DEFAULT => 'DEFAULT "{value}"',
-        Accessories::COLLATION => 'COLLATE {value}',
-        Accessories::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\'',
-        Accessories::INDEX => 'INDEX {name} ({column})'
+    private array $constraints = [
+        Constraints::CHECK => 'CHECK({column} >= 0)',
+        Constraints::AUTOINCREMENT => 'SERIAL',
+        Constraints::NOT_NULL => 'NOT NULL',
+        Constraints::UNIQUE => 'UNIQUE',
+        Constraints::DEFAULT => 'DEFAULT "{value}"',
+        Constraints::COLLATION => 'COLLATE {value}',
+        Constraints::PRIMARY_KEY => 'PRIMARY KEY',
+        Constraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
+        Constraints::ON_UPDATE => 'ON UPDATE {action}',
+        Constraints::ON_DELETE => 'ON DELETE {action}',
+        Constraints::INDEX => 'INDEX {name} ({column})',
+        Constraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
     ];
 
     /**

@@ -43,7 +43,7 @@ class DefinedColumnAccessories
      */
     public function unsigned(): self
     {
-        return $this->bindAccessory(Accessories::UNSIGNED);
+        return $this->bindAccessory(Constraints::UNSIGNED);
     }
 
     /**
@@ -51,7 +51,7 @@ class DefinedColumnAccessories
      */
     public function autoincrement(): self
     {
-        return $this->bindAccessory(Accessories::AUTOINCREMENT);
+        return $this->bindAccessory(Constraints::AUTOINCREMENT);
     }
 
     /**
@@ -59,7 +59,7 @@ class DefinedColumnAccessories
      */
     public function primary(): self
     {
-        return $this->bindAccessory(Accessories::PRIMARY);
+        return $this->bindAccessory(Constraints::PRIMARY);
     }
 
     /**
@@ -67,7 +67,7 @@ class DefinedColumnAccessories
      */
     public function notNull(): self
     {
-        return $this->bindAccessory(Accessories::NOT_NULL);
+        return $this->bindAccessory(Constraints::NOT_NULL);
     }
 
     /**
@@ -75,7 +75,7 @@ class DefinedColumnAccessories
      */
     public function unique(): self
     {
-        return $this->bindAccessory(Accessories::PRIMARY);
+        return $this->bindAccessory(Constraints::PRIMARY);
     }
 
     /**
@@ -84,7 +84,7 @@ class DefinedColumnAccessories
      */
     public function default(int|string|float $value): self
     {
-        return $this->bindAccessory(Accessories::DEFAULT, compact('value'));
+        return $this->bindAccessory(Constraints::DEFAULT, compact('value'));
     }
 
     /**
@@ -93,7 +93,7 @@ class DefinedColumnAccessories
      */
     public function collation(int|string|float $value): self
     {
-        return $this->bindAccessory(Accessories::COLLATION, compact('value'));
+        return $this->bindAccessory(Constraints::COLLATION, compact('value'));
     }
 
     /**
@@ -111,7 +111,7 @@ class DefinedColumnAccessories
      */
     public function charset(int|string|float $value): self
     {
-        return $this->bindAccessory(Accessories::CHARSET, compact('value'));
+        return $this->bindAccessory(Constraints::CHARSET, compact('value'));
     }
 
     /**
@@ -120,7 +120,7 @@ class DefinedColumnAccessories
      */
     public function comment(string $value): self
     {
-        return $this->bindAccessory(Accessories::COMMENT, compact('value'));
+        return $this->bindAccessory(Constraints::COMMENT, compact('value'));
     }
 
     /**
@@ -130,7 +130,7 @@ class DefinedColumnAccessories
      */
     public function index(string $name, string $column): self
     {
-        return $this->bindAccessory(Accessories::INDEX, compact('name', 'column'));
+        return $this->bindAccessory(Constraints::INDEX, compact('name', 'column'));
     }
 
     /**
@@ -138,6 +138,6 @@ class DefinedColumnAccessories
      */
     public function invisible(): self
     {
-        return $this->bindAccessory(Accessories::INVISIBLE);
+        return $this->bindAccessory(Constraints::INVISIBLE);
     }
 }
