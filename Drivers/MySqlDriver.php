@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints;
+use Moirai\DDL\ColumnConstraints;
 use Moirai\DDL\DataTypes;
 
 class MySqlDriver extends Driver
@@ -71,21 +71,29 @@ class MySqlDriver extends Driver
     ];
 
     private array $constraints = [
-        Constraints::UNSIGNED => 'UNSIGNED',
-        Constraints::CHECK => 'CHECK({column} >= 0)',
-        Constraints::AUTOINCREMENT => 'AUTO_INCREMENT',
-        Constraints::NOT_NULL => 'NOT NULL',
-        Constraints::UNIQUE => 'UNIQUE',
-        Constraints::DEFAULT => 'DEFAULT "{value}"',
-        Constraints::COLLATION => 'COLLATE {value}',
-        Constraints::CHARSET => 'CHARACTER SET {value}',
-        Constraints::PRIMARY_KEY => 'PRIMARY KEY',
-        Constraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
-        Constraints::ON_UPDATE => 'ON UPDATE {action}',
-        Constraints::ON_DELETE => 'ON DELETE {action}',
-        Constraints::INVISIBLE => 'INVISIBLE',
-        Constraints::INDEX => 'INDEX {name} ({column})',
-        Constraints::COMMENT => 'COMMENT "{value}"'
+        ColumnConstraints::UNSIGNED => 'UNSIGNED',
+        ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
+        ColumnConstraints::AUTOINCREMENT => 'AUTO_INCREMENT',
+        ColumnConstraints::NOT_NULL => 'NOT NULL',
+        ColumnConstraints::UNIQUE => 'UNIQUE',
+        ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
+        ColumnConstraints::COLLATION => 'COLLATE {value}',
+        ColumnConstraints::CHARSET => 'CHARACTER SET {value}',
+        ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
+        ColumnConstraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
+        ColumnConstraints::ON_UPDATE => 'ON UPDATE {action}',
+        ColumnConstraints::ON_DELETE => 'ON DELETE {action}',
+        ColumnConstraints::INVISIBLE => 'INVISIBLE',
+        ColumnConstraints::INDEX => 'INDEX {name} ({column})',
+        ColumnConstraints::COMMENT => 'COMMENT "{value}"'
+    ];
+
+    private array $columnConstraints = [
+        ColumnConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
+        ColumnConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
+        ColumnConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
+        ColumnConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table} ({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        ColumnConstraints::INDEX => 'INDEX {name} ({columns})'
     ];
 
     /**

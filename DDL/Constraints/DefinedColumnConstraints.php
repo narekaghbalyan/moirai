@@ -1,8 +1,10 @@
 <?php
 
-namespace Moirai\DDL;
+namespace Moirai\DDL\Constraints;
 
-class DefinedColumnAccessories
+use Moirai\DDL\Blueprint;
+
+class DefinedColumnConstraints
 {
     /**
      * @var string
@@ -31,9 +33,9 @@ class DefinedColumnAccessories
      * @param array $parameters
      * @return $this
      */
-    public function bindAccessory(int $key, array $parameters = []): self
+    public function bind(int $key, array $parameters = []): self
     {
-        $this->blueprintInstance->columns[$this->column]['accessories'][$key] = $parameters;
+        $this->blueprintInstance->columns[$this->column]['constraints'][$key] = $parameters;
 
         return $this;
     }
@@ -43,7 +45,15 @@ class DefinedColumnAccessories
      */
     public function unsigned(): self
     {
-        return $this->bindAccessory(Constraints::UNSIGNED);
+        return $this->bind(ColumnConstraints::UNSIGNED);
+    }
+
+    /**
+     * @return $this
+     */
+    public function check(): self
+    {
+        return $this->bind(ColumnConstraints::CHECK);
     }
 
     /**
@@ -51,15 +61,7 @@ class DefinedColumnAccessories
      */
     public function autoincrement(): self
     {
-        return $this->bindAccessory(Constraints::AUTOINCREMENT);
-    }
-
-    /**
-     * @return $this
-     */
-    public function primary(): self
-    {
-        return $this->bindAccessory(Constraints::PRIMARY);
+        return $this->bind(ColumnConstraints::AUTOINCREMENT);
     }
 
     /**
@@ -67,7 +69,7 @@ class DefinedColumnAccessories
      */
     public function notNull(): self
     {
-        return $this->bindAccessory(Constraints::NOT_NULL);
+        return $this->bind(ColumnConstraints::NOT_NULL);
     }
 
     /**
@@ -75,7 +77,7 @@ class DefinedColumnAccessories
      */
     public function unique(): self
     {
-        return $this->bindAccessory(Constraints::PRIMARY);
+        return $this->bind(ColumnConstraints::UNIQUE);
     }
 
     /**
@@ -84,7 +86,7 @@ class DefinedColumnAccessories
      */
     public function default(int|string|float $value): self
     {
-        return $this->bindAccessory(Constraints::DEFAULT, compact('value'));
+        return $this->bind(ColumnConstraints::DEFAULT, compact('value'));
     }
 
     /**
@@ -93,7 +95,7 @@ class DefinedColumnAccessories
      */
     public function collation(int|string|float $value): self
     {
-        return $this->bindAccessory(Constraints::COLLATION, compact('value'));
+        return $this->bind(ColumnConstraints::COLLATION, compact('value'));
     }
 
     /**
@@ -111,7 +113,23 @@ class DefinedColumnAccessories
      */
     public function charset(int|string|float $value): self
     {
-        return $this->bindAccessory(Constraints::CHARSET, compact('value'));
+        return $this->bind(ColumnConstraints::CHARSET, compact('value'));
+    }
+
+    /**
+     * @return $this
+     */
+    public function primaryKey(): self
+    {
+        return $this->bind(ColumnConstraints::PRIMARY_KEY);
+    }
+
+    /**
+     * @return $this
+     */
+    public function invisible(): self
+    {
+        return $this->bind(ColumnConstraints::INVISIBLE);
     }
 
     /**
@@ -120,24 +138,6 @@ class DefinedColumnAccessories
      */
     public function comment(string $value): self
     {
-        return $this->bindAccessory(Constraints::COMMENT, compact('value'));
-    }
-
-    /**
-     * @param string $name
-     * @param string $column
-     * @return $this
-     */
-    public function index(string $name, string $column): self
-    {
-        return $this->bindAccessory(Constraints::INDEX, compact('name', 'column'));
-    }
-
-    /**
-     * @return $this
-     */
-    public function invisible(): self
-    {
-        return $this->bindAccessory(Constraints::INVISIBLE);
+        return $this->bind(ColumnConstraints::COMMENT, compact('value'));
     }
 }

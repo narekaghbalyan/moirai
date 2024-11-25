@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints;
+use Moirai\DDL\ColumnConstraints;
 use Moirai\DDL\DataTypes;
 
 class OracleDriver extends Driver
@@ -57,15 +57,15 @@ class OracleDriver extends Driver
     ];
 
     private array $constraints = [
-        Constraints::CHECK => 'CHECK({column} >= 0)',
-        Constraints::NOT_NULL => 'NOT NULL',
-        Constraints::UNIQUE => 'UNIQUE',
-        Constraints::DEFAULT => 'DEFAULT "{value}"',
-        Constraints::PRIMARY_KEY => 'PRIMARY KEY',
-        Constraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
-        Constraints::ON_DELETE => 'ON DELETE {action}',
-        Constraints::INDEX => 'INDEX {name} ({column})',
-        Constraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
+        ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
+        ColumnConstraints::NOT_NULL => 'NOT NULL',
+        ColumnConstraints::UNIQUE => 'UNIQUE',
+        ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
+        ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
+        ColumnConstraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
+        ColumnConstraints::ON_DELETE => 'ON DELETE {action}',
+        ColumnConstraints::INDEX => 'INDEX {name} ({column})',
+        ColumnConstraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
     ];
 
 
