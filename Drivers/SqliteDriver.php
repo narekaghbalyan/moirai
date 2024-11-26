@@ -2,8 +2,10 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\ColumnConstraints;
+use Moirai\DDL\Constraints\ColumnConstraints;
+use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\ForeignKeyActions;
 
 class SqliteDriver extends Driver
 {
@@ -27,19 +29,22 @@ class SqliteDriver extends Driver
      * @var array|string[]
      */
     protected array $dataTypes = [
-        DataTypes::INTEGER => 'INTEGER',                // Signed integer
-        DataTypes::REAL => 'REAL',                      // Floating point
-        DataTypes::TEXT => 'TEXT',                      // Text string
-        DataTypes::BLOB => 'BLOB',                      // Binary large object
-        DataTypes::NUMERIC => 'NUMERIC',                // Numeric value
-        DataTypes::CHAR => 'CHAR{length}',                   // Fixed-length character string
-        DataTypes::VARCHAR => 'VARCHAR{length}',              // Variable-length character string
-        DataTypes::DECIMAL => 'DECIMAL',          // Exact numeric with precision
-        DataTypes::DATE => 'DATE',                      // Date value
-        DataTypes::DATE_TIME => 'DATETIME',              // Date and time value
+        DataTypes::INTEGER => 'INTEGER',
+        DataTypes::REAL => 'REAL',
+        DataTypes::TEXT => 'TEXT',
+        DataTypes::BLOB => 'BLOB',
+        DataTypes::NUMERIC => 'NUMERIC',
+        DataTypes::CHAR => 'CHAR({length})',
+        DataTypes::VARCHAR => 'VARCHAR({length})',
+        DataTypes::DECIMAL => 'DECIMAL',
+        DataTypes::DATE => 'DATE',
+        DataTypes::DATE_TIME => 'DATETIME',
     ];
 
-    private array $constraints = [
+    /**
+     * @var array|string[]
+     */
+    private array $columnConstraints = [
         ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
         ColumnConstraints::AUTOINCREMENT => 'AUTOINCREMENT',
         ColumnConstraints::NOT_NULL => 'NOT NULL',
@@ -47,11 +52,29 @@ class SqliteDriver extends Driver
         ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
         ColumnConstraints::COLLATION => 'COLLATE {value}',
         ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
-        ColumnConstraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
-        ColumnConstraints::ON_DELETE => 'ON DELETE {action}',
-        ColumnConstraints::INDEX => 'INDEX {name} ({column})',
     ];
 
+    /**
+     * @var array|string[]
+     */
+    private array $tableConstraints = [
+        TableConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
+        TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
+        TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
+        TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        TableConstraints::INDEX => 'CREATE INDEX {name} ON {table} ({columns})'
+    ];
+
+    /**
+     * @var array
+     */
+    public static array $allowedForeignKeyActions = [
+        ForeignKeyActions::CASCADE,
+        ForeignKeyActions::SET_NULL,
+        ForeignKeyActions::RESTRICT,
+        ForeignKeyActions::SET_DEFAULT,
+        ForeignKeyActions::NO_ACTION
+    ];
 
     /**
      * SqliteDriver constructor.

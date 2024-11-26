@@ -5,7 +5,6 @@ namespace Moirai\DDL;
 use Closure;
 use Exception;
 use Moirai\DDL\Constraints\DefinedColumnConstraints;
-use Moirai\DDL\Constraints\DefinedForeignKeyActions;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\MySqlDriver;
@@ -25,7 +24,7 @@ class Blueprint
     /**
      * @var array
      */
-    private array $columns = [];
+    public array $columns = [];
 
     /**
      * @var array
@@ -50,10 +49,110 @@ class Blueprint
 
     /**
      * @return string
+     * @throws \Exception
      */
-    public function getDriverName(): string
+    private function sew(): string
     {
-        return $this->driver->getDriverName();
+        return !empty($this->columns)
+            ? implode(', ', array_merge($this->sewColumns(), $this->sewTableConstraints()))
+            : '';
+    }
+
+    /**
+     * @return array
+     * @throws \Exception
+     */
+    private function sewColumns(): array
+    {
+        $sewedColumns = [];
+
+        foreach ($this->columns as $column => $options) {
+            $columnDefinitionSignature = $this->driver->getDataType($options['data_type']);
+
+            foreach ($options['parameters'] as $parameterKey => $parameterValue) {
+                $parameterKey = '{' . $parameterKey . '}';
+
+                if (is_null($parameterValue)) {
+                    $parameterKey = '({' . $parameterKey . '})';
+                    $parameterValue = '';
+                }
+
+                $columnDefinitionSignature = str_replace(
+                    $parameterKey,
+                    $parameterValue,
+                    $columnDefinitionSignature
+                );
+            }
+
+            foreach ($options['constraints'] as $columnConstraintKey => $columnConstraintParameters) {
+                $columnConstraintDefinitionSignature = $this->driver->getColumnConstraint($columnConstraintKey);
+
+                foreach ($columnConstraintParameters as $columnConstraintParameterKey => $columnConstraintParameterValue) {
+                    $columnConstraintDefinitionSignature = str_replace(
+                        '{' . $columnConstraintParameterKey . '}',
+                        $columnConstraintParameterValue,
+                        $columnConstraintDefinitionSignature
+                    );
+                }
+
+                $columnDefinitionSignature .= ' ' . $columnConstraintDefinitionSignature;
+            }
+
+            $sewedColumns[] = $column . ' ' . $columnDefinitionSignature;
+        }
+
+        return $sewedColumns;
+    }
+
+    /**
+     * @return array
+     * @throws \Exception
+     */
+    private function sewTableConstraints(): array
+    {
+        $sewedTableConstraints = [];
+
+        $tableConstraintParameterKeyToPlaceholder = [
+            'name' => 'CONSTRAINT {name}',
+            'on_delete_action' => 'ON DELETE {on_delete_action}',
+            'on_update_action' => 'ON UPDATE {on_update_action}'
+        ];
+
+        foreach ($this->tableConstraints as $tableConstraint) {
+            $tableConstraintDefinitionSignature = $this->driver->getTableConstraint($tableConstraint['type']);
+
+            foreach ($tableConstraint['parameters'] as $tableConstraintParameterKey => $tableConstraintParameterValue) {
+                if (is_null($tableConstraintParameterValue)
+                    && isset($tableConstraintParameterKeyToPlaceholder[$tableConstraintParameterKey])) {
+                    $tableConstraintDefinitionSignature = str_replace(
+                        $tableConstraintParameterKeyToPlaceholder[$tableConstraintParameterKey],
+                        '',
+                        $tableConstraintDefinitionSignature
+                    );
+                }
+
+                if (in_array($tableConstraintParameterKey, ['on_delete_action', 'on_update_action'])
+                    && !in_array($tableConstraintParameterValue, $this->driver->getAllowedForeignKeyActions())) {
+                    throw new Exception(
+                        'DBMS driver "'
+                        . $this->driver->getDriverName()
+                        . '" does not support "'
+                        . $tableConstraintParameterValue
+                        . '" action as foreign key action.'
+                    );
+                }
+
+                $tableConstraintDefinitionSignature = str_replace(
+                    '{' . $tableConstraintParameterKey . '}',
+                    $tableConstraintParameterValue,
+                    $tableConstraintDefinitionSignature
+                );
+            }
+
+            $sewedTableConstraints[] = $tableConstraintDefinitionSignature;
+        }
+
+        return $sewedTableConstraints;
     }
 
     /**
@@ -81,20 +180,26 @@ class Blueprint
 
     /**
      * @param string $type
-     * @param string $name
-     * @param string|array $values
+     * @param array $parameters
+     * @throws \Exception
      */
-    private function bindTableConstraint(string $type, string $name, string|array $values)
+    private function bindTableConstraint(string $type, array $parameters): void
     {
         if (in_array($type, [TableConstraints::PRIMARY_KEY])) {
-            // this constraints can be specified once in table
-            // ... check if already exists -> if yes -> exception, if no -> bind
+            if (
+            !empty(
+            array_filter($this->tableConstraints, function ($tableConstraint) {
+                return $tableConstraint['type'] === TableConstraints::PRIMARY_KEY;
+            })
+            )
+            ) {
+                throw new Exception('Primary key already exists in table "' . $this->table . '".');
+            }
         }
 
         $this->tableConstraints[] = [
             'type' => $type,
-            'name' => $name,
-            'value' => $values
+            'parameters' => $parameters,
         ];
     }
 
@@ -103,54 +208,16 @@ class Blueprint
 
 
 
-    /**
-     * @return string
-     * @throws \Exception
-     */
-    private function sewDefinedColumns(): string
-    {
-        if (empty($this->columns)) {
-            return '';
-        }
 
-        $sewedColumns = [];
 
-        foreach ($this->columns as $column => $options) {
-            $definitionSignature = $this->driver->getDataType($options['data_type']);
 
-            foreach ($options['parameters'] as $parameterKey => $parameterValue) {
-                $definitionSignature = str_replace(
-                    '{' . $parameterKey . '}',
-                    !is_null($parameterValue) ? '(' . $parameterValue . ')' : '',
-                    $definitionSignature
-                );
-            }
 
-            if (!empty($options['accessories'])) {
-                foreach ($options['accessories'] as $accessoryKey => $accessoryParameters) {
-                    $accessory = $this->driver->getDdlAccessory($accessoryKey);
 
-                    //'CHECK({column} >= 0)
 
-                    if (!empty($accessoryParameters)) {
-                        foreach ($accessoryParameters as $accessoryParameterKey => $accessoryParameterValue) {
-                            $accessory = str_replace(
-                                '{' . $accessoryParameterKey . '}',
-                                $accessoryParameterValue,
-                                $accessory
-                            );
-                        }
-                    }
 
-                    $definitionSignature .= ' ' . $accessory;
-                }
-            }
 
-            $sewedColumns[] = $column . ' ' . $definitionSignature;
-        }
 
-        dd(implode(', ', $sewedColumns));
-    }
+
 
     /**
      * --------------------------------------------------------------------------
@@ -2078,10 +2145,6 @@ class Blueprint
     }
 
     /**
-     * Table constraints
-     */
-
-    /**
      * --------------------------------------------------------------------------
      * | Clause to define check table constraint.                               |
      * | -------------- DBMS drivers that support this data type -------------- |
@@ -2094,11 +2157,11 @@ class Blueprint
      * |                ...                                                     |
      * --------------------------------------------------------------------------
      * @param string $expression
-     * @param string|null $constraintName
+     * @param string|null $name
      */
-    public function check(string $expression, string|null $constraintName = null)
+    public function check(string $expression, string|null $name = null)
     {
-        $this->bindTableConstraint(TableConstraints::CHECK, $constraintName, $expression);
+        $this->bindTableConstraint(TableConstraints::CHECK, compact('name', 'expression'));
     }
 
     /**
@@ -2114,11 +2177,17 @@ class Blueprint
      * | columns in a separate constraint.                                      |
      * --------------------------------------------------------------------------
      * @param string|array $columns
-     * @param string|null $constraintName
+     * @param string|null $name
      */
-    public function unique(string|array $columns, string|null $constraintName = null)
+    public function unique(string|array $columns, string|null $name = null)
     {
-        $this->bindTableConstraint(TableConstraints::UNIQUE, $constraintName, implode(', ', $columns));
+        $this->bindTableConstraint(
+            TableConstraints::UNIQUE,
+            [
+                'name' => $name,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 
     /**
@@ -2130,11 +2199,17 @@ class Blueprint
      * | Argument "columns" - column(s) that will be primary key(s).            |
      * --------------------------------------------------------------------------
      * @param string|array $columns
-     * @param string|null $constraintName
+     * @param string|null $name
      */
-    public function primaryKey(string|array $columns, string|null $constraintName = null)
+    public function primaryKey(string|array $columns, string|null $name = null)
     {
-        $this->bindTableConstraint(TableConstraints::PRIMARY_KEY, $constraintName, implode(', ', $columns));
+        $this->bindTableConstraint(
+            TableConstraints::PRIMARY_KEY,
+            [
+                'name' => $name,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 
     /**
@@ -2146,38 +2221,57 @@ class Blueprint
      * | Argument "columns" - the column(s) in the current table that holds the |
      * | value that will reference another table's primary or unique key. It is |
      * | the foreign key column(s).                                             |
+     * |     Required - yes                                                     |
      * |                                                                        |
      * | Argument "referencedTable" - this is the referenced table. It is the   |
      * | table that contains the column(s) you're linking to.                   |
+     * |     Required - yes                                                     |
      * |                                                                        |
      * | Argument "referencedColumns" - the column(s) in the referenced table   |
      * | that the foreign key will match against.                               |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "onDelete" - the action that should be taken when a record in |
+     * | the referenced (parent) table is deleted.                              |
+     * |     Required - no                                                      |
+     * |     Available values - Moirai\DDL\ForeignKeyActions                    |
+     * |                                                                        |
+     * | Argument "onUpdate" - the action that should be taken when a record in |
+     * | the referenced (parent) table is updated.                              |
+     * |     Required - no                                                      |
+     * |     Unavailable - Oracle                                               |
+     * |     Available values - Moirai\DDL\ForeignKeyActions                    |
+     * |                                                                        |
+     * | Argument "name" - the name of constraint.                              |
+     * |     Required - no                                                      |
      * --------------------------------------------------------------------------
      * @param string|array $columns
      * @param string $referencedTable
      * @param string|array $referencedColumns
-     * @param string|null $constraintName
-     *
-     *
-     * TODO actions on update and on delete
+     * @param string|null $onDelete
+     * @param string|null $onUpdate
+     * @param string|null $name
+     * @throws \Exception
      */
     public function foreignKey(
         string|array $columns,
         string $referencedTable,
         string|array $referencedColumns,
-        string|null $constraintName = null
+        string|null $onDelete = null,
+        string|null $onUpdate = null,
+        string|null $name = null
     )
     {
         $this->bindTableConstraint(
             TableConstraints::FOREIGN_KEY,
-            $constraintName,
-            '('
-            . implode(', ', $columns)
-            . ') REFERENCES '
-            . $referencedTable
-            . ' ('
-            . implode(', ', $referencedColumns)
-            . ')'
+            [
+                'name' => $name,
+                'columns' => implode(', ', $columns),
+                'referenced_table' => $referencedTable,
+                'referenced_columns' => implode(', ', $referencedColumns),
+                'on_delete_action' => $onDelete,
+                'on_update_action' => $onUpdate
+            ]
         );
     }
 
@@ -2188,15 +2282,23 @@ class Blueprint
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "columns" - column(s) that will be primary key(s).            |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - MS SQL Server, Oracle, SQLite                           |
      * --------------------------------------------------------------------------
      *
-     * TODO
-     *
      * @param string|array $columns
-     * @param string|null $constraintName
+     * @param string|null $name
      */
-    public function index(string|array $columns, string|null $constraintName = null)
+    public function index(string|array $columns, string|null $name = null)
     {
-        $this->bindTableConstraint(TableConstraints::INDEX, $constraintName, implode(', ', $columns));
+        $this->bindTableConstraint(
+            TableConstraints::INDEX,
+            [
+                'name' => $name,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 }

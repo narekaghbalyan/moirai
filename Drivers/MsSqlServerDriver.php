@@ -2,8 +2,10 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\ColumnConstraints;
+use Moirai\DDL\Constraints\ColumnConstraints;
+use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\ForeignKeyActions;
 
 class MsSqlServerDriver extends Driver
 {
@@ -24,49 +26,54 @@ class MsSqlServerDriver extends Driver
     ];
 
     /**
+     * @var bool
+     */
+    protected bool $useUnderscoreInDriverNameWhenSeparating = true;
+
+    /**
      * @var array|string[]
      */
     protected array $dataTypes = [
-        DataTypes::INTEGER => 'int',
-        DataTypes::SMALL_INTEGER => 'smallint',
-        DataTypes::TINY_INTEGER => 'tinyint',
-        DataTypes::BIG_INTEGER => 'bigint',
-        DataTypes::DECIMAL => 'decimal{precision_and_scale}',
-        DataTypes::NUMERIC => 'numeric{precision_and_scale}',
-        DataTypes::MONEY => 'money',
-        DataTypes::SMALL_MONEY => 'smallmoney',
-        DataTypes::FLOAT => 'float{precision}',
-        DataTypes::REAL => 'real',
-        DataTypes::CHAR => 'char{length}',
-        DataTypes::VARCHAR => 'varchar{length}',
-        DataTypes::TEXT => 'text',
-        DataTypes::N_CHAR => 'nchar{length}',
-        DataTypes::N_VARCHAR => 'nvarchar{length}',
-        DataTypes::N_TEXT => 'ntext',
-        DataTypes::BINARY => 'binary{length}',
-        DataTypes::VARBINARY => 'varbinary(length)',
-        DataTypes::IMAGE => 'image',
-
-        DataTypes::DATE => 'date',
-        DataTypes::TIME => 'time{precision}',
-        DataTypes::DATE_TIME => 'datetime',
-        DataTypes::DATE_TIME_2 => 'datetime2{precision}',
-        DataTypes::SMALL_DATE_TIME => 'smalldatetime',
-        DataTypes::DATE_TIME_OFFSET => 'datetimeoffset{precision}',
-
-
-        DataTypes::BIT => 'bit',
-        DataTypes::UUID => 'uniqueidentifier',
-        DataTypes::XML => 'xml',
-        DataTypes::JSON => 'nvarchar(max)', // JSON stored as nvarchar
-        DataTypes::SQL_VARIANT => 'sql_variant',
-        DataTypes::ROW_VERSION => 'rowversion',
-        DataTypes::GEOMETRY => 'geometry',
-        DataTypes::GEOGRAPHY => 'geography',
-        DataTypes::HIERARYCHYID => 'hierarchyid'
+        DataTypes::INTEGER => 'INT',
+        DataTypes::SMALL_INTEGER => 'SMALLINT',
+        DataTypes::TINY_INTEGER => 'TINYINT',
+        DataTypes::BIG_INTEGER => 'BIGINT',
+        DataTypes::DECIMAL => 'DECIMAL({precision_and_scale})',
+        DataTypes::NUMERIC => 'NUMERIC({precision_and_scale})',
+        DataTypes::MONEY => 'MONEY',
+        DataTypes::SMALL_MONEY => 'SMALLMONEY',
+        DataTypes::FLOAT => 'FLOAT({precision})',
+        DataTypes::REAL => 'REAL',
+        DataTypes::CHAR => 'CHAR({length})',
+        DataTypes::VARCHAR => 'VARCHAR({length})',
+        DataTypes::TEXT => 'TEXT',
+        DataTypes::N_CHAR => 'NCHAR({length})',
+        DataTypes::N_VARCHAR => 'NVARCHAR({length})',
+        DataTypes::N_TEXT => 'NTEXT',
+        DataTypes::BINARY => 'BINARY({length})',
+        DataTypes::VARBINARY => 'VARBINARY({length})',
+        DataTypes::IMAGE => 'IMAGE',
+        DataTypes::DATE => 'DATE',
+        DataTypes::TIME => 'TIME({precision})',
+        DataTypes::DATE_TIME => 'DATETIME',
+        DataTypes::DATE_TIME_2 => 'DATETIME2({precision})',
+        DataTypes::SMALL_DATE_TIME => 'SMALLDATETIME',
+        DataTypes::DATE_TIME_OFFSET => 'DATETIMEOFFSET({precision})',
+        DataTypes::BIT => 'BIT',
+        DataTypes::UUID => 'UNIQUEIDENTIFIER',
+        DataTypes::XML => 'XML',
+        DataTypes::JSON => 'NVARCHAR({max})',
+        DataTypes::SQL_VARIANT => 'SQL_VARIANT',
+        DataTypes::ROW_VERSION => 'ROWVERSION',
+        DataTypes::GEOMETRY => 'GEOMETRY',
+        DataTypes::GEOGRAPHY => 'GEOGRAPHY',
+        DataTypes::HIERARYCHYID => 'HIERARCHYID'
     ];
 
-    private array $constraints = [
+    /**
+     * @var array|string[]
+     */
+    private array $columnConstraints = [
         ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
         ColumnConstraints::AUTOINCREMENT => 'IDENTITY',
         ColumnConstraints::NOT_NULL => 'NOT NULL',
@@ -74,16 +81,28 @@ class MsSqlServerDriver extends Driver
         ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
         ColumnConstraints::COLLATION => 'COLLATE {value}',
         ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
-        ColumnConstraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
-        ColumnConstraints::ON_DELETE => 'ON DELETE {action}',
-        ColumnConstraints::INDEX => 'INDEX {name} ({column})',
     ];
 
+    /**
+     * @var array|string[]
+     */
+    private array $tableConstraints = [
+        TableConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
+        TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
+        TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
+        TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        TableConstraints::INDEX => 'INDEX {name} ({columns})'
+    ];
 
     /**
-     * @var bool
+     * @var array
      */
-    protected bool $useUnderscoreInDriverNameWhenSeparating = true;
+    public static array $allowedForeignKeyActions = [
+        ForeignKeyActions::CASCADE,
+        ForeignKeyActions::SET_NULL,
+        ForeignKeyActions::SET_DEFAULT,
+        ForeignKeyActions::NO_ACTION
+    ];
 
     /**
      * MsSqlServerDriver constructor.

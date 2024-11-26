@@ -22,12 +22,4 @@ class AvailableDbmsDrivers
 
         return $reflectionClass->getConstants();
     }
-
-//    public static function getDriversAndHandlersConformity(): array
-//    {
-//        return [
-//            self::MYSQL => MySqlDriver::class,
-//            self::POSTGRESQL => null
-//        ];
-//    }
 }

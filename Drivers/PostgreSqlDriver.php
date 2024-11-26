@@ -2,8 +2,10 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\ColumnConstraints;
+use Moirai\DDL\Constraints\ColumnConstraints;
+use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\ForeignKeyActions;
 
 class PostgreSqlDriver extends Driver
 {
@@ -16,72 +18,12 @@ class PostgreSqlDriver extends Driver
     ];
 
     /**
-     * @var array|string[]
-     */
-    protected array $dataTypes = [
-        DataTypes::SMALL_INTEGER => 'SMALLINT',                // 2 bytes
-        DataTypes::INTEGER => 'INTEGER',                  // 4 bytes
-        DataTypes::BIG_INTEGER => 'BIGINT',                    // 8 bytes
-        DataTypes::DECIMAL => 'DECIMAL{precision_and_scale}', // Exact numeric with selectable precision
-        DataTypes::NUMERIC => 'NUMERIC{precision_and_scale}', // Exact numeric
-        DataTypes::FLOAT => 'FLOAT',
-        DataTypes::REAL => 'REAL',                        // 4 bytes floating point
-        DataTypes::DOUBLE => 'DOUBLE PRECISION', // 8 bytes floating point
-        DataTypes::MONEY => 'MONEY',                      // Currency type
-        DataTypes::CHAR => 'CHAR{length}',                     // Fixed-length character
-        DataTypes::VARCHAR => 'VARCHAR{length}',                // Variable-length character
-        DataTypes::TEXT => 'TEXT',                        // Variable-length character with no specific length
-        DataTypes::BYTEA => 'BYTEA',                      // Binary data
-
-
-        DataTypes::DATE => 'DATE',                        // Date type
-        DataTypes::TIME => 'TIME{precision}',                        // Time without time zone
-        DataTypes::TIMESTAMP => 'TIMESTAMP{precision}',              // Timestamp without time zone
-        DataTypes::TIME_TZ => 'TIME{precision} WITH TIME ZONE',      // Time with time zone
-        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP{precision} WITH TIME ZONE', // Timestamp with time zone
-
-
-        DataTypes::INTERVAL => 'INTERVAL',                // Time interval
-        DataTypes::BOOLEAN => 'BOOLEAN',                   // Boolean type
-        DataTypes::UUID => 'UUID',                        // Universally Unique Identifier
-        DataTypes::JSON => 'JSON',                        // JSON data type
-        DataTypes::JSONB => 'JSONB',                      // Binary JSON data type
-        DataTypes::XML => 'XML',                          // XML data type
-        DataTypes::ARRAY => '[]',                // Array type (e.g., INTEGER[])
-        DataTypes::HSTORE => 'HSTORE',                    // Key-value pairs
-        DataTypes::INET => 'INET',                        // IP address
-        DataTypes::CIDR => 'CIDR',                        // IP subnet
-        DataTypes::POINT => 'POINT',                      // Geometric point
-        DataTypes::LINE => 'LINE',                        // Geometric line
-        DataTypes::LSEG => 'LSEG',                        // Line segment
-        DataTypes::BOX => 'BOX',                          // Geometric box
-        DataTypes::POLYGON => 'POLYGON',                  // Geometric polygon
-        DataTypes::CIRCLE => 'CIRCLE',                    // Geometric circle
-    ];
-
-    private array $constraints = [
-        ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
-        ColumnConstraints::AUTOINCREMENT => 'SERIAL',
-        ColumnConstraints::NOT_NULL => 'NOT NULL',
-        ColumnConstraints::UNIQUE => 'UNIQUE',
-        ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
-        ColumnConstraints::COLLATION => 'COLLATE {value}',
-        ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
-        ColumnConstraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
-        ColumnConstraints::ON_UPDATE => 'ON UPDATE {action}',
-        ColumnConstraints::ON_DELETE => 'ON DELETE {action}',
-        ColumnConstraints::INDEX => 'INDEX {name} ({column})',
-        ColumnConstraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
-    ];
-
-    /**
      * @var array
      */
     protected array $pitaForStrings = [
         'opening' => '\'',
         'closing' => '\''
     ];
-
 
     /**
      * @var array|int[]
@@ -111,6 +53,81 @@ class PostgreSqlDriver extends Driver
      */
     protected array $dmlAdditionalAccessories = [
         'orderDirections' => ['nulls last', 'nulls first']
+    ];
+
+    /**
+     * @var array|string[]
+     */
+    protected array $dataTypes = [
+        DataTypes::SMALL_INTEGER => 'SMALLINT',
+        DataTypes::INTEGER => 'INTEGER',
+        DataTypes::BIG_INTEGER => 'BIGINT',
+        DataTypes::DECIMAL => 'DECIMAL({precision_and_scale})',
+        DataTypes::NUMERIC => 'NUMERIC({precision_and_scale})',
+        DataTypes::FLOAT => 'FLOAT',
+        DataTypes::REAL => 'REAL',
+        DataTypes::DOUBLE => 'DOUBLE PRECISION',
+        DataTypes::MONEY => 'MONEY',
+        DataTypes::CHAR => 'CHAR({length})',
+        DataTypes::VARCHAR => 'VARCHAR({length})',
+        DataTypes::TEXT => 'TEXT',
+        DataTypes::BYTEA => 'BYTEA',
+        DataTypes::DATE => 'DATE',
+        DataTypes::TIME => 'TIME({precision})',
+        DataTypes::TIMESTAMP => 'TIMESTAMP({precision})',
+        DataTypes::TIME_TZ => 'TIME({precision}) WITH TIME ZONE',
+        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP({precision}) WITH TIME ZONE',
+        DataTypes::INTERVAL => 'INTERVAL',
+        DataTypes::BOOLEAN => 'BOOLEAN',
+        DataTypes::UUID => 'UUID',
+        DataTypes::JSON => 'JSON',
+        DataTypes::JSONB => 'JSONB',
+        DataTypes::XML => 'XML',
+        DataTypes::HSTORE => 'HSTORE',
+        DataTypes::INET => 'INET',
+        DataTypes::CIDR => 'CIDR',
+        DataTypes::POINT => 'POINT',
+        DataTypes::LINE => 'LINE',
+        DataTypes::LSEG => 'LSEG',
+        DataTypes::BOX => 'BOX',
+        DataTypes::POLYGON => 'POLYGON',
+        DataTypes::CIRCLE => 'CIRCLE'
+    ];
+
+    /**
+     * @var array|string[]
+     */
+    private array $columnConstraints = [
+        ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
+        ColumnConstraints::AUTOINCREMENT => 'SERIAL',
+        ColumnConstraints::NOT_NULL => 'NOT NULL',
+        ColumnConstraints::UNIQUE => 'UNIQUE',
+        ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
+        ColumnConstraints::COLLATION => 'COLLATE {value}',
+        ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
+        ColumnConstraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
+    ];
+
+    /**
+     * @var array|string[]
+     */
+    private array $tableConstraints = [
+        TableConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
+        TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
+        TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
+        TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        TableConstraints::INDEX => 'INDEX {name} ({columns})'
+    ];
+
+    /**
+     * @var array
+     */
+    private array $allowedForeignKeyActions = [
+        ForeignKeyActions::CASCADE,
+        ForeignKeyActions::SET_NULL,
+        ForeignKeyActions::RESTRICT,
+        ForeignKeyActions::SET_DEFAULT,
+        ForeignKeyActions::NO_ACTION
     ];
 
     /**

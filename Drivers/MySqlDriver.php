@@ -2,8 +2,10 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\ColumnConstraints;
+use Moirai\DDL\Constraints\ColumnConstraints;
+use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\ForeignKeyActions;
 
 class MySqlDriver extends Driver
 {
@@ -32,33 +34,30 @@ class MySqlDriver extends Driver
         DataTypes::MEDIUM_INTEGER => 'MEDIUMINT',
         DataTypes::INTEGER => 'INT',
         DataTypes::BIG_INTEGER => 'BIGINT',
-        DataTypes::FLOAT => 'FLOAT{precision}',
-        DataTypes::DOUBLE => 'DOUBLE{precision}',
-        DataTypes::DECIMAL => 'DECIMAL{precision_and_scale}',
-        DataTypes::NUMERIC => 'NUMERIC{precision_and_scale}',
-        DataTypes::BIT => 'BIT{size}',
-        DataTypes::CHAR => 'CHAR{length}',
-        DataTypes::VARCHAR => 'VARCHAR{length}',
-        DataTypes::TINY_TEXT => 'text',
-        DataTypes::TEXT => 'text',
-        DataTypes::MEDIUM_TEXT => 'text',
-        DataTypes::LONG_TEXT => 'text',
-        DataTypes::BINARY => 'BINARY(length)',
-        DataTypes::VARBINARY => 'VARBINARY(length)',
-        DataTypes::TINY_BLOB => 'BLOB',
+        DataTypes::FLOAT => 'FLOAT({precision})',
+        DataTypes::DOUBLE => 'DOUBLE({precision})',
+        DataTypes::DECIMAL => 'DECIMAL({precision_and_scale})',
+        DataTypes::NUMERIC => 'NUMERIC({precision_and_scale})',
+        DataTypes::BIT => 'BIT({size})',
+        DataTypes::CHAR => 'CHAR({length})',
+        DataTypes::VARCHAR => 'VARCHAR({length})',
+        DataTypes::TINY_TEXT => 'TINY TEXT',
+        DataTypes::TEXT => 'TEXT',
+        DataTypes::MEDIUM_TEXT => 'MEDIUM TEXT',
+        DataTypes::LONG_TEXT => 'LONG TEXT',
+        DataTypes::BINARY => 'BINARY({length})',
+        DataTypes::VARBINARY => 'VARBINARY({length})',
+        DataTypes::TINY_BLOB => 'TINY BLOB',
         DataTypes::BLOB => 'BLOB',
-        DataTypes::MEDIUM_BLOB => 'BLOB',
-        DataTypes::LONG_BLOB => 'BLOB',
-
+        DataTypes::MEDIUM_BLOB => 'MEDIUM BLOB',
+        DataTypes::LONG_BLOB => 'LONG BLOB',
         DataTypes::DATE => 'DATE',
         DataTypes::DATE_TIME => 'DATETIME',
-        DataTypes::TIMESTAMP => 'TIMESTAMP{precision}',
-        DataTypes::TIME => 'TIME{precision}',
+        DataTypes::TIMESTAMP => 'TIMESTAMP({precision})',
+        DataTypes::TIME => 'TIME({precision})',
         DataTypes::YEAR => 'YEAR',
-
-
-        DataTypes::ENUM => 'ENUM{white_list}',
-        DataTypes::SET => 'SET{white_list}',
+        DataTypes::ENUM => 'ENUM({white_list})',
+        DataTypes::SET => 'SET({white_list})',
         DataTypes::JSON => 'JSON',
         DataTypes::POINT => 'POINT',
         DataTypes::LINE_STRING => 'LINESTRING',
@@ -67,10 +66,13 @@ class MySqlDriver extends Driver
         DataTypes::GEOMETRY_COLLECTION => 'GEOMETRYCOLLECTION',
         DataTypes::MULTI_POINT => 'MULTIPOINT',
         DataTypes::MULTI_LINE_STRING => 'MULTILINESTRING',
-        DataTypes::MULTI_POLYGON => 'MULTIPOLYGON',
+        DataTypes::MULTI_POLYGON => 'MULTIPOLYGON'
     ];
 
-    private array $constraints = [
+    /**
+     * @var array|string[]
+     */
+    private array $columnConstraints = [
         ColumnConstraints::UNSIGNED => 'UNSIGNED',
         ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
         ColumnConstraints::AUTOINCREMENT => 'AUTO_INCREMENT',
@@ -80,20 +82,29 @@ class MySqlDriver extends Driver
         ColumnConstraints::COLLATION => 'COLLATE {value}',
         ColumnConstraints::CHARSET => 'CHARACTER SET {value}',
         ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
-        ColumnConstraints::FOREIGN_KEY => 'FOREIGN KEY ({column}) REFERENCES {table}({column})',
-        ColumnConstraints::ON_UPDATE => 'ON UPDATE {action}',
-        ColumnConstraints::ON_DELETE => 'ON DELETE {action}',
         ColumnConstraints::INVISIBLE => 'INVISIBLE',
-        ColumnConstraints::INDEX => 'INDEX {name} ({column})',
         ColumnConstraints::COMMENT => 'COMMENT "{value}"'
     ];
 
-    private array $columnConstraints = [
-        ColumnConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
-        ColumnConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
-        ColumnConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
-        ColumnConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table} ({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
-        ColumnConstraints::INDEX => 'INDEX {name} ({columns})'
+    /**
+     * @var array|string[]
+     */
+    private array $tableConstraints = [
+        TableConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
+        TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
+        TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
+        TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        TableConstraints::INDEX => 'INDEX {name} ({columns})'
+    ];
+
+    /**
+     * @var array
+     */
+    private static array $allowedForeignKeyActions = [
+        ForeignKeyActions::CASCADE,
+        ForeignKeyActions::SET_NULL,
+        ForeignKeyActions::RESTRICT,
+        ForeignKeyActions::NO_ACTION
     ];
 
     /**

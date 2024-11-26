@@ -13,6 +13,6 @@ class ColumnConstraints
     public const COLLATION = 6;
     public const CHARSET = 7;
     public const PRIMARY_KEY = 8;
-    public const INVISIBLE = 9;
-    public const COMMENT = 10;
+    public const INVISIBLE = 10;
+    public const COMMENT = 11;
 }

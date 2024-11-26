@@ -57,14 +57,6 @@ abstract class Driver
     }
 
     /**
-     * @return array
-     */
-    public function getDdlAccessories(): array
-    {
-        return $this->ddlAccessories;
-    }
-
-    /**
      * @return array|null
      */
     public function getDmlAdditionalAccessories(): array|null
@@ -91,13 +83,35 @@ abstract class Driver
      * @return string
      * @throws \Exception
      */
-    public function getDdlAccessory(string $key): string
+    public function getColumnConstraint(string $key): string
     {
-        if (!isset($this->ddlAccessories[$key])) {
-            throw new Exception('This column accessory is not supported by this driver.');
+        if (!isset($this->columnConstraints[$key])) {
+            throw new Exception('This column constraint is not supported by this driver.');
         }
 
-        return $this->ddlAccessories[$key];
+        return $this->columnConstraints[$key];
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     * @throws \Exception
+     */
+    public function getTableConstraint(string $key): string
+    {
+        if (!isset($this->tableConstraints[$key])) {
+            throw new Exception('This table constraint is not supported by this driver.');
+        }
+
+        return $this->tableConstraints[$key];
+    }
+
+    /**
+     * @return array
+     */
+    public function getAllowedForeignKeyActions(): array
+    {
+        return $this->allowedForeignKeyActions;
     }
 
     /**
