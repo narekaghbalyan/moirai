@@ -7,23 +7,10 @@ interface GrammarInterface
     /**
      * @return array
      */
-    public function getDataTypes(): array;
+    public function getPitaForColumns(): array;
 
     /**
-     * @param string $key
-     * @return string
+     * @return array
      */
-    public function getDataType(string $key): string;
-
-    /**
-     * @param string $key
-     * @return string
-     */
-    public function getColumnConstraint(string $key): string;
-
-    /**
-     * @param string $key
-     * @return string
-     */
-    public function getTableConstraint(string $key): string;
+    public function getPitaForStrings(): array;
 }

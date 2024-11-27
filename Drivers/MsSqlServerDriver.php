@@ -10,22 +10,6 @@ use Moirai\DDL\ForeignKeyActions;
 class MsSqlServerDriver extends Driver
 {
     /**
-     * @var array
-     */
-    protected array $pitaForColumns = [
-        'opening' => '[',
-        'closing' => ']'
-    ];
-
-    /**
-     * @var array
-     */
-    protected array $pitaForStrings = [
-        'opening' => '\'',
-        'closing' => '\''
-    ];
-
-    /**
      * @var bool
      */
     protected bool $useUnderscoreInDriverNameWhenSeparating = true;

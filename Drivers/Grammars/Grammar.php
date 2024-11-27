@@ -2,72 +2,31 @@
 
 namespace Moirai\Drivers\Grammars;
 
-use Exception;
-
 abstract class Grammar
 {
     /**
      * @var array
      */
-    protected array $dataTypes;
+    protected array $pitaForColumns;
 
     /**
      * @var array
      */
-    protected array $columnConstraints;
-
-    /**
-     * @var array
-     */
-    protected array $tableConstraints;
+    protected array $pitaForStrings;
 
     /**
      * @return array
      */
-    public function getDataTypes(): array
+    public function getPitaForColumns(): array
     {
-        return $this->dataTypes;
+        return $this->pitaForColumns;
     }
 
     /**
-     * @param string $key
-     * @return string
-     * @throws \Exception
+     * @return array
      */
-    public function getDataType(string $key): string
+    public function getPitaForStrings(): array
     {
-        if (!isset($this->dataTypes[$key])) {
-            throw new Exception('This data type is not supported by this driver.');
-        }
-
-        return $this->dataTypes[$key];
-    }
-
-    /**
-     * @param string $key
-     * @return string
-     * @throws \Exception
-     */
-    public function getColumnConstraint(string $key): string
-    {
-        if (!isset($this->columnConstraints[$key])) {
-            throw new Exception('This column constraint is not supported by this driver.');
-        }
-
-        return $this->columnConstraints[$key];
-    }
-
-    /**
-     * @param string $key
-     * @return string
-     * @throws \Exception
-     */
-    public function getTableConstraint(string $key): string
-    {
-        if (!isset($this->tableConstraints[$key])) {
-            throw new Exception('This table constraint is not supported by this driver.');
-        }
-
-        return $this->tableConstraints[$key];
+        return $this->pitaForStrings;
     }
 }

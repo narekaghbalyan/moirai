@@ -12,22 +12,6 @@ class OracleDriver extends Driver
     /**
      * @var array
      */
-    protected array $pitaForColumns = [
-        'opening' => '"',
-        'closing' => '"'
-    ];
-
-    /**
-     * @var array
-     */
-    protected array $pitaForStrings = [
-        'opening' => '\'',
-        'closing' => '\''
-    ];
-
-    /**
-     * @var array
-     */
     public static array $allowedForeignKeyActions = [
         ForeignKeyActions::CASCADE,
         ForeignKeyActions::SET_NULL,

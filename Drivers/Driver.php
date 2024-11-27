@@ -2,45 +2,22 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\Drivers\Grammars\Lexis;
+use Moirai\Drivers\Grammars\Grammar;
 
 abstract class Driver
 {
     /**
-     * @var Lexis
+     * @var \Moirai\Drivers\Grammars\Grammar
      */
-    protected Lexis $grammar;
+    protected Grammar $grammar;
 
-    /**
-     * @var array
-     */
-    protected array $pitaForColumns;
-
-    /**
-     * @var array
-     */
-    protected array $pitaForStrings;
 
     /**
      * @var bool
      */
     protected bool $useUnderscoreInDriverNameWhenSeparating = false;
 
-    /**
-     * @return array
-     */
-    public function getPitaForColumns(): array
-    {
-        return $this->pitaForColumns;
-    }
 
-    /**
-     * @return array
-     */
-    public function getPitaForStrings(): array
-    {
-        return $this->pitaForStrings;
-    }
 
 
 

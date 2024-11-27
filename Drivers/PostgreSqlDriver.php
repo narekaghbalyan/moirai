@@ -10,22 +10,6 @@ use Moirai\DDL\ForeignKeyActions;
 class PostgreSqlDriver extends Driver
 {
     /**
-     * @var array
-     */
-    protected array $pitaForColumns = [
-        'opening' => '"',
-        'closing' => '"'
-    ];
-
-    /**
-     * @var array
-     */
-    protected array $pitaForStrings = [
-        'opening' => '\'',
-        'closing' => '\''
-    ];
-
-    /**
      * @var array|int[]
      */
     private array $normalizationBitmasks = [0, 1, 2, 4, 8, 16, 32];
