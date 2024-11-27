@@ -6,67 +6,59 @@ use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
 
-class MariaDbGrammar extends Grammar implements GrammarInterface
+class PostgreSqlLexis extends Lexis implements LexisInterface
 {
     /**
      * @var array|string[]
      */
     protected array $dataTypes = [
-        DataTypes::TINY_INTEGER => 'TINYINT',
         DataTypes::SMALL_INTEGER => 'SMALLINT',
-        DataTypes::MEDIUM_INTEGER => 'MEDIUMINT',
-        DataTypes::INTEGER => 'INT',
+        DataTypes::INTEGER => 'INTEGER',
         DataTypes::BIG_INTEGER => 'BIGINT',
-        DataTypes::FLOAT => 'FLOAT({precision})',
-        DataTypes::DOUBLE => 'DOUBLE({precision})',
         DataTypes::DECIMAL => 'DECIMAL({precision_and_scale})',
         DataTypes::NUMERIC => 'NUMERIC({precision_and_scale})',
-        DataTypes::BIT => 'BIT({size})',
+        DataTypes::FLOAT => 'FLOAT',
+        DataTypes::REAL => 'REAL',
+        DataTypes::DOUBLE => 'DOUBLE PRECISION',
+        DataTypes::MONEY => 'MONEY',
         DataTypes::CHAR => 'CHAR({length})',
         DataTypes::VARCHAR => 'VARCHAR({length})',
-        DataTypes::TINY_TEXT => 'TINY TEXT',
         DataTypes::TEXT => 'TEXT',
-        DataTypes::MEDIUM_TEXT => 'MEDIUM TEXT',
-        DataTypes::LONG_TEXT => 'LONG TEXT',
-        DataTypes::BINARY => 'BINARY({length})',
-        DataTypes::VARBINARY => 'VARBINARY({length})',
-        DataTypes::TINY_BLOB => 'TINY BLOB',
-        DataTypes::BLOB => 'BLOB',
-        DataTypes::MEDIUM_BLOB => 'MEDIUM BLOB',
-        DataTypes::LONG_BLOB => 'LONG BLOB',
+        DataTypes::BYTEA => 'BYTEA',
         DataTypes::DATE => 'DATE',
-        DataTypes::DATE_TIME => 'DATETIME',
-        DataTypes::TIMESTAMP => 'TIMESTAMP({precision})',
         DataTypes::TIME => 'TIME({precision})',
-        DataTypes::YEAR => 'YEAR',
-        DataTypes::ENUM => 'ENUM({white_list})',
-        DataTypes::SET => 'SET({white_list})',
+        DataTypes::TIMESTAMP => 'TIMESTAMP({precision})',
+        DataTypes::TIME_TZ => 'TIME({precision}) WITH TIME ZONE',
+        DataTypes::TIMESTAMP_TZ => 'TIMESTAMP({precision}) WITH TIME ZONE',
+        DataTypes::INTERVAL => 'INTERVAL',
+        DataTypes::BOOLEAN => 'BOOLEAN',
+        DataTypes::UUID => 'UUID',
         DataTypes::JSON => 'JSON',
+        DataTypes::JSONB => 'JSONB',
+        DataTypes::XML => 'XML',
+        DataTypes::HSTORE => 'HSTORE',
+        DataTypes::INET => 'INET',
+        DataTypes::CIDR => 'CIDR',
         DataTypes::POINT => 'POINT',
-        DataTypes::LINE_STRING => 'LINESTRING',
+        DataTypes::LINE => 'LINE',
+        DataTypes::LSEG => 'LSEG',
+        DataTypes::BOX => 'BOX',
         DataTypes::POLYGON => 'POLYGON',
-        DataTypes::GEOMETRY => 'GEOMETRY',
-        DataTypes::GEOMETRY_COLLECTION => 'GEOMETRYCOLLECTION',
-        DataTypes::MULTI_POINT => 'MULTIPOINT',
-        DataTypes::MULTI_LINE_STRING => 'MULTILINESTRING',
-        DataTypes::MULTI_POLYGON => 'MULTIPOLYGON'
+        DataTypes::CIRCLE => 'CIRCLE'
     ];
 
     /**
      * @var array|string[]
      */
     protected array $columnConstraints = [
-        ColumnConstraints::UNSIGNED => 'UNSIGNED',
         ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
-        ColumnConstraints::AUTOINCREMENT => 'AUTO_INCREMENT',
+        ColumnConstraints::AUTOINCREMENT => 'SERIAL',
         ColumnConstraints::NOT_NULL => 'NOT NULL',
         ColumnConstraints::UNIQUE => 'UNIQUE',
         ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
         ColumnConstraints::COLLATION => 'COLLATE {value}',
-        ColumnConstraints::CHARSET => 'CHARACTER SET {value}',
         ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
-        ColumnConstraints::INVISIBLE => 'INVISIBLE',
-        ColumnConstraints::COMMENT => 'COMMENT "{value}"'
+        ColumnConstraints::COMMENT => 'COMMENT ON COLUMN {table}.{column} IS \'{value}\''
     ];
 
     /**

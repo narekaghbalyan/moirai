@@ -1,72 +1,64 @@
 <?php
 
-namespace Moirai\Drivers\Grammars;
+namespace Moirai\Drivers\Lexises;
 
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
 
-class MySqlGrammar extends Grammar implements GrammarInterface
+class MsSqlServerLexis extends Lexis implements LexisInterface
 {
     /**
      * @var array|string[]
      */
     protected array $dataTypes = [
-        DataTypes::TINY_INTEGER => 'TINYINT',
-        DataTypes::SMALL_INTEGER => 'SMALLINT',
-        DataTypes::MEDIUM_INTEGER => 'MEDIUMINT',
         DataTypes::INTEGER => 'INT',
+        DataTypes::SMALL_INTEGER => 'SMALLINT',
+        DataTypes::TINY_INTEGER => 'TINYINT',
         DataTypes::BIG_INTEGER => 'BIGINT',
-        DataTypes::FLOAT => 'FLOAT({precision})',
-        DataTypes::DOUBLE => 'DOUBLE({precision})',
         DataTypes::DECIMAL => 'DECIMAL({precision_and_scale})',
         DataTypes::NUMERIC => 'NUMERIC({precision_and_scale})',
-        DataTypes::BIT => 'BIT({size})',
+        DataTypes::MONEY => 'MONEY',
+        DataTypes::SMALL_MONEY => 'SMALLMONEY',
+        DataTypes::FLOAT => 'FLOAT({precision})',
+        DataTypes::REAL => 'REAL',
         DataTypes::CHAR => 'CHAR({length})',
         DataTypes::VARCHAR => 'VARCHAR({length})',
-        DataTypes::TINY_TEXT => 'TINY TEXT',
         DataTypes::TEXT => 'TEXT',
-        DataTypes::MEDIUM_TEXT => 'MEDIUM TEXT',
-        DataTypes::LONG_TEXT => 'LONG TEXT',
+        DataTypes::N_CHAR => 'NCHAR({length})',
+        DataTypes::N_VARCHAR => 'NVARCHAR({length})',
+        DataTypes::N_TEXT => 'NTEXT',
         DataTypes::BINARY => 'BINARY({length})',
         DataTypes::VARBINARY => 'VARBINARY({length})',
-        DataTypes::TINY_BLOB => 'TINY BLOB',
-        DataTypes::BLOB => 'BLOB',
-        DataTypes::MEDIUM_BLOB => 'MEDIUM BLOB',
-        DataTypes::LONG_BLOB => 'LONG BLOB',
+        DataTypes::IMAGE => 'IMAGE',
         DataTypes::DATE => 'DATE',
-        DataTypes::DATE_TIME => 'DATETIME',
-        DataTypes::TIMESTAMP => 'TIMESTAMP({precision})',
         DataTypes::TIME => 'TIME({precision})',
-        DataTypes::YEAR => 'YEAR',
-        DataTypes::ENUM => 'ENUM({white_list})',
-        DataTypes::SET => 'SET({white_list})',
-        DataTypes::JSON => 'JSON',
-        DataTypes::POINT => 'POINT',
-        DataTypes::LINE_STRING => 'LINESTRING',
-        DataTypes::POLYGON => 'POLYGON',
+        DataTypes::DATE_TIME => 'DATETIME',
+        DataTypes::DATE_TIME_2 => 'DATETIME2({precision})',
+        DataTypes::SMALL_DATE_TIME => 'SMALLDATETIME',
+        DataTypes::DATE_TIME_OFFSET => 'DATETIMEOFFSET({precision})',
+        DataTypes::BIT => 'BIT',
+        DataTypes::UUID => 'UNIQUEIDENTIFIER',
+        DataTypes::XML => 'XML',
+        DataTypes::JSON => 'NVARCHAR({max})',
+        DataTypes::SQL_VARIANT => 'SQL_VARIANT',
+        DataTypes::ROW_VERSION => 'ROWVERSION',
         DataTypes::GEOMETRY => 'GEOMETRY',
-        DataTypes::GEOMETRY_COLLECTION => 'GEOMETRYCOLLECTION',
-        DataTypes::MULTI_POINT => 'MULTIPOINT',
-        DataTypes::MULTI_LINE_STRING => 'MULTILINESTRING',
-        DataTypes::MULTI_POLYGON => 'MULTIPOLYGON'
+        DataTypes::GEOGRAPHY => 'GEOGRAPHY',
+        DataTypes::HIERARYCHYID => 'HIERARCHYID'
     ];
 
     /**
      * @var array|string[]
      */
     protected array $columnConstraints = [
-        ColumnConstraints::UNSIGNED => 'UNSIGNED',
         ColumnConstraints::CHECK => 'CHECK({column} >= 0)',
-        ColumnConstraints::AUTOINCREMENT => 'AUTO_INCREMENT',
+        ColumnConstraints::AUTOINCREMENT => 'IDENTITY',
         ColumnConstraints::NOT_NULL => 'NOT NULL',
         ColumnConstraints::UNIQUE => 'UNIQUE',
         ColumnConstraints::DEFAULT => 'DEFAULT "{value}"',
         ColumnConstraints::COLLATION => 'COLLATE {value}',
-        ColumnConstraints::CHARSET => 'CHARACTER SET {value}',
         ColumnConstraints::PRIMARY_KEY => 'PRIMARY KEY',
-        ColumnConstraints::INVISIBLE => 'INVISIBLE',
-        ColumnConstraints::COMMENT => 'COMMENT "{value}"'
     ];
 
     /**

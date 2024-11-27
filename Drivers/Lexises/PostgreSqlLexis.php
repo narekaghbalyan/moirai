@@ -1,12 +1,12 @@
 <?php
 
-namespace Moirai\Drivers\Grammars;
+namespace Moirai\Drivers\Lexises;
 
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
 
-class PostgreSqlGrammar extends Grammar implements GrammarInterface
+class PostgreSqlLexis extends Lexis implements LexisInterface
 {
     /**
      * @var array|string[]

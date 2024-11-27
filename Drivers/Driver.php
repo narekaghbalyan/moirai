@@ -2,15 +2,14 @@
 
 namespace Moirai\Drivers;
 
-use Exception;
-use Moirai\Drivers\Grammars\Grammar;
+use Moirai\Drivers\Grammars\Lexis;
 
 abstract class Driver
 {
     /**
-     * @var Grammar
+     * @var Lexis
      */
-    protected Grammar $grammar;
+    protected Lexis $grammar;
 
     /**
      * @var array
