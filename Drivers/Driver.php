@@ -3,14 +3,14 @@
 namespace Moirai\Drivers;
 
 use Exception;
-use Moirai\Drivers\Grammars\DriverGrammar;
+use Moirai\Drivers\Grammars\Grammar;
 
 abstract class Driver
 {
     /**
-     * @var DriverGrammar
+     * @var Grammar
      */
-    protected DriverGrammar $grammar;
+    protected Grammar $grammar;
 
     /**
      * @var array
@@ -21,11 +21,6 @@ abstract class Driver
      * @var array
      */
     protected array $pitaForStrings;
-
-    /**
-     * @var array
-     */
-    protected array $dataTypes;
 
     /**
      * @var bool
@@ -48,13 +43,7 @@ abstract class Driver
         return $this->pitaForStrings;
     }
 
-    /**
-     * @return array
-     */
-    public function getDataTypes(): array
-    {
-        return $this->dataTypes;
-    }
+
 
     /**
      * @return array|null
@@ -64,47 +53,11 @@ abstract class Driver
         return $this->dmlAdditionalAccessories ?? null;
     }
 
-    /**
-     * @param string $key
-     * @return string
-     * @throws \Exception
-     */
-    public function getDataType(string $key): string
-    {
-        if (!isset($this->dataTypes[$key])) {
-            throw new Exception('This data type is not supported by this driver.');
-        }
 
-        return $this->dataTypes[$key];
-    }
 
-    /**
-     * @param string $key
-     * @return string
-     * @throws \Exception
-     */
-    public function getColumnConstraint(string $key): string
-    {
-        if (!isset($this->columnConstraints[$key])) {
-            throw new Exception('This column constraint is not supported by this driver.');
-        }
 
-        return $this->columnConstraints[$key];
-    }
 
-    /**
-     * @param string $key
-     * @return string
-     * @throws \Exception
-     */
-    public function getTableConstraint(string $key): string
-    {
-        if (!isset($this->tableConstraints[$key])) {
-            throw new Exception('This table constraint is not supported by this driver.');
-        }
 
-        return $this->tableConstraints[$key];
-    }
 
     /**
      * @return array

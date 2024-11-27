@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\Drivers\Interfaces;
+namespace Moirai\Drivers;
 
 interface DriverInterface
 {
