@@ -2,17 +2,21 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints\ColumnConstraints;
-use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
 use Moirai\DDL\ForeignKeyActions;
+use Moirai\Drivers\Grammars\MariaDbGrammar;
+use Moirai\Drivers\Lexises\MariaDbLexis;
 
-class MariaDbDriver extends Driver
+class MariaDbDriver extends Driver implements DriverInterface
 {
+    /**
+     * @var string
+     */
+    protected string $name = 'MariaDB';
+
     /**
      * @var array
      */
-    private static array $allowedForeignKeyActions = [
+    protected array $allowedForeignKeyActions = [
         ForeignKeyActions::CASCADE,
         ForeignKeyActions::SET_NULL,
         ForeignKeyActions::RESTRICT,
@@ -24,6 +28,7 @@ class MariaDbDriver extends Driver
      */
     public function __construct()
     {
-        $this->initializeDriverGrammaticalStructure();
+        $this->grammar = new MariaDbGrammar();
+        $this->lexis = new MariaDbLexis();
     }
 }

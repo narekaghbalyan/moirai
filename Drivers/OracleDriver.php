@@ -2,17 +2,21 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints\ColumnConstraints;
-use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
 use Moirai\DDL\ForeignKeyActions;
+use Moirai\Drivers\Grammars\OracleGrammar;
+use Moirai\Drivers\Lexises\OracleLexis;
 
-class OracleDriver extends Driver
+class OracleDriver extends Driver implements DriverInterface
 {
+    /**
+     * @var string
+     */
+    protected string $name = 'Oracle';
+
     /**
      * @var array
      */
-    public static array $allowedForeignKeyActions = [
+    protected array $allowedForeignKeyActions = [
         ForeignKeyActions::CASCADE,
         ForeignKeyActions::SET_NULL,
         ForeignKeyActions::SET_DEFAULT,
@@ -24,6 +28,7 @@ class OracleDriver extends Driver
      */
     public function __construct()
     {
-        $this->initializeDriverGrammaticalStructure();
+        $this->grammar = new OracleGrammar();
+        $this->lexis = new OracleLexis();
     }
 }

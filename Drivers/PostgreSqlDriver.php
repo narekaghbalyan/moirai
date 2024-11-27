@@ -2,13 +2,35 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints\ColumnConstraints;
-use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
 use Moirai\DDL\ForeignKeyActions;
+use Moirai\Drivers\Grammars\PostgreSqlGrammar;
+use Moirai\Drivers\Lexises\PostgreSqlLexis;
 
-class PostgreSqlDriver extends Driver
+class PostgreSqlDriver extends Driver implements DriverInterface
 {
+    /**
+     * @var string
+     */
+    protected string $name = 'PostgreSQL';
+
+    /**
+     * @var array
+     */
+    protected array $allowedForeignKeyActions = [
+        ForeignKeyActions::CASCADE,
+        ForeignKeyActions::SET_NULL,
+        ForeignKeyActions::RESTRICT,
+        ForeignKeyActions::SET_DEFAULT,
+        ForeignKeyActions::NO_ACTION
+    ];
+
+    /**
+     * @var array|\string[][]|null
+     */
+    protected array|null $additionalAccessories = [
+        'orderDirections' => ['nulls last', 'nulls first']
+    ];
+
     /**
      * @var array|int[]
      */
@@ -33,29 +55,12 @@ class PostgreSqlDriver extends Driver
     ];
 
     /**
-     * @var array|\string[][]
-     */
-    protected array $dmlAdditionalAccessories = [
-        'orderDirections' => ['nulls last', 'nulls first']
-    ];
-
-    /**
-     * @var array
-     */
-    protected array $allowedForeignKeyActions = [
-        ForeignKeyActions::CASCADE,
-        ForeignKeyActions::SET_NULL,
-        ForeignKeyActions::RESTRICT,
-        ForeignKeyActions::SET_DEFAULT,
-        ForeignKeyActions::NO_ACTION
-    ];
-
-    /**
      * PostgreSqlDriver constructor.
      */
     public function __construct()
     {
-        $this->initializeDriverGrammaticalStructure();
+        $this->grammar = new PostgreSqlGrammar();
+        $this->lexis = new PostgreSqlLexis();
     }
 
     /**

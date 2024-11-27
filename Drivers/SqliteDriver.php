@@ -2,17 +2,21 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints\ColumnConstraints;
-use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
 use Moirai\DDL\ForeignKeyActions;
+use Moirai\Drivers\Grammars\SqliteGrammar;
+use Moirai\Drivers\Lexises\SqliteLexis;
 
-class SqliteDriver extends Driver
+class SqliteDriver extends Driver implements DriverInterface
 {
+    /**
+     * @var string
+     */
+    protected string $name = 'SQLite';
+
     /**
      * @var array
      */
-    public static array $allowedForeignKeyActions = [
+    protected array $allowedForeignKeyActions = [
         ForeignKeyActions::CASCADE,
         ForeignKeyActions::SET_NULL,
         ForeignKeyActions::RESTRICT,
@@ -25,6 +29,7 @@ class SqliteDriver extends Driver
      */
     public function __construct()
     {
-        $this->initializeDriverGrammaticalStructure();
+        $this->grammar = new SqliteGrammar();
+        $this->lexis = new SqliteLexis();
     }
 }

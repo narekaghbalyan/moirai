@@ -2,22 +2,21 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints\ColumnConstraints;
-use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
 use Moirai\DDL\ForeignKeyActions;
+use Moirai\Drivers\Grammars\MsSqlServerGrammar;
+use Moirai\Drivers\Lexises\MsSqlServerLexis;
 
-class MsSqlServerDriver extends Driver
+class MsSqlServerDriver extends Driver implements DriverInterface
 {
     /**
-     * @var bool
+     * @var string
      */
-    protected bool $useUnderscoreInDriverNameWhenSeparating = true;
+    protected string $name = 'MS SQL Server';
 
     /**
      * @var array
      */
-    public static array $allowedForeignKeyActions = [
+    protected array $allowedForeignKeyActions = [
         ForeignKeyActions::CASCADE,
         ForeignKeyActions::SET_NULL,
         ForeignKeyActions::SET_DEFAULT,
@@ -29,6 +28,7 @@ class MsSqlServerDriver extends Driver
      */
     public function __construct()
     {
-        $this->initializeDriverGrammaticalStructure();
+        $this->grammar = new MsSqlServerGrammar();
+        $this->lexis = new MsSqlServerLexis();
     }
 }

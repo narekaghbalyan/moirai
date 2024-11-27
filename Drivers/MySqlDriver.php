@@ -2,17 +2,21 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\Constraints\ColumnConstraints;
-use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
 use Moirai\DDL\ForeignKeyActions;
+use Moirai\Drivers\Grammars\MySqlGrammar;
+use Moirai\Drivers\Lexises\MySqlLexis;
 
-class MySqlDriver extends Driver
+class MySqlDriver extends Driver implements DriverInterface
 {
+    /**
+     * @var string
+     */
+    protected string $name = 'MySQL';
+
     /**
      * @var array
      */
-    private static array $allowedForeignKeyActions = [
+    protected array $allowedForeignKeyActions = [
         ForeignKeyActions::CASCADE,
         ForeignKeyActions::SET_NULL,
         ForeignKeyActions::RESTRICT,
@@ -24,6 +28,7 @@ class MySqlDriver extends Driver
      */
     public function __construct()
     {
-        $this->initializeDriverGrammaticalStructure();
+        $this->grammar = new MySqlGrammar();
+        $this->lexis = new MySqlLexis();
     }
 }

@@ -6,20 +6,18 @@ use ReflectionClass;
 
 class AvailableDbmsDrivers
 {
-    const MYSQL = 'mysql';
-    const POSTGRESQL = 'postgresql';
-    const SQLITE = 'sqlite';
-    const MS_SQL_SERVER = 'microsoft sql server';
-    const MARIADB = 'mariadb';
-    const ORACLE = 'oracle';
+    const MYSQL = 0;
+    const POSTGRESQL = 1;
+    const SQLITE = 2;
+    const MS_SQL_SERVER = 3;
+    const MARIADB = 4;
+    const ORACLE = 5;
 
     /**
      * @return array
      */
     public static function getDrivers(): array
     {
-        $reflectionClass = new ReflectionClass(__CLASS__);
-
-        return $reflectionClass->getConstants();
+        return (new ReflectionClass(__CLASS__))->getConstants();
     }
 }

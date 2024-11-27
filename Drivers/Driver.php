@@ -3,37 +3,58 @@
 namespace Moirai\Drivers;
 
 use Moirai\Drivers\Grammars\Grammar;
+use Moirai\Drivers\Lexises\Lexis;
 
 abstract class Driver
 {
+    /**
+     * @var string
+     */
+    protected string $name;
+
     /**
      * @var \Moirai\Drivers\Grammars\Grammar
      */
     protected Grammar $grammar;
 
+    /**
+     * @var \Moirai\Drivers\Lexises\Lexis
+     */
+    protected Lexis $lexis;
 
     /**
-     * @var bool
+     * @var array
      */
-    protected bool $useUnderscoreInDriverNameWhenSeparating = false;
-
-
-
-
+    protected array $allowedForeignKeyActions;
 
     /**
-     * @return array|null
+     * @var array|null
      */
-    public function getDmlAdditionalAccessories(): array|null
+    protected array|null $additionalAccessories = null;
+
+    /**
+     * @return string
+     */
+    public function getName(): string
     {
-        return $this->dmlAdditionalAccessories ?? null;
+        return $this->name;
     }
 
+    /**
+     * @return \Moirai\Drivers\Grammars\Grammar
+     */
+    public function getGrammar(): Grammar
+    {
+        return $this->grammar;
+    }
 
-
-
-
-
+    /**
+     * @return \Moirai\Drivers\Lexises\Lexis
+     */
+    public function getLexis(): Lexis
+    {
+        return $this->lexis;
+    }
 
     /**
      * @return array
@@ -44,29 +65,10 @@ abstract class Driver
     }
 
     /**
-     * @return string
+     * @return array|null
      */
-    public function getDriverName(): string
+    public function getAdditionalAccessories(): array|null
     {
-        return AvailableDbmsDrivers::getDrivers()[strtoupper(
-            $this->useUnderscoreInDriverNameWhenSeparating
-                ? implode('_', array_filter(preg_split('/(?=[A-Z])/', $this->getCleanDbmsName())))
-                : $this->getCleanDbmsName()
-        )];
-    }
-
-    protected function initializeDriverGrammaticalStructure(): void
-    {
-        $grammarPath = __NAMESPACE__ . '\\' . 'Grammars' . '\\' . $this->getCleanDbmsName() . 'Grammar';
-
-        $this->grammar = new $grammarPath();
-    }
-
-    /**
-     * @return string
-     */
-    private function getCleanDbmsName(): string
-    {
-        return str_replace([__NAMESPACE__, '/', '\\', 'Driver'], '', get_called_class());
+        return $this->additionalAccessories;
     }
 }
