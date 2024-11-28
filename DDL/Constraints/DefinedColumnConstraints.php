@@ -3,6 +3,8 @@
 namespace Moirai\DDL\Constraints;
 
 use Moirai\DDL\Blueprint;
+use Moirai\Drivers\OracleDriver;
+use Moirai\Drivers\PostgreSqlDriver;
 
 class DefinedColumnConstraints
 {

@@ -4,17 +4,21 @@ namespace Moirai\DDL;
 
 use Closure;
 use Exception;
+use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\DefinedColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\Drivers\AvailableDbmsDrivers;
+use Moirai\Drivers\DriverInterface;
 use Moirai\Drivers\MySqlDriver;
+use Moirai\Drivers\OracleDriver;
+use Moirai\Drivers\PostgreSqlDriver;
 
 class Blueprint
 {
     /**
-     * @var \Moirai\Drivers\PostgreSqlDriver
+     * @var \Moirai\Drivers\DriverInterface|\Moirai\Drivers\MySqlDriver
      */
-    private $driver;
+    private DriverInterface $driver;
 
     /**
      * @var string
@@ -30,6 +34,11 @@ class Blueprint
      * @var array
      */
     private array $tableConstraints = [];
+
+    /**
+     * @var array
+     */
+    private array $chain = [];
 
     /**
      * Blueprint constructor.
@@ -67,12 +76,21 @@ class Blueprint
         $sewedColumns = [];
 
         foreach ($this->columns as $column => $options) {
-            $columnDefinitionSignature = $this->driver->getDataType($options['data_type']);
+            $columnDefinitionSignature = $this->driver->getLexis()->getDataType($options['data_type']);
 
             foreach ($options['parameters'] as $parameterKey => $parameterValue) {
                 $parameterKey = '{' . $parameterKey . '}';
 
-                if (is_null($parameterValue)) {
+                if (!is_null($parameterValue)) {
+                    if (!str_contains($columnDefinitionSignature, $parameterKey)) {
+                        throw new Exception(
+                            'DBMS driver "'
+                            . $this->driver->getName()
+                            . '" do not support parameters for data type "'
+                            . $columnDefinitionSignature . '".'
+                        );
+                    }
+                } else {
                     $parameterKey = '({' . $parameterKey . '})';
                     $parameterValue = '';
                 }
@@ -85,7 +103,13 @@ class Blueprint
             }
 
             foreach ($options['constraints'] as $columnConstraintKey => $columnConstraintParameters) {
-                $columnConstraintDefinitionSignature = $this->driver->getColumnConstraint($columnConstraintKey);
+                $columnConstraintDefinitionSignature = $this->driver->getLexis()->getColumnConstraint($columnConstraintKey);
+
+                if ($columnConstraintKey === ColumnConstraints::COMMENT
+                    && in_array($this->driver::class, [PostgreSqlDriver::class, OracleDriver::class])) {
+                    $columnConstraintParameters['table'] = $this->table;
+                    $columnConstraintParameters['column'] = $column;
+                }
 
                 foreach ($columnConstraintParameters as $columnConstraintParameterKey => $columnConstraintParameterValue) {
                     $columnConstraintDefinitionSignature = str_replace(
@@ -95,7 +119,12 @@ class Blueprint
                     );
                 }
 
-                $columnDefinitionSignature .= ' ' . $columnConstraintDefinitionSignature;
+                if ($columnConstraintKey === ColumnConstraints::COMMENT
+                    && in_array($this->driver::class, [PostgreSqlDriver::class, OracleDriver::class])) {
+                    $this->chain[] = $columnConstraintDefinitionSignature;
+                } else {
+                    $columnDefinitionSignature .= ' ' . $columnConstraintDefinitionSignature;
+                }
             }
 
             $sewedColumns[] = $column . ' ' . $columnDefinitionSignature;
@@ -119,7 +148,7 @@ class Blueprint
         ];
 
         foreach ($this->tableConstraints as $tableConstraint) {
-            $tableConstraintDefinitionSignature = $this->driver->getTableConstraint($tableConstraint['type']);
+            $tableConstraintDefinitionSignature = $this->driver->getLexis()->getTableConstraint($tableConstraint['type']);
 
             foreach ($tableConstraint['parameters'] as $tableConstraintParameterKey => $tableConstraintParameterValue) {
                 if (is_null($tableConstraintParameterValue)
@@ -135,7 +164,7 @@ class Blueprint
                     && !in_array($tableConstraintParameterValue, $this->driver->getAllowedForeignKeyActions())) {
                     throw new Exception(
                         'DBMS driver "'
-                        . $this->driver->getDriverName()
+                        . $this->driver->getName()
                         . '" does not support "'
                         . $tableConstraintParameterValue
                         . '" action as foreign key action.'
@@ -186,13 +215,9 @@ class Blueprint
     private function bindTableConstraint(string $type, array $parameters): void
     {
         if (in_array($type, [TableConstraints::PRIMARY_KEY])) {
-            if (
-            !empty(
-            array_filter($this->tableConstraints, function ($tableConstraint) {
+            if (!empty(array_filter($this->tableConstraints, function ($tableConstraint) {
                 return $tableConstraint['type'] === TableConstraints::PRIMARY_KEY;
-            })
-            )
-            ) {
+            }))) {
                 throw new Exception('Primary key already exists in table "' . $this->table . '".');
             }
         }
@@ -268,7 +293,7 @@ class Blueprint
         return $this->bindColumn(
             $column,
             DataTypes::BIT,
-            in_array($this->getDriverName(), [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
+            in_array($this->driver::class, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
                 ? compact('size')
                 : null
         );
@@ -288,14 +313,15 @@ class Blueprint
      */
     public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
+
         return $this->bindColumn(
             $column,
             DataTypes::TINY_INTEGER,
             null,
-            [
-                'autoincrement' => $autoIncrement,
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::AUTOINCREMENT => $autoIncrement,
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -335,10 +361,10 @@ class Blueprint
             $column,
             DataTypes::SMALL_INTEGER,
             null,
-            [
-                'autoincrement' => $autoIncrement,
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::AUTOINCREMENT => $autoIncrement,
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -353,8 +379,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedSmallInteger(string $column, bool $autoIncrement = false): DefinedColumnConstraints
     {
@@ -371,8 +396,7 @@ class Blueprint
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function mediumInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
@@ -380,10 +404,10 @@ class Blueprint
             $column,
             DataTypes::MEDIUM_INTEGER,
             null,
-            [
-                'autoincrement' => $autoIncrement,
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::AUTOINCREMENT => $autoIncrement,
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -398,8 +422,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedMediumInteger(string $column, bool $autoIncrement = false): DefinedColumnConstraints
     {
@@ -416,8 +439,7 @@ class Blueprint
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
@@ -425,10 +447,10 @@ class Blueprint
             $column,
             DataTypes::INTEGER,
             null,
-            [
-                'autoincrement' => $autoIncrement,
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::AUTOINCREMENT => $autoIncrement,
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -442,8 +464,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedInteger(string $column, bool $autoIncrement = false): DefinedColumnConstraints
     {
@@ -460,8 +481,7 @@ class Blueprint
      * @param string $column
      * @param bool $autoIncrement
      * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function bigInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
@@ -469,10 +489,10 @@ class Blueprint
             $column,
             DataTypes::BIG_INTEGER,
             null,
-            [
-                'autoincrement' => $autoIncrement,
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::AUTOINCREMENT => $autoIncrement,
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -486,8 +506,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param bool $autoIncrement
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedBigInteger(string $column, bool $autoIncrement = false): DefinedColumnConstraints
     {
@@ -508,17 +527,17 @@ class Blueprint
      * @param string $column
      * @param bool $unsigned
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function float(string $column, bool $unsigned = false, int|string|null $precision = null): DefinedColumnConstraints
+    public function float(string $column, int|string|null $precision = null, bool $unsigned = false): DefinedColumnConstraints
     {
         return $this->bindColumn(
             $column,
             DataTypes::FLOAT,
             compact('precision'),
-            [
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -537,12 +556,11 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedFloat(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->float($column, true, $precision);
+        return $this->float($column, $precision, true);
     }
 
     /**
@@ -553,31 +571,11 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function binaryFloat(string $column, bool $unsigned = false): DefinedColumnConstraints
+    public function binaryFloat(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BINARY_FLOAT, null, ['unsigned' => $unsigned]);
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to define unsigned binary float data type column.               |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | MySQL, MariaDB, Postgre SQL, MS SQL Server, SQLite                     |
-     * | ---------------------------------------------------------------------- |
-     * | Same as "binaryFloat" with the "unsigned" argument specified as        |
-     * | "true".                                                                |
-     * --------------------------------------------------------------------------
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
-     */
-    public function unsignedBinaryFloat(string $column): DefinedColumnConstraints
-    {
-        return $this->binaryFloat($column, true);
+        return $this->bindColumn($column, DataTypes::BINARY_FLOAT,);
     }
 
     /**
@@ -592,19 +590,19 @@ class Blueprint
      * |     Unavailable - PostgreSQl                                           |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @param bool $unsigned
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function double(string $column, bool $unsigned = false, int|string|null $precision = null): DefinedColumnConstraints
+    public function double(string $column, int|string|null $precision = null, bool $unsigned = false): DefinedColumnConstraints
     {
         return $this->bindColumn(
             $column,
             DataTypes::DOUBLE,
             compact('precision'),
-            [
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -623,12 +621,11 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedDouble(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->double($column, true, $precision);
+        return $this->double($column, $precision, true);
     }
 
     /**
@@ -639,31 +636,11 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function binaryDouble(string $column,  bool $unsigned = false): DefinedColumnConstraints
+    public function binaryDouble(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BINARY_DOUBLE, null, ['unsigned' => $unsigned]);
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to define unsigned binary double data type column.              |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | MySQL, MariaDB, Postgre SQL, MS SQL Server, SQLite                     |
-     * | ---------------------------------------------------------------------- |
-     * | Same as "binaryDouble" with the "unsigned" argument specified as       |
-     * | "true".                                                                |
-     * --------------------------------------------------------------------------
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
-     */
-    public function unsignedBinaryDouble(string $column): DefinedColumnConstraints
-    {
-        return $this->binaryDouble($column, true);
+        return $this->bindColumn($column, DataTypes::BINARY_DOUBLE);
     }
 
     /**
@@ -683,16 +660,16 @@ class Blueprint
      * |     Unavailable - SQLite                                               |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
      * @param int|string|null $precision
      * @param int|string|null $scale
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @param bool $unsigned
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function decimal(
         string $column,
-        bool $unsigned = false,
         int|string|null $precision = null,
-        int|string|null $scale = null
+        int|string|null $scale = null,
+        bool $unsigned = false
     ): DefinedColumnConstraints
     {
         return $this->bindColumn(
@@ -701,9 +678,9 @@ class Blueprint
             [
                 'precision_and_scale' => !is_null($scale) ? $precision . ', ' . $scale : $precision
             ],
-            [
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -728,12 +705,11 @@ class Blueprint
      * @param string $column
      * @param int|string|null $precision
      * @param int|string|null $scale
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedDecimal(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnConstraints
     {
-        return $this->decimal($column, true, $precision, $scale);
+        return $this->decimal($column, $precision, $scale, true);
     }
 
     /**
@@ -753,16 +729,16 @@ class Blueprint
      * |     Unavailable - SQLite                                               |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
      * @param int|string|null $precision
      * @param int|string|null $scale
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @param bool $unsigned
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function numeric(
         string $column,
-        bool $unsigned = false,
         int|string|null $precision = null,
-        int|string|null $scale = null
+        int|string|null $scale = null,
+        bool $unsigned = false
     ): DefinedColumnConstraints
     {
         return $this->bindColumn(
@@ -771,9 +747,9 @@ class Blueprint
             [
                 'precision_and_scale' => !is_null($scale) ? $precision . ', ' . $scale : $precision
             ],
-            [
-                'unsigned' => $unsigned
-            ]
+            array_filter([
+                ColumnConstraints::UNSIGNED => $unsigned
+            ])
         );
     }
 
@@ -798,12 +774,11 @@ class Blueprint
      * @param string $column
      * @param int|string|null $precision
      * @param int|string|null $scale
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function unsignedNumeric(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnConstraints
     {
-        return $this->numeric($column, true, $precision, $scale);
+        return $this->numeric($column, $precision, $scale, true);
     }
 
     /**
@@ -821,55 +796,19 @@ class Blueprint
      * |     Required - No                                                      |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
      * @param int|string|null $precision
      * @param int|string|null $scale
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function number(
-        string $column,
-        bool $unsigned = false,
-        int|string|null $precision = null,
-        int|string|null $scale = null
-    ): DefinedColumnConstraints
+    public function number(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnConstraints
     {
         return $this->bindColumn(
             $column,
             DataTypes::NUMBER,
             [
                 'precision_and_scale' => !is_null($scale) ? $precision . ', ' . $scale : $precision
-            ],
-            [
-                'unsigned' => $unsigned
             ]
         );
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to define unsigned number data type column.                     |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | Oracle                                                                 |
-     * | ---------------------------------------------------------------------- |
-     * | Argument "precision" - represents the total number of digits that can  |
-     * | be stored.                                                             |
-     * |     Required - No                                                      |
-     * |                                                                        |
-     * | Argument "scale" - represents the number of digits that can be stored  |
-     * | to the right of the decimal point.                                     |
-     * |     Required - No                                                      |
-     * |                                                                        |
-     * | Same as "number" with the "unsigned" argument specified as "true".     |
-     * --------------------------------------------------------------------------
-     * @param string $column
-     * @param int|string|null $precision
-     * @param int|string|null $scale
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
-     */
-    public function unsignedNumber(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnConstraints
-    {
-        return $this->number($column, true, $precision, $scale);
     }
 
     /**
@@ -880,30 +819,11 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function real(string $column, bool $unsigned = false): DefinedColumnConstraints
+    public function real(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::REAL, null, ['unsigned' => $unsigned]);
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to define unsigned real data type column.                       |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | Oracle                                                                 |
-     * | ---------------------------------------------------------------------- |
-     * | Same as "real" with the "unsigned" argument specified as "true".       |
-     * --------------------------------------------------------------------------
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
-     */
-    public function unsignedReal(string $column): DefinedColumnConstraints
-    {
-        return $this->real($column, true);
+        return $this->bindColumn($column, DataTypes::REAL);
     }
 
     /**
@@ -914,30 +834,11 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function smallMoney(string $column, bool $unsigned = false): DefinedColumnConstraints
+    public function smallMoney(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::SMALL_MONEY, null, ['unsigned' => $unsigned]);
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to define unsigned small money data type column.                |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | MS SQL Server                                                          |
-     * | ---------------------------------------------------------------------- |
-     * | Same as "smallMoney" with the "unsigned" argument specified as "true". |
-     * --------------------------------------------------------------------------
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
-     */
-    public function unsignedSmallMoney(string $column): DefinedColumnConstraints
-    {
-        return $this->smallMoney($column, true);
+        return $this->bindColumn($column, DataTypes::SMALL_MONEY);
     }
 
     /**
@@ -948,30 +849,11 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @param bool $unsigned
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
-    public function money(string $column, bool $unsigned = false): DefinedColumnConstraints
+    public function money(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MONEY, null, ['unsigned' => $unsigned]);
-    }
-
-    /**
-     * --------------------------------------------------------------------------
-     * | Clause to define unsigned money data type column.                      |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | PostgreSQL, MS SQL Server                                              |
-     * | ---------------------------------------------------------------------- |
-     * | Same as "money" with the "unsigned" argument specified as "true".      |
-     * --------------------------------------------------------------------------
-     * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
-     */
-    public function unsignedMoney(string $column): DefinedColumnConstraints
-    {
-        return $this->money($column, true);
+        return $this->bindColumn($column, DataTypes::MONEY);
     }
 
     /**
@@ -985,8 +867,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function char(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
@@ -1004,8 +885,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function nchar(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
@@ -1023,8 +903,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function varchar(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
@@ -1042,8 +921,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function varchar2(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
@@ -1061,8 +939,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function nvarchar(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
@@ -1080,8 +957,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function nvarchar2(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
@@ -1096,8 +972,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function tinyText(string $column): DefinedColumnConstraints
     {
@@ -1112,8 +987,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function mediumText(string $column): DefinedColumnConstraints
     {
@@ -1128,8 +1002,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function text(string $column): DefinedColumnConstraints
     {
@@ -1144,8 +1017,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function longText(string $column): DefinedColumnConstraints
     {
@@ -1160,8 +1032,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function nText(string $column): DefinedColumnConstraints
     {
@@ -1176,8 +1047,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function tinyBlob(string $column): DefinedColumnConstraints
     {
@@ -1192,8 +1062,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function mediumBlob(string $column): DefinedColumnConstraints
     {
@@ -1208,8 +1077,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function blob(string $column): DefinedColumnConstraints
     {
@@ -1224,8 +1092,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function longBlob(string $column): DefinedColumnConstraints
     {
@@ -1241,8 +1108,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param array $whiteList
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function set(string $column, array $whiteList): DefinedColumnConstraints
     {
@@ -1264,8 +1130,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param array $whiteList
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function enum(string $column, array $whiteList): DefinedColumnConstraints
     {
@@ -1286,8 +1151,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function json(string $column): DefinedColumnConstraints
     {
@@ -1302,8 +1166,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function jsonb(string $column): DefinedColumnConstraints
     {
@@ -1321,8 +1184,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function binary(string $column, string|int|null $length = null): DefinedColumnConstraints
     {
@@ -1340,8 +1202,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function varbinary(string $column, string|int|null $length = null): DefinedColumnConstraints
     {
@@ -1356,7 +1217,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function uuid(string $column): DefinedColumnConstraints
     {
@@ -1372,8 +1233,7 @@ class Blueprint
      * | Same as "uuid".                                                        |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function uniqueIdentifier(string $column): DefinedColumnConstraints
     {
@@ -1388,7 +1248,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function xml(string $column): DefinedColumnConstraints
     {
@@ -1404,7 +1264,7 @@ class Blueprint
      * | Same as "xml".                                                         |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function xmlType(string $column): DefinedColumnConstraints
     {
@@ -1419,7 +1279,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function image(string $column): DefinedColumnConstraints
     {
@@ -1434,7 +1294,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function sqlVariant(string $column): DefinedColumnConstraints
     {
@@ -1449,7 +1309,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function rowVersion(string $column): DefinedColumnConstraints
     {
@@ -1464,7 +1324,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function clob(string $column): DefinedColumnConstraints
     {
@@ -1480,7 +1340,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function nclob(string $column): DefinedColumnConstraints
     {
@@ -1498,7 +1358,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int $length
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function raw(string $column, string|int $length): DefinedColumnConstraints
     {
@@ -1513,7 +1373,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function long(string $column): DefinedColumnConstraints
     {
@@ -1528,7 +1388,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function urowid(string $column): DefinedColumnConstraints
     {
@@ -1543,7 +1403,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function bytea(string $column): DefinedColumnConstraints
     {
@@ -1558,7 +1418,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function hstore(string $column): DefinedColumnConstraints
     {
@@ -1573,7 +1433,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function inet(string $column): DefinedColumnConstraints
     {
@@ -1589,7 +1449,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function cidr(string $column): DefinedColumnConstraints
     {
@@ -1604,8 +1464,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function date(string $column): DefinedColumnConstraints
     {
@@ -1620,7 +1479,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function dateTime(string $column): DefinedColumnConstraints
     {
@@ -1639,7 +1498,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function dateTime2(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1654,7 +1513,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function smallDateTime(string $column): DefinedColumnConstraints
     {
@@ -1673,7 +1532,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param string|int|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function dateTimeOffset(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1692,8 +1551,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function time(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1713,8 +1571,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timestamp(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1729,7 +1586,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function year(string $column): DefinedColumnConstraints
     {
@@ -1748,7 +1605,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timeTz(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1769,7 +1626,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timeWithTimezone(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1789,7 +1646,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timestampTz(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1811,7 +1668,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timestampWithTimezone(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1830,7 +1687,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timestampLtz(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1851,7 +1708,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @param int|string|null $precision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function timestampWithLocalTimeZone(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
@@ -1866,7 +1723,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function intervalYearToMonth(string $column): DefinedColumnConstraints
     {
@@ -1888,7 +1745,7 @@ class Blueprint
      * @param string $column
      * @param int|string|null $dayPrecision
      * @param int|string|null $secondPrecision
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function intervalDayToSecond(
         string $column,
@@ -1914,8 +1771,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function geometry(string $column): DefinedColumnConstraints
     {
@@ -1930,8 +1786,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function geometryCollection(string $column): DefinedColumnConstraints
     {
@@ -1946,7 +1801,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function point(string $column): DefinedColumnConstraints
     {
@@ -1961,8 +1816,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function multipoint(string $column): DefinedColumnConstraints
     {
@@ -1977,8 +1831,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function line(string $column): DefinedColumnConstraints
     {
@@ -1993,8 +1846,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function linestring(string $column): DefinedColumnConstraints
     {
@@ -2009,8 +1861,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function multilinestring(string $column): DefinedColumnConstraints
     {
@@ -2025,8 +1876,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function polygon(string $column): DefinedColumnConstraints
     {
@@ -2041,8 +1891,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function multipolygon(string $column): DefinedColumnConstraints
     {
@@ -2057,8 +1906,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function geography(string $column): DefinedColumnConstraints
     {
@@ -2073,8 +1921,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function hierarchyId(string $column): DefinedColumnConstraints
     {
@@ -2089,8 +1936,7 @@ class Blueprint
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $column
-     * @return \Moirai\DDL\DefinedColumnConstraints
-     * @throws \Exception
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
      */
     public function lSeg(string $column): DefinedColumnConstraints
     {
@@ -2107,7 +1953,6 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $column
      * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
-     * @throws \Exception
      */
     public function lineSegment(string $column): DefinedColumnConstraints
     {
@@ -2158,6 +2003,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string $expression
      * @param string|null $name
+     * @throws \Exception
      */
     public function check(string $expression, string|null $name = null)
     {
@@ -2178,6 +2024,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string|array $columns
      * @param string|null $name
+     * @throws \Exception
      */
     public function unique(string|array $columns, string|null $name = null)
     {
@@ -2200,6 +2047,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * @param string|array $columns
      * @param string|null $name
+     * @throws \Exception
      */
     public function primaryKey(string|array $columns, string|null $name = null)
     {
@@ -2290,6 +2138,7 @@ class Blueprint
      *
      * @param string|array $columns
      * @param string|null $name
+     * @throws \Exception
      */
     public function index(string|array $columns, string|null $name = null)
     {

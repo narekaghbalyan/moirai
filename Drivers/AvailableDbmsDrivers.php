@@ -6,12 +6,12 @@ use ReflectionClass;
 
 class AvailableDbmsDrivers
 {
-    const MYSQL = 0;
-    const POSTGRESQL = 1;
-    const SQLITE = 2;
-    const MS_SQL_SERVER = 3;
-    const MARIADB = 4;
-    const ORACLE = 5;
+    const MYSQL = MySqlDriver::class;
+    const MARIADB = MariaDbDriver::class;
+    const POSTGRESQL = PostgreSqlDriver::class;
+    const MS_SQL_SERVER = MsSqlServerDriver::class;
+    const ORACLE = OracleDriver::class;
+    const SQLITE = SqliteDriver::class;
 
     /**
      * @return array

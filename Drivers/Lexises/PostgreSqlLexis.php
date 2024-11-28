@@ -30,7 +30,6 @@ class PostgreSqlLexis extends Lexis implements LexisInterface
         DataTypes::TIMESTAMP => 'TIMESTAMP({precision})',
         DataTypes::TIME_TZ => 'TIME({precision}) WITH TIME ZONE',
         DataTypes::TIMESTAMP_TZ => 'TIMESTAMP({precision}) WITH TIME ZONE',
-        DataTypes::INTERVAL => 'INTERVAL',
         DataTypes::BOOLEAN => 'BOOLEAN',
         DataTypes::UUID => 'UUID',
         DataTypes::JSON => 'JSON',
