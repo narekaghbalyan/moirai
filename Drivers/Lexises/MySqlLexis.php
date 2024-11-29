@@ -5,6 +5,7 @@ namespace Moirai\Drivers\Lexises;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\Indexes;
 
 class MySqlLexis extends Lexis implements LexisInterface
 {
@@ -77,6 +78,15 @@ class MySqlLexis extends Lexis implements LexisInterface
         TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
         TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
         TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
-        TableConstraints::INDEX => 'INDEX {name} ({columns})'
+    ];
+
+    protected array $indexes = [
+        Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
+        Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})',
+        Indexes::PRIMARY_KEY => 'ALTER TABLE {table} ADD PRIMARY KEY ({column})',
+        Indexes::FULL_TEXT => 'CREATE FULLTEXT INDEX {name} ON {table} ({columns})',
+        Indexes::SPATIAL => 'CREATE SPATIAL INDEX {name} ON {table} ({columns})',
+        Indexes::HASH => 'CREATE INDEX {name} ON {table} ({columns}) USING HASH',
+        Indexes::INVISIBLE => 'CREATE INDEX {name} ON {table} ({columns}) INVISIBLE'
     ];
 }

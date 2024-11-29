@@ -8,5 +8,4 @@ class TableConstraints
     public const UNIQUE = 1;
     public const PRIMARY_KEY = 2;
     public const FOREIGN_KEY = 3;
-    public const INDEX = 4;
 }

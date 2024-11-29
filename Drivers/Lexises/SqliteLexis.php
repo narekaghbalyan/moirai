@@ -5,6 +5,7 @@ namespace Moirai\Drivers\Lexises;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\Indexes;
 
 class SqliteLexis extends Lexis implements LexisInterface
 {
@@ -44,7 +45,12 @@ class SqliteLexis extends Lexis implements LexisInterface
         TableConstraints::CHECK => 'CONSTRAINT {name} CHECK({expression})',
         TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
         TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
-        TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
-        TableConstraints::INDEX => 'CREATE INDEX {name} ON {table} ({columns})'
+        TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}'
+    ];
+
+    protected array $indexes = [
+        Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
+        Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})',
+        Indexes::PARTIAL => 'CREATE UNIQUE INDEX {name} ON {table} ({columns}) {expression}'
     ];
 }

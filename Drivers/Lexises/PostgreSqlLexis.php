@@ -5,6 +5,7 @@ namespace Moirai\Drivers\Lexises;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\Indexes;
 
 class PostgreSqlLexis extends Lexis implements LexisInterface
 {
@@ -68,6 +69,17 @@ class PostgreSqlLexis extends Lexis implements LexisInterface
         TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
         TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
         TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
-        TableConstraints::INDEX => 'INDEX {name} ({columns})'
+    ];
+
+    protected array $indexes = [
+        Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
+        Indexes::HASH => 'CREATE INDEX {name} ON {table} USING hash ({columns})',
+        Indexes::GIN => 'CREATE INDEX {name} ON {table} USING gin ({columns})',
+        Indexes::GIST => 'CREATE INDEX {name} ON {table} USING gist ({columns})',
+        Indexes::SPGIST => 'CREATE INDEX {name} ON {table} USING spgist ({columns})',
+        Indexes::BRIN => 'CREATE INDEX {name} ON {table} USING brin ({columns})',
+        Indexes::BLOOM => 'CREATE INDEX {name} ON {table} USING bloom ({columns})',
+        Indexes::PARTIAL => 'CREATE INDEX {name} ON {table} ({columns}) {expression}',
+        Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})'
     ];
 }

@@ -5,6 +5,7 @@ namespace Moirai\Drivers\Lexises;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\Indexes;
 
 class OracleLexis extends Lexis implements LexisInterface
 {
@@ -55,6 +56,18 @@ class OracleLexis extends Lexis implements LexisInterface
         TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
         TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
         TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action}',
-        TableConstraints::INDEX => 'CREATE INDEX {name} ON {table} ({columns})'
+    ];
+
+    protected array $indexes = [
+        Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
+        Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})',
+        Indexes::BITMAP => 'CREATE BITMAP INDEX {name} ON {table} ({columns})',
+        Indexes::REVERSE => 'CREATE INDEX {name} ON {table} ({columns}) REVERSE',
+        Indexes::SPATIAL => 'CREATE INDEX {name} ON {table} ({columns}) INDEXTYPE IS MDSYS.SPATIAL_INDEX',
+        Indexes::PARTIAL => 'CREATE INDEX {name} ON {table} ({columns}) PARTITION BY RANGE ({column})',
+        Indexes::GLOBAL => 'CREATE INDEX {name} ON {table} ({columns}) GLOBAL',
+        Indexes::LOCAL => 'CREATE INDEX {name} ON {table} ({columns}) LOCAL',
+        Indexes::COMPRESS => 'CREATE INDEX {name} ON {table} ({columns}) COMPRESS',
+        Indexes::CLUSTERED => 'CREATE CLUSTER {name} ({columns})'
     ];
 }

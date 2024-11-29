@@ -2125,22 +2125,22 @@ class Blueprint
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to define index table constraint.                               |
+     * | Clause to define index.                                                |
      * | -------------- DBMS drivers that support this data type -------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
-     * | Argument "columns" - column(s) that will be primary key(s).            |
+     * | Argument "name" - the name of index.                                   |
      * |     Required - yes                                                     |
      * |                                                                        |
-     * | Argument "name" - the name of index.                                   |
-     * |     Required - MS SQL Server, Oracle, SQLite                           |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
      * --------------------------------------------------------------------------
      *
+     * @param string $name
      * @param string|array $columns
-     * @param string|null $name
      * @throws \Exception
      */
-    public function index(string|array $columns, string|null $name = null)
+    public function index(string $name, string|array $columns)
     {
         $this->bindTableConstraint(
             TableConstraints::INDEX,
@@ -2149,5 +2149,25 @@ class Blueprint
                 'columns' => implode(', ', $columns)
             ]
         );
+    }
+
+    public function fullText()
+    {
+        // TODO ...
+    }
+
+    public function spatial()
+    {
+        // TODO ...
+    }
+
+    public function dropForeignKey()
+    {
+        // TODO ...
+    }
+
+    public function dropIndex()
+    {
+        // TODO ...
     }
 }

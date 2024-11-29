@@ -5,6 +5,7 @@ namespace Moirai\Drivers\Lexises;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
+use Moirai\DDL\Indexes;
 
 class MsSqlServerLexis extends Lexis implements LexisInterface
 {
@@ -69,6 +70,18 @@ class MsSqlServerLexis extends Lexis implements LexisInterface
         TableConstraints::UNIQUE => 'CONSTRAINT {name} UNIQUE({columns})',
         TableConstraints::PRIMARY_KEY => 'CONSTRAINT {name} PRIMARY KEY ({columns})',
         TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
-        TableConstraints::INDEX => 'INDEX {name} ({columns})'
+    ];
+
+    protected array $indexes = [
+        Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
+        Indexes::CLUSTERED => 'CREATE CLUSTERED INDEX {name} ON {table} ({columns})',
+        Indexes::NON_CLUSTERED => 'CREATE NONCLUSTERED INDEX {name} ON {table} ({columns})',
+        Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})',
+        Indexes::FULL_TEXT => 'CREATE FULLTEXT INDEX ON {table} ({columns}) KEY INDEX {name}',
+        Indexes::XML => 'CREATE PRIMARY XML INDEX {name} ON {table} ({columns})',
+        Indexes::SPATIAL => 'CREATE SPATIAL INDEX {name} ON {table} ({columns})',
+        Indexes::PARTIAL => 'CREATE NONCLUSTERED INDEX {name} ON {table} ({columns}) {expression}',
+        Indexes::COLUMNSTORE => 'CREATE CLUSTERED COLUMNSTORE INDEX {name} ON {table} ({columns})',
+        Indexes::INCLUDE => 'CREATE NONCLUSTERED INDEX {name} ON {table} ({columns}) INCLUDE ({included_columns})'
     ];
 }
