@@ -80,6 +80,9 @@ class MariaDbLexis extends Lexis implements LexisInterface
         TableConstraints::FOREIGN_KEY => 'CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
     ];
 
+    /**
+     * @var array|string[]
+     */
     protected array $indexes = [
         Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
         Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})',

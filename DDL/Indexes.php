@@ -5,33 +5,26 @@ namespace Moirai\DDL;
 class Indexes
 {
     public const INDEX = 0;
-    public const UNIQUE = 999;
-    public const PRIMARY_KEY = 99988;
-    public const FULL_TEXT = 1;
-    public const SPATIAL = 2;
-    public const HASH = 3;
-    public const INVISIBLE = 11213211;
-    public const GIN = 4; // Generalized Inverted Index
-    public const GIST = 5; // Generalized Search Tree
-    public const SPGIST = 6; // Space-partitioned Generalized Search Tree
-    public const BRIN = 7;
-    public const BLOOM = 8;
-    public const PARTIAL = 9; // filtered
-    public const CLUSTERED = 10;
-    public const NON_CLUSTERED = 11;
-    public const XML = 12;
-    public const COLUMNSTORE = 13;
-    public const INCLUDE = 14;
-    public const BITMAP = 15;
-    public const REVERSE = 16;
-    public const GLOBAL = 12311;
-    public const LOCAL = 121311;
-    public const COMPRESS = 1213211;
-
-
-
-
-
-
-
+    public const UNIQUE = 1;
+    public const PRIMARY_KEY = 2;
+    public const FULL_TEXT = 3;
+    public const SPATIAL = 4;
+    public const HASH = 5;
+    public const INVISIBLE = 6;
+    public const GIN = 7;
+    public const GIST = 8;
+    public const SPGIST = 9;
+    public const BRIN = 10;
+    public const BLOOM = 11;
+    public const PARTIAL = 12;
+    public const CLUSTERED = 13;
+    public const NON_CLUSTERED = 14;
+    public const XML = 15;
+    public const COLUMNSTORE = 16;
+    public const INCLUDE = 17;
+    public const BITMAP = 18;
+    public const REVERSE = 19;
+    public const GLOBAL = 20;
+    public const LOCAL = 21;
+    public const COMPRESS = 22;
 }

@@ -38,6 +38,11 @@ class Blueprint
     /**
      * @var array
      */
+    private array $indexes = [];
+
+    /**
+     * @var array
+     */
     private array $chain = [];
 
     /**
@@ -225,6 +230,18 @@ class Blueprint
         $this->tableConstraints[] = [
             'type' => $type,
             'parameters' => $parameters,
+        ];
+    }
+
+    /**
+     * @param string $type
+     * @param array $parameters
+     */
+    private function bindIndex(string $type, array $parameters): void
+    {
+        $this->indexes[] = [
+            'type' => $type,
+            'parameters' => $parameters
         ];
     }
 
@@ -2142,8 +2159,8 @@ class Blueprint
      */
     public function index(string $name, string|array $columns)
     {
-        $this->bindTableConstraint(
-            TableConstraints::INDEX,
+        $this->bindIndex(
+            Indexes::INDEX,
             [
                 'name' => $name,
                 'columns' => implode(', ', $columns)
@@ -2151,23 +2168,729 @@ class Blueprint
         );
     }
 
-    public function fullText()
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define full text index.                                      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function fullTextIndex(string $name, string|array $columns)
     {
-        // TODO ...
+        $this->bindIndex(
+            Indexes::FULL_TEXT,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 
-    public function spatial()
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define spatial index.                                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, MS SQL Server, Oracle                                  |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function spatialIndex(string $name, string|array $columns)
     {
-        // TODO ...
+        $this->bindIndex(
+            Indexes::SPATIAL,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 
-    public function dropForeignKey()
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define hash index.                                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function hashIndex(string $name, string|array $columns)
     {
-        // TODO ...
+        $this->bindIndex(
+            Indexes::HASH,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 
-    public function dropIndex()
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define invisible index.                                      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function invisibleIndex(string $name, string|array $columns)
     {
-        // TODO ...
+        $this->bindIndex(
+            Indexes::INVISIBLE,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define gin (Generalized Inverted Index).                     |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function gin(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::GIN,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define gin (Generalized Inverted Index).                     |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Same as "gin".                                                         |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function generalizedInvertedIndex(string $name, string|array $columns)
+    {
+        $this->gin($name, $columns);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define gist (Generalized Search Tree) index.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function gistIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::GIST,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define gist (Generalized Search Tree) index.                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Same as "gistIndex".                                                   |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function generalizedSearchTreeIndex(string $name, string|array $columns)
+    {
+        $this->gistIndex($name, $columns);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define spgist (Space-partitioned Generalized Search Tree)    |
+     * | index.                                                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function spgistIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::SPGIST,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define spgist (Space-partitioned Generalized Search Tree)    |
+     * | index.                                                                 |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Same as "spgistIndex".                                                 |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function spacePartitionedGeneralizedSearchTreeIndex(string $name, string|array $columns)
+    {
+        $this->spgistIndex($name, $columns);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define brin (Block Range Index).                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function brin(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::BRIN,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define brin (Block Range Index).                             |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Same as "brin".                                                        |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function blockRangeIndex(string $name, string|array $columns)
+    {
+        $this->brin($name, $columns);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define bloom index.                                          |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function bloomIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::BLOOM,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define partial index.                                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, MS SQL Server, Oracle, SQLite                              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "expression" - expression or column. For Oracle expression    |
+     * | will be used as column. You must specify column.                       |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @param string|array $expression
+     */
+    public function partialIndex(string $name, string|array $columns, string|array $expression)
+    {
+        $this->bindIndex(
+            Indexes::PARTIAL,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns),
+                'expression' => $expression
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define filtered index.                                       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL, MS SQL Server, Oracle, SQLite                              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "expression" - expression or column. For Oracle expression    |
+     * | will be used as column. You must specify column.                       |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Same as "partialIndex".                                                |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @param string|array $expression
+     */
+    public function filteredIndex(string $name, string|array $columns, string|array $expression)
+    {
+        $this->partialIndex($name, $columns, $expression);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define clustered index.                                      |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server, Oracle                                                  |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function clusteredIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::CLUSTERED,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define cluster index.                                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server, Oracle                                                  |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Same as "clusteredIndex".                                              |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function clusterIndex(string $name, string|array $columns)
+    {
+        $this->clusteredIndex($name, $columns);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define non clustered index.                                  |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function nonClusteredIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::NON_CLUSTERED,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define xml index.                                            |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function xmlIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::XML,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define columnstore index.                                    |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function columnStoreIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::COLUMNSTORE,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define include index.                                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MS SQL Server                                                          |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @param string|array $includedColumns
+     */
+    public function includeIndex(string $name, string|array $columns, string|array $includedColumns)
+    {
+        $this->bindIndex(
+            Indexes::INCLUDE,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns),
+                'included_columns' => implode(', ', $includedColumns),
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define bitmap index.                                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function bitmapIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::BITMAP,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define reverse index.                                        |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function reverseIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::REVERSE,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define global index.                                         |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function globalIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::GLOBAL,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define local index.                                          |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function localIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::LOCAL,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define compress index.                                       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     */
+    public function compressIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::COMPRESS,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
     }
 }
