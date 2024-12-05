@@ -86,7 +86,7 @@ class MariaDbLexis extends Lexis implements LexisInterface
     protected array $indexes = [
         Indexes::INDEX => 'CREATE INDEX {name} ON {table} ({columns})',
         Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})',
-        Indexes::PRIMARY_KEY => 'ALTER TABLE {table} ADD PRIMARY KEY ({column})',
+        Indexes::PRIMARY_KEY => 'ALTER TABLE {table} ADD PRIMARY KEY ({columns})',
         Indexes::FULL_TEXT => 'CREATE FULLTEXT INDEX {name} ON {table} ({columns})',
         Indexes::SPATIAL => 'CREATE SPATIAL INDEX {name} ON {table} ({columns})',
         Indexes::HASH => 'CREATE INDEX {name} ON {table} ({columns}) USING HASH',

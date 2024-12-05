@@ -67,6 +67,8 @@ class Blueprint
      */
     private function sew(): string
     {
+        $this->sewIndexes();
+
         return !empty($this->columns)
             ? implode(', ', array_merge($this->sewColumns(), $this->sewTableConstraints()))
             : '';
@@ -81,18 +83,18 @@ class Blueprint
         $sewedColumns = [];
 
         foreach ($this->columns as $column => $options) {
-            $columnDefinitionSignature = $this->driver->getLexis()->getDataType($options['data_type']);
+            $definitionSignature = $this->driver->getLexis()->getDataType($options['data_type']);
 
             foreach ($options['parameters'] as $parameterKey => $parameterValue) {
                 $parameterKey = '{' . $parameterKey . '}';
 
                 if (!is_null($parameterValue)) {
-                    if (!str_contains($columnDefinitionSignature, $parameterKey)) {
+                    if (!str_contains($definitionSignature, $parameterKey)) {
                         throw new Exception(
                             'DBMS driver "'
                             . $this->driver->getName()
                             . '" do not support parameters for data type "'
-                            . $columnDefinitionSignature . '".'
+                            . $definitionSignature . '".'
                         );
                     }
                 } else {
@@ -100,39 +102,39 @@ class Blueprint
                     $parameterValue = '';
                 }
 
-                $columnDefinitionSignature = str_replace(
+                $definitionSignature = str_replace(
                     $parameterKey,
                     $parameterValue,
-                    $columnDefinitionSignature
+                    $definitionSignature
                 );
             }
 
-            foreach ($options['constraints'] as $columnConstraintKey => $columnConstraintParameters) {
-                $columnConstraintDefinitionSignature = $this->driver->getLexis()->getColumnConstraint($columnConstraintKey);
+            foreach ($options['constraints'] as $constraintKey => $constraintParameters) {
+                $constraintDefinitionSignature = $this->driver->getLexis()->getColumnConstraint($constraintKey);
 
-                if ($columnConstraintKey === ColumnConstraints::COMMENT
+                if ($constraintKey === ColumnConstraints::COMMENT
                     && in_array($this->driver::class, [PostgreSqlDriver::class, OracleDriver::class])) {
-                    $columnConstraintParameters['table'] = $this->table;
-                    $columnConstraintParameters['column'] = $column;
+                    $constraintParameters['table'] = $this->table;
+                    $constraintParameters['column'] = $column;
                 }
 
-                foreach ($columnConstraintParameters as $columnConstraintParameterKey => $columnConstraintParameterValue) {
-                    $columnConstraintDefinitionSignature = str_replace(
-                        '{' . $columnConstraintParameterKey . '}',
-                        $columnConstraintParameterValue,
-                        $columnConstraintDefinitionSignature
+                foreach ($constraintParameters as $constraintParameterKey => $constraintParameterValue) {
+                    $constraintDefinitionSignature = str_replace(
+                        '{' . $constraintParameterKey . '}',
+                        $constraintParameterValue,
+                        $constraintDefinitionSignature
                     );
                 }
 
-                if ($columnConstraintKey === ColumnConstraints::COMMENT
+                if ($constraintKey === ColumnConstraints::COMMENT
                     && in_array($this->driver::class, [PostgreSqlDriver::class, OracleDriver::class])) {
-                    $this->chain[] = $columnConstraintDefinitionSignature;
+                    $this->chain[] = $constraintDefinitionSignature;
                 } else {
-                    $columnDefinitionSignature .= ' ' . $columnConstraintDefinitionSignature;
+                    $definitionSignature .= ' ' . $constraintDefinitionSignature;
                 }
             }
 
-            $sewedColumns[] = $column . ' ' . $columnDefinitionSignature;
+            $sewedColumns[] = $column . ' ' . $definitionSignature;
         }
 
         return $sewedColumns;
@@ -153,40 +155,61 @@ class Blueprint
         ];
 
         foreach ($this->tableConstraints as $tableConstraint) {
-            $tableConstraintDefinitionSignature = $this->driver->getLexis()->getTableConstraint($tableConstraint['type']);
+            $definitionSignature = $this->driver->getLexis()->getTableConstraint($tableConstraint['type']);
 
-            foreach ($tableConstraint['parameters'] as $tableConstraintParameterKey => $tableConstraintParameterValue) {
-                if (is_null($tableConstraintParameterValue)
-                    && isset($tableConstraintParameterKeyToPlaceholder[$tableConstraintParameterKey])) {
-                    $tableConstraintDefinitionSignature = str_replace(
-                        $tableConstraintParameterKeyToPlaceholder[$tableConstraintParameterKey],
+            foreach ($tableConstraint['parameters'] as $parameterKey => $parameterValue) {
+                if (is_null($parameterValue)
+                    && isset($tableConstraintParameterKeyToPlaceholder[$parameterKey])) {
+                    $definitionSignature = str_replace(
+                        $tableConstraintParameterKeyToPlaceholder[$parameterKey],
                         '',
-                        $tableConstraintDefinitionSignature
+                        $definitionSignature
                     );
                 }
 
-                if (in_array($tableConstraintParameterKey, ['on_delete_action', 'on_update_action'])
-                    && !in_array($tableConstraintParameterValue, $this->driver->getAllowedForeignKeyActions())) {
+                if (in_array($parameterKey, ['on_delete_action', 'on_update_action'])
+                    && !in_array($parameterValue, $this->driver->getAllowedForeignKeyActions())) {
                     throw new Exception(
                         'DBMS driver "'
                         . $this->driver->getName()
                         . '" does not support "'
-                        . $tableConstraintParameterValue
+                        . $parameterValue
                         . '" action as foreign key action.'
                     );
                 }
 
-                $tableConstraintDefinitionSignature = str_replace(
-                    '{' . $tableConstraintParameterKey . '}',
-                    $tableConstraintParameterValue,
-                    $tableConstraintDefinitionSignature
+                $definitionSignature = str_replace(
+                    '{' . $parameterKey . '}',
+                    $parameterValue,
+                    $definitionSignature
                 );
             }
 
-            $sewedTableConstraints[] = $tableConstraintDefinitionSignature;
+            $sewedTableConstraints[] = $definitionSignature;
         }
 
         return $sewedTableConstraints;
+    }
+
+    /**
+     * @return array
+     * @throws \Exception
+     */
+    private function sewIndexes(): array
+    {
+        foreach ($this->indexes as $index) {
+            $creationSignature = $this->driver->getLexis()->getIndex($index['type']);
+
+            foreach ($index['parameters'] as $parameterKey => $parameter) {
+                $creationSignature = str_replace(
+                    '{' . $parameterKey . '}',
+                    $parameter,
+                    $creationSignature
+                );
+            }
+
+            $this->chain[] = $creationSignature;
+        }
     }
 
     /**
@@ -244,22 +267,6 @@ class Blueprint
             'parameters' => $parameters
         ];
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * --------------------------------------------------------------------------
@@ -2163,6 +2170,61 @@ class Blueprint
             Indexes::INDEX,
             [
                 'name' => $name,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define index.                                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     * @param string|array $columns
+     * @throws \Exception
+     */
+    public function uniqueIndex(string $name, string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::UNIQUE,
+            [
+                'name' => $name,
+                'table' => $this->table,
+                'columns' => implode(', ', $columns)
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define index.                                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * |                                                                        |
+     * | Argument "columns" - column(s) that will be indexed.                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string|array $columns
+     */
+    public function primaryKeyIndex(string|array $columns)
+    {
+        $this->bindIndex(
+            Indexes::PRIMARY_KEY,
+            [
+                'table' => $this->table,
                 'columns' => implode(', ', $columns)
             ]
         );

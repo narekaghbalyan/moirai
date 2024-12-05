@@ -22,6 +22,11 @@ abstract class Lexis
     protected array $tableConstraints;
 
     /**
+     * @var array
+     */
+    protected array $indexes;
+
+    /**
      * @return array
      */
     public function getDataTypes(): array
@@ -69,5 +74,19 @@ abstract class Lexis
         }
 
         return $this->tableConstraints[$key];
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     * @throws \Exception
+     */
+    public function getIndex(string $key): string
+    {
+        if (!isset($this->indexes[$key])) {
+            throw new Exception('This index is not supported by this driver.');
+        }
+
+        return $this->indexes[$key];
     }
 }
