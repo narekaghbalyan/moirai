@@ -5,55 +5,67 @@ namespace Moirai\CLI;
 class CLI
 {
     /**
-     * php moirai table:create users
-     * php moirai table:alert users
-     * php moirai table:update users
-     * php moirai table:drop users
-     * php moirai table:delete users
-     * php moirai table:migrate users
+     * @var string
+     */
+    private static string $migrationsDestinationPath = __DIR__ . '/Tables/';
+
+    /**
+     * php moirai create <table_name>
+     * php moirai alter <table_name>
+     * php moirai drop <table_name>
+     * php moirai migrate
+     * php moirai rollback
      *
      * @param array $argv
      */
     public static function run(array $argv): void
     {
-        $command = $argv[1] ?? null;
+        $action = $argv[1] ?? null;
 
-        switch ($command) {
-            case 'table:create':
-            case 'table:new':
-                self::createTable($argv);
+        if (!method_exists(self::class, $action)) {
+            echo 'Error: Action "'
+                . $action
+                . '" is not recognized for command "'
+                . implode(' ', $argv)
+                . '".'
+                . PHP_EOL;
 
-                break;
-            case 'table:alert':
-            case 'table:update':
-                self::alertTable($argv);
-
-                break;
-            case 'table:drop':
-            case 'table:delete':
-                self::dropTable($argv);
-
-                break;
-            case 'table:migrate':
-
-
-                break;
-            default:
-                echo 'Error: Command "' . $command . '" not recognized.\\n';
+            die();
         }
+
+        self::$action($argv[2] ?? null);
     }
 
-    private static function createTable(array $arguments)
+    /**
+     * @param string $table
+     */
+    private static function create(string $table)
+    {
+        file_put_contents(
+            self::$migrationsDestinationPath . $table . '.php',
+            '<?php'
+            . PHP_EOL
+        );
+
+        echo 'Migration for table "' . $table . '" successfully created.' . PHP_EOL;
+    }
+
+    private static function alter(string $table)
     {
 
     }
 
-    private static function alertTable(array $arguments)
+    private static function drop(string $table)
     {
 
     }
 
-    private static function dropTable(array $arguments)
+    private static function migrate(string|null $table)
+    {
+
+    }
+
+    private static function rollback(string|null $table)
     {
 
     }
