@@ -4,20 +4,29 @@ namespace Moirai\DDL;
 
 use Closure;
 
-class Schema extends SchemaBuilder
+class Schema
 {
     /**
      * @param string $table
      * @param \Closure|\Moirai\DDL\Blueprint $blueprint
+     * @throws \Exception
      */
     public static function create(string $table, Closure|Blueprint $blueprint): void
     {
-        if (!$blueprint instanceof Blueprint) {
+        if ($blueprint instanceof Closure) {
             $blueprint = new Blueprint($table, $blueprint);
         }
 
-        $tableCreationExpression = 'CREATE TABLE (' . $blueprint . ')';
+        $statement = 'CREATE TABLE (' . $blueprint->sew() . ');';
+    }
 
-        dd($tableCreationExpression);
+    public static function update(): void
+    {
+
+    }
+
+    public static function delete(): void
+    {
+
     }
 }

@@ -65,10 +65,8 @@ class Blueprint
      * @return string
      * @throws \Exception
      */
-    private function sew(): string
+    public function sew(): string
     {
-        $this->sewIndexes();
-
         return !empty($this->columns)
             ? implode(', ', array_merge($this->sewColumns(), $this->sewTableConstraints()))
             : '';
