@@ -2,7 +2,15 @@
 
 namespace Moirai\DDL;
 
-abstract class Migration
+use Exception;
+use Moirai\Drivers\MySqlDriver;
+use ReflectionException;
+use ReflectionMethod;
+
+/**
+ * @mixin \Moirai\DDL\Blueprint
+ */
+class Migration
 {
 
 }

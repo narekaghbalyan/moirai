@@ -3,16 +3,34 @@
 namespace Moirai\Migrations;
 
 use Moirai\DDL\Migration;
+use Moirai\DDL\Schema;
+use Moirai\DDL\Blueprint;
 
-class create_users_table extends Migration
+/**
+ * Migration for creating users table
+ */
+return new class extends Migration
 {
-    public function onMigrate()
+    /**
+     * Do something during migrate.
+     *
+     * @return bool
+     */
+    public function onMigrate(): bool
     {
-
+        return Schema::create('users', function (Blueprint $blueprint) {
+            $blueprint->integer('id', true, true);
+            $blueprint->varchar('name')->notNull();
+        });
     }
 
-    public function onRollback()
+    /**
+     * Do something during rollback.
+     *
+     * @return bool
+     */
+    public function onRollback(): bool
     {
-
+        return Schema::drop();
     }
-}
+};

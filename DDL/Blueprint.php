@@ -9,14 +9,13 @@ use Moirai\DDL\Constraints\DefinedColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\DriverInterface;
-use Moirai\Drivers\MySqlDriver;
 use Moirai\Drivers\OracleDriver;
 use Moirai\Drivers\PostgreSqlDriver;
 
 class Blueprint
 {
     /**
-     * @var \Moirai\Drivers\DriverInterface|\Moirai\Drivers\MySqlDriver
+     * @var \Moirai\Drivers\DriverInterface
      */
     private DriverInterface $driver;
 
@@ -28,7 +27,7 @@ class Blueprint
     /**
      * @var array
      */
-    public array $columns = [];
+    private array $columns = [];
 
     /**
      * @var array
@@ -48,12 +47,13 @@ class Blueprint
     /**
      * Blueprint constructor.
      *
+     * @param \Moirai\Drivers\DriverInterface $driver
      * @param string $table
      * @param \Closure|null $callback
      */
-    public function __construct(string $table, Closure|null $callback = null)
+    public function __construct(DriverInterface $driver, string $table, Closure|null $callback = null)
     {
-        $this->driver = new MySqlDriver();
+        $this->driver = $driver;
         $this->table = $table;
 
         if (!is_null($callback)) {
@@ -65,7 +65,7 @@ class Blueprint
      * @return string
      * @throws \Exception
      */
-    public function sew(): string
+    private function sew(): string
     {
         return !empty($this->columns)
             ? implode(', ', array_merge($this->sewColumns(), $this->sewTableConstraints()))
