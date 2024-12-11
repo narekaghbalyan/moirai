@@ -140,4 +140,17 @@ class DefinedColumnConstraints
     {
         return $this->bind(ColumnConstraints::COMMENT, compact('value'));
     }
+
+
+
+
+
+    /**
+     * @param string $value
+     * @return $this
+     */
+    public function drop(): self
+    {
+        return $this->bind(ColumnConstraints::COMMENT, compact('value'));
+    }
 }

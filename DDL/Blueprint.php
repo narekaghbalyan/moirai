@@ -27,7 +27,7 @@ class Blueprint
     /**
      * @var array
      */
-    private array $columns = [];
+    public array $columns = [];
 
     /**
      * @var array
@@ -62,14 +62,20 @@ class Blueprint
     }
 
     /**
-     * @return string
+     * @return array
      * @throws \Exception
      */
-    private function sew(): string
+    public function getDefinitions(): array
     {
-        return !empty($this->columns)
-            ? implode(', ', array_merge($this->sewColumns(), $this->sewTableConstraints()))
-            : '';
+        return array_merge($this->sewColumns(), $this->sewTableConstraints());
+    }
+
+    /**
+     * @return array
+     */
+    public function getChainedStatements(): array
+    {
+        return $this->chain;
     }
 
     /**
