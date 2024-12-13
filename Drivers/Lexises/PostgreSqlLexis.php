@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers\Lexises;
 
+use Moirai\DDL\AlterActions;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
@@ -85,4 +86,47 @@ class PostgreSqlLexis extends Lexis implements LexisInterface
         Indexes::PARTIAL => 'CREATE INDEX {name} ON {table} ({columns}) {expression}',
         Indexes::UNIQUE => 'CREATE UNIQUE INDEX {name} ON {table} ({columns})'
     ];
+
+    /**
+     * @var array|string[]
+     */
+    protected array $alterActions = [
+        AlterActions::ADD_COLUMN => '{table} ADD COLUMN {column} {definition}',
+        AlterActions::MODIFY_COLUMN => '{table} ALTER COLUMN {column} SET DATA TYPE {definition}',
+        AlterActions::RENAME_COLUMN => '{table} RENAME COLUMN {old_name} TO {new_name}',
+        AlterActions::DROP_COLUMN => '{table} DROP COLUMN {column}',
+
+        AlterActions::SET_DEFAULT => '{table} ALTER COLUMN {column} SET DEFAULT {value}',
+        AlterActions::DROP_DEFAULT => '{table} ALTER COLUMN {column} DROP DEFAULT',
+
+        AlterActions::ADD_CHECK_CONSTRAINT => '{table} ADD CONSTRAINT {name} CHECK ({expression})',
+        AlterActions::DROP_CHECK_CONSTRAINT => '{table} DROP CONSTRAINT {name}',
+        AlterActions::ADD_UNIQUE_CONSTRAINT => '{table} ADD CONSTRAINT {name} UNIQUE ({columns})',
+        AlterActions::ADD_PRIMARY_KEY_CONSTRAINT => '{table} ADD CONSTRAINT {name} PRIMARY KEY ({columns})',
+        AlterActions::DROP_PRIMARY_KEY_CONSTRAINT => '{table} DROP CONSTRAINT {name}',
+        AlterActions::ADD_FOREIGN_KEY_CONSTRAINT => '{table} ADD CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table} ({referenced_column}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        AlterActions::DROP_FOREIGN_KEY_CONSTRAINT => '{table} DROP CONSTRAINT {name}',
+        AlterActions::DROP_INDEX => 'DROP INDEX {name}',
+
+        AlterActions::ENABLE_KEYS => '{table} ENABLE TRIGGER ALL',
+        AlterActions::DISABLE_KEYS => '{table} DISABLE TRIGGER ALL',
+        AlterActions::ADD_PARTITION => '{table} ADD PARTITION {definition}',
+        AlterActions::DROP_PARTITION => '{table} DROP PARTITION {name}',
+        AlterActions::ADD_COMPUTED_COLUMN => '{table} ADD COLUMN {column} {expression} GENERATED ALWAYS AS ({expression}) STORED',
+        AlterActions::DROP_COMPUTED_COLUMN => '{table} DROP COLUMN {column}',
+
+        AlterActions::LOCK_TABLE => 'LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE',
+        AlterActions::UNLOCK_TABLE => 'UNLOCK TABLE {table}',
+
+        AlterActions::RENAME_TABLE => '{table} RENAME TO {new_name}',
+        AlterActions::CHANGE_TABLESPACE => '{table} SET TABLESPACE {tablespace_name}',
+
+        AlterActions::SET_STORAGE => '{table} ALTER COLUMN {column} SET STORAGE {storage_type}',
+        AlterActions::ADD_EXTENSION => 'CREATE EXTENSION IF NOT EXISTS {extension_name}',
+        AlterActions::DROP_EXTENSION => 'DROP EXTENSION {extension_name}',
+        AlterActions::CREATE_SEQUENCE => 'CREATE SEQUENCE {sequence_name}',
+        AlterActions::DROP_SEQUENCE => 'DROP SEQUENCE {sequence_name}',
+        AlterActions::RENAME_SEQUENCE => 'ALTER SEQUENCE {old_name} RENAME TO {new_name}',
+    ];
+
 }

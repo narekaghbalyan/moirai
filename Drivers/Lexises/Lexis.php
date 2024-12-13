@@ -27,6 +27,11 @@ abstract class Lexis
     protected array $indexes;
 
     /**
+     * @var array
+     */
+    protected array $alterActions;
+
+    /**
      * @return array
      */
     public function getDataTypes(): array
@@ -88,5 +93,19 @@ abstract class Lexis
         }
 
         return $this->indexes[$key];
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     * @throws \Exception
+     */
+    public function getAlterAction(string $key): string
+    {
+        if (!isset($this->alterActions[$key])) {
+            throw new Exception('This alter action is not supported by this driver.');
+        }
+
+        return $this->alterActions[$key];
     }
 }

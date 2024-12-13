@@ -2023,8 +2023,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
     }
 
 
-    public function get()
+    public function get(): array
     {
+        return [];
+
         return $this->getClause();
     }
 
@@ -2710,5 +2712,10 @@ class QueryBuilderRepresentativeSpokesman extends QueryBuilder
         $this->lockClauseBinder(false);
 
         return $this;
+    }
+
+    public function describe()
+    {
+
     }
 }

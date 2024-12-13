@@ -7,6 +7,8 @@ use Exception;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\DefinedColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
+use Moirai\DML\QueryBuilder;
+use Moirai\DML\QueryBuilderRepresentativeSpokesman;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\DriverInterface;
 use Moirai\Drivers\OracleDriver;
@@ -23,6 +25,11 @@ class Blueprint
      * @var string
      */
     private string $table;
+
+    /**
+     * @var string
+     */
+    private string $action;
 
     /**
      * @var array
@@ -45,29 +52,37 @@ class Blueprint
     private array $chain = [];
 
     /**
+     * @var array
+     */
+    public array $modify = [];
+
+    /**
+     * @var array
+     */
+    public array $rename = [];
+
+    /**
+     * @var array
+     */
+    public array $alterStatements = [];
+
+    /**
      * Blueprint constructor.
      *
      * @param \Moirai\Drivers\DriverInterface $driver
      * @param string $table
+     * @param string $action
      * @param \Closure|null $callback
      */
-    public function __construct(DriverInterface $driver, string $table, Closure|null $callback = null)
+    public function __construct(DriverInterface $driver, string $table, string $action, Closure|null $callback = null)
     {
         $this->driver = $driver;
         $this->table = $table;
+        $this->action = $action;
 
         if (!is_null($callback)) {
             $callback($this);
         }
-    }
-
-    /**
-     * @return array
-     * @throws \Exception
-     */
-    public function getDefinitions(): array
-    {
-        return array_merge($this->sewColumns(), $this->sewTableConstraints());
     }
 
     /**
@@ -82,7 +97,7 @@ class Blueprint
      * @return array
      * @throws \Exception
      */
-    private function sewColumns(): array
+    public function sewColumns(): array
     {
         $sewedColumns = [];
 
@@ -138,7 +153,7 @@ class Blueprint
                 }
             }
 
-            $sewedColumns[] = $column . ' ' . $definitionSignature;
+            $sewedColumns[$column] = $column . ' ' . $definitionSignature;
         }
 
         return $sewedColumns;
@@ -148,7 +163,7 @@ class Blueprint
      * @return array
      * @throws \Exception
      */
-    private function sewTableConstraints(): array
+    public function sewTableConstraints(): array
     {
         $sewedTableConstraints = [];
 
@@ -268,6 +283,18 @@ class Blueprint
     {
         $this->indexes[] = [
             'type' => $type,
+            'parameters' => $parameters
+        ];
+    }
+
+    /**
+     * @param int $action
+     * @param array $parameters
+     */
+    private function bindAlterStatement(int $action, array $parameters): void
+    {
+        $this->alterStatements[] = [
+            'action' => $action,
             'parameters' => $parameters
         ];
     }
@@ -2020,8 +2047,9 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define check table constraint.                               |
-     * | -------------- DBMS drivers that support this data type -------------- |
-     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | -------------- DBMS drivers that support this constraint ------------- |
+     * | Creating - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite   |
+     * | Altering - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle           |
      * | ---------------------------------------------------------------------- |
      * | Argument "expression" - driver expression to check a some condition.   |
      * |     Examples - column >= value                                         |
@@ -2033,9 +2061,32 @@ class Blueprint
      * @param string|null $name
      * @throws \Exception
      */
-    public function check(string $expression, string|null $name = null)
+    public function check(string $expression, string|null $name = null): void
     {
+        if ($this->action === Actions::ALTER) {
+            $this->bindAlterStatement(
+                AlterActions::ADD_CHECK_CONSTRAINT,
+                compact('name', 'expression')
+            );
+
+            return;
+        }
+
         $this->bindTableConstraint(TableConstraints::CHECK, compact('name', 'expression'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop check constraint.                                       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     */
+    public function dropCheck(string $name): void
+    {
+        $this->bindAlterStatement(AlterActions::ADD_CHECK_CONSTRAINT, compact('name'));
     }
 
     /**
@@ -2054,22 +2105,28 @@ class Blueprint
      * @param string|null $name
      * @throws \Exception
      */
-    public function unique(string|array $columns, string|null $name = null)
+    public function unique(string|array $columns, string|null $name = null): void
     {
-        $this->bindTableConstraint(
-            TableConstraints::UNIQUE,
-            [
-                'name' => $name,
-                'columns' => implode(', ', $columns)
-            ]
-        );
+        $parameters = [
+            'name' => $name,
+            'columns' => implode(', ', $columns)
+        ];
+
+        if ($this->action === Actions::ALTER) {
+            $this->bindAlterStatement(AlterActions::ADD_UNIQUE_CONSTRAINT, $parameters);
+
+            return;
+        }
+
+        $this->bindTableConstraint(TableConstraints::UNIQUE, $parameters);
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to define primary key table constraint.                         |
      * | -------------- DBMS drivers that support this data type -------------- |
-     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | Creating - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite   |
+     * | Altering - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle           |
      * | ---------------------------------------------------------------------- |
      * | Argument "columns" - column(s) that will be primary key(s).            |
      * --------------------------------------------------------------------------
@@ -2077,22 +2134,28 @@ class Blueprint
      * @param string|null $name
      * @throws \Exception
      */
-    public function primaryKey(string|array $columns, string|null $name = null)
+    public function primaryKey(string|array $columns, string|null $name = null): void
     {
-        $this->bindTableConstraint(
-            TableConstraints::PRIMARY_KEY,
-            [
-                'name' => $name,
-                'columns' => implode(', ', $columns)
-            ]
-        );
+        $parameters = [
+            'name' => $name,
+            'columns' => implode(', ', $columns)
+        ];
+
+        if ($this->action === Actions::ALTER) {
+            $this->bindAlterStatement(AlterActions::ADD_PRIMARY_KEY_CONSTRAINT, $parameters);
+
+            return;
+        }
+
+        $this->bindTableConstraint(TableConstraints::PRIMARY_KEY, $parameters);
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to define foreign key table constraint.                         |
      * | -------------- DBMS drivers that support this data type -------------- |
-     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | Creating - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite   |
+     * | Altering - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle           |
      * | ---------------------------------------------------------------------- |
      * | Argument "columns" - the column(s) in the current table that holds the |
      * | value that will reference another table's primary or unique key. It is |
@@ -2136,19 +2199,38 @@ class Blueprint
         string|null $onDelete = null,
         string|null $onUpdate = null,
         string|null $name = null
-    )
+    ): void
     {
-        $this->bindTableConstraint(
-            TableConstraints::FOREIGN_KEY,
-            [
-                'name' => $name,
-                'columns' => implode(', ', $columns),
-                'referenced_table' => $referencedTable,
-                'referenced_columns' => implode(', ', $referencedColumns),
-                'on_delete_action' => $onDelete,
-                'on_update_action' => $onUpdate
-            ]
-        );
+        $parameters = [
+            'name' => $name,
+            'columns' => implode(', ', $columns),
+            'referenced_table' => $referencedTable,
+            'referenced_columns' => implode(', ', $referencedColumns),
+            'on_delete_action' => $onDelete,
+            'on_update_action' => $onUpdate
+        ];
+
+        if ($this->action === Actions::ALTER) {
+            $this->bindAlterStatement(AlterActions::ADD_FOREIGN_KEY_CONSTRAINT, $parameters);
+
+            return;
+        }
+
+        $this->bindTableConstraint(TableConstraints::FOREIGN_KEY, $parameters);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop foreign key table constraint.                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     */
+    public function dropForeignKey(string $name): void
+    {
+        $this->bindAlterStatement(AlterActions::DROP_FOREIGN_KEY_CONSTRAINT, compact('name'));
     }
 
     /**
@@ -2168,7 +2250,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function index(string $name, string|array $columns)
+    public function index(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::INDEX,
@@ -2196,7 +2278,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function uniqueIndex(string $name, string|array $columns)
+    public function uniqueIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::UNIQUE,
@@ -2223,7 +2305,7 @@ class Blueprint
      *
      * @param string|array $columns
      */
-    public function primaryKeyIndex(string|array $columns)
+    public function primaryKeyIndex(string|array $columns): void
     {
         $this->bindIndex(
             Indexes::PRIMARY_KEY,
@@ -2251,7 +2333,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function fullTextIndex(string $name, string|array $columns)
+    public function fullTextIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::FULL_TEXT,
@@ -2280,7 +2362,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function spatialIndex(string $name, string|array $columns)
+    public function spatialIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::SPATIAL,
@@ -2309,7 +2391,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function hashIndex(string $name, string|array $columns)
+    public function hashIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::HASH,
@@ -2338,7 +2420,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function invisibleIndex(string $name, string|array $columns)
+    public function invisibleIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::INVISIBLE,
@@ -2367,7 +2449,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function gin(string $name, string|array $columns)
+    public function gin(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::GIN,
@@ -2398,7 +2480,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function generalizedInvertedIndex(string $name, string|array $columns)
+    public function generalizedInvertedIndex(string $name, string|array $columns): void
     {
         $this->gin($name, $columns);
     }
@@ -2420,7 +2502,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function gistIndex(string $name, string|array $columns)
+    public function gistIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::GIST,
@@ -2451,7 +2533,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function generalizedSearchTreeIndex(string $name, string|array $columns)
+    public function generalizedSearchTreeIndex(string $name, string|array $columns): void
     {
         $this->gistIndex($name, $columns);
     }
@@ -2474,7 +2556,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function spgistIndex(string $name, string|array $columns)
+    public function spgistIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::SPGIST,
@@ -2506,7 +2588,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function spacePartitionedGeneralizedSearchTreeIndex(string $name, string|array $columns)
+    public function spacePartitionedGeneralizedSearchTreeIndex(string $name, string|array $columns): void
     {
         $this->spgistIndex($name, $columns);
     }
@@ -2528,7 +2610,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function brin(string $name, string|array $columns)
+    public function brin(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::BRIN,
@@ -2559,7 +2641,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function blockRangeIndex(string $name, string|array $columns)
+    public function blockRangeIndex(string $name, string|array $columns): void
     {
         $this->brin($name, $columns);
     }
@@ -2581,7 +2663,7 @@ class Blueprint
      * @param string|array $columns
      * @throws \Exception
      */
-    public function bloomIndex(string $name, string|array $columns)
+    public function bloomIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::BLOOM,
@@ -2614,7 +2696,7 @@ class Blueprint
      * @param string|array $columns
      * @param string|array $expression
      */
-    public function partialIndex(string $name, string|array $columns, string|array $expression)
+    public function partialIndex(string $name, string|array $columns, string|array $expression): void
     {
         $this->bindIndex(
             Indexes::PARTIAL,
@@ -2650,7 +2732,7 @@ class Blueprint
      * @param string|array $columns
      * @param string|array $expression
      */
-    public function filteredIndex(string $name, string|array $columns, string|array $expression)
+    public function filteredIndex(string $name, string|array $columns, string|array $expression): void
     {
         $this->partialIndex($name, $columns, $expression);
     }
@@ -2671,7 +2753,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function clusteredIndex(string $name, string|array $columns)
+    public function clusteredIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::CLUSTERED,
@@ -2701,7 +2783,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function clusterIndex(string $name, string|array $columns)
+    public function clusterIndex(string $name, string|array $columns): void
     {
         $this->clusteredIndex($name, $columns);
     }
@@ -2722,7 +2804,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function nonClusteredIndex(string $name, string|array $columns)
+    public function nonClusteredIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::NON_CLUSTERED,
@@ -2750,7 +2832,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function xmlIndex(string $name, string|array $columns)
+    public function xmlIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::XML,
@@ -2778,7 +2860,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function columnStoreIndex(string $name, string|array $columns)
+    public function columnStoreIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::COLUMNSTORE,
@@ -2807,7 +2889,7 @@ class Blueprint
      * @param string|array $columns
      * @param string|array $includedColumns
      */
-    public function includeIndex(string $name, string|array $columns, string|array $includedColumns)
+    public function includeIndex(string $name, string|array $columns, string|array $includedColumns): void
     {
         $this->bindIndex(
             Indexes::INCLUDE,
@@ -2836,7 +2918,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function bitmapIndex(string $name, string|array $columns)
+    public function bitmapIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::BITMAP,
@@ -2864,7 +2946,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function reverseIndex(string $name, string|array $columns)
+    public function reverseIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::REVERSE,
@@ -2892,7 +2974,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function globalIndex(string $name, string|array $columns)
+    public function globalIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::GLOBAL,
@@ -2920,7 +3002,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function localIndex(string $name, string|array $columns)
+    public function localIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::LOCAL,
@@ -2948,7 +3030,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      */
-    public function compressIndex(string $name, string|array $columns)
+    public function compressIndex(string $name, string|array $columns): void
     {
         $this->bindIndex(
             Indexes::COMPRESS,
@@ -2958,5 +3040,134 @@ class Blueprint
                 'columns' => implode(', ', $columns)
             ]
         );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define index.                                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of index.                                   |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $name
+     */
+    public function dropIndex(string $name): void
+    {
+        $this->bindAlterStatement(AlterActions::DROP_INDEX, compact('name'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to rename column.                                               |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "newName" - the name of the column that will be renamed.      |
+     * |     Required - yes                                                     |
+     * | Argument "oldName" - the name to which this column should be renamed.  |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $oldName
+     * @param string $newName
+     * @throws \Exception
+     */
+    public function renameColumn(string $oldName, string $newName): void
+    {
+        $parameters = [
+            'old_name' => $oldName,
+            'new_named' => $newName
+        ];
+
+        if (in_array($this->driver::class, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
+            $queryBuilder = new QueryBuilderRepresentativeSpokesman($this->driver::class);
+
+            $column = $queryBuilder
+                ->from('INFORMATION_SCHEMA.COLUMNS')
+                ->select([
+                    'COLUMN_NAME',
+                    'DATA_TYPE',
+                    'CHARACTER_MAXIMUM_LENGTH',
+                    'NUMERIC_PRECISION',
+                    'NUMERIC_SCALE',
+                    'IS_NULLABLE',
+                    'COLUMN_DEFAULT',
+                    'EXTRA'
+                ])
+                ->where('TABLE_NAME', $this->table)
+                ->where('TABLE_SCHEMA', 'db_name')
+                ->where('COLUMN_NAME ', $oldName)
+                ->get();
+
+            $definition = $column['DATA_TYPE'];
+
+            if (in_array($column['DATA_TYPE'], ['float', 'double', 'decimal', 'numeric'])) {
+                $columnParameters = '';
+
+                if ($column['NUMERIC_PRECISION']) {
+                    $columnParameters = $column['NUMERIC_PRECISION'];
+
+                    if ($column['NUMERIC_SCALE']) {
+                        $columnParameters .= ', ' . $column['NUMERIC_SCALE'];
+                    }
+                }
+
+                $definition .= '(' . $columnParameters . ')';
+            } elseif (in_array($column['DATA_TYPE'], ['bit'])) {
+                if ($column['NUMERIC_PRECISION']) {
+                    $definition .= '(' . $column['NUMERIC_PRECISION'] . ')';
+                }
+            } elseif (in_array($column['DATA_TYPE'], ['char', 'varchar', 'binary', 'varbinary'])) {
+                if ($column['CHARACTER_MAXIMUM_LENGTH']) {
+                    $definition .= '(' . $column['CHARACTER_MAXIMUM_LENGTH'] . ')';
+                }
+            } elseif (in_array($column['DATA_TYPE'], ['timestamp', 'time'])) {
+                if ($column['NUMERIC_PRECISION']) {
+                    $definition .= '(' . $column['NUMERIC_PRECISION'] . ')';
+                }
+            }  elseif (in_array($column['DATA_TYPE'], ['enum', 'set'])) {
+                if ($column['COLUMN_TYPE']) {
+                    $definition .= '('
+                        . str_replace(
+                            "'",
+                            '',
+                            substr(
+                                $column['COLUMN_TYPE'],
+                                strpos($column['COLUMN_TYPE'], '(') + 1,
+                                -1
+                            )
+                        )
+                        . ')';
+                }
+            }
+
+            if ($column['IS_NULLABLE'] == 'NO') {
+                $definition .= ' NOT NULL';
+            }
+
+            if ($column['COLUMN_DEFAULT'] !== null) {
+                $definition .= ' DEFAULT ' . $column['COLUMN_DEFAULT'];
+            }
+
+            if ($column['EXTRA']) {
+                if (str_contains($column['EXTRA'], 'auto_increment')) {
+                    $definition .= ' AUTO_INCREMENT';
+                }
+
+                if (str_contains($column['EXTRA'], 'unsigned')) {
+                    $definition .= ' UNSIGNED';
+                }
+
+                if (str_contains($column['EXTRA'], 'on update')) {
+                    $definition .= ' ON UPDATE CURRENT_TIMESTAMP';
+                }
+            }
+
+            $parameters['definition'] = $definition;
+        }
+
+        $this->bindAlterStatement(AlterActions::DROP_INDEX, $parameters);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Moirai\DDL\Constraints;
 
+use Moirai\DDL\AlterColumnActions;
 use Moirai\DDL\Blueprint;
 
 class DefinedColumnConstraints
@@ -141,16 +142,8 @@ class DefinedColumnConstraints
         return $this->bind(ColumnConstraints::COMMENT, compact('value'));
     }
 
-
-
-
-
-    /**
-     * @param string $value
-     * @return $this
-     */
-    public function drop(): self
+    public function modify(): void
     {
-        return $this->bind(ColumnConstraints::COMMENT, compact('value'));
+        $this->blueprintInstance->modify[] = $this->column;
     }
 }

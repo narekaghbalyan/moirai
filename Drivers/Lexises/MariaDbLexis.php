@@ -2,6 +2,7 @@
 
 namespace Moirai\Drivers\Lexises;
 
+use Moirai\DDL\AlterActions;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
 use Moirai\DDL\DataTypes;
@@ -92,4 +93,38 @@ class MariaDbLexis extends Lexis implements LexisInterface
         Indexes::HASH => 'CREATE INDEX {name} ON {table} ({columns}) USING HASH',
         Indexes::INVISIBLE => 'CREATE INDEX {name} ON {table} ({columns}) INVISIBLE'
     ];
+
+    /**
+     * @var array|string[]
+     */
+    protected array $alterActions = [
+        AlterActions::ADD_COLUMN => '{table} ADD COLUMN {column} {definition}',
+        AlterActions::ADD_COMPUTED_COLUMN => '{table} ADD COLUMN {column} {expression} GENERATED ALWAYS AS ({expression}) STORED',
+        AlterActions::MODIFY_COLUMN => '{table} MODIFY COLUMN {column} {definition}',
+        AlterActions::RENAME_COLUMN => '{table} CHANGE COLUMN {old_name} {new_name} {definition}',
+        AlterActions::DROP_COLUMN => '{table} DROP COLUMN {column}',
+        AlterActions::DROP_DEFAULT => '{table} ALTER COLUMN {column} DROP DEFAULT',
+
+        AlterActions::ADD_CHECK_CONSTRAINT => '{table} ADD CONSTRAINT {name} CHECK ({expression})',
+        AlterActions::DROP_CHECK_CONSTRAINT => '{table} DROP CONSTRAINT {name}',
+        AlterActions::ADD_UNIQUE_CONSTRAINT => '{table} ADD CONSTRAINT {name} UNIQUE ({columns})',
+        AlterActions::ADD_PRIMARY_KEY_CONSTRAINT => '{table} ADD PRIMARY KEY ({columns})',
+        AlterActions::DROP_PRIMARY_KEY_CONSTRAINT => '{table} DROP PRIMARY KEY',
+        AlterActions::ADD_FOREIGN_KEY_CONSTRAINT => '{table} ADD CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table}({referenced_columns}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        AlterActions::DROP_FOREIGN_KEY_CONSTRAINT => '{table} DROP FOREIGN KEY {name}',
+        AlterActions::DROP_INDEX => '{table} DROP INDEX {name}',
+
+        AlterActions::ENABLE_KEYS => '{table} ENABLE KEYS',
+        AlterActions::DISABLE_KEYS => '{table} DISABLE KEYS',
+        AlterActions::ADD_PARTITION => '{table} ADD PARTITION {definition}',
+        AlterActions::DROP_PARTITION => '{table} DROP PARTITION {name}',
+        AlterActions::LOCK_TABLE => 'LOCK TABLES {table} WRITE',
+        AlterActions::UNLOCK_TABLE => 'UNLOCK TABLES',
+        AlterActions::RENAME_TABLE => '{table} RENAME TO {new_name}',
+        AlterActions::CHANGE_ENGINE => '{table} ENGINE = {engine}',
+        AlterActions::CHANGE_ROW_FORMAT => '{table} ROW_FORMAT = {format}',
+        AlterActions::CHANGE_AUTO_INCREMENT => '{table} AUTO_INCREMENT = {value}',
+        AlterActions::CHANGE_TABLESPACE => '{table} TABLESPACE {name}',
+    ];
+
 }

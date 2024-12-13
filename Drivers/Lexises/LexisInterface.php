@@ -26,4 +26,10 @@ interface LexisInterface
      * @return string
      */
     public function getTableConstraint(string $key): string;
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    public function getAlterAction(string $key): string;
 }
