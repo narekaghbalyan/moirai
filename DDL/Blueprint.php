@@ -3103,31 +3103,24 @@ class Blueprint
 
             $definition = $column['DATA_TYPE'];
 
-            if (in_array($column['DATA_TYPE'], ['float', 'double', 'decimal', 'numeric'])) {
+            if (in_array($column['DATA_TYPE'], ['float', 'double', 'decimal', 'numeric', 'bit', 'timestamp', 'time'])) {
                 $columnParameters = '';
 
                 if ($column['NUMERIC_PRECISION']) {
                     $columnParameters = $column['NUMERIC_PRECISION'];
 
-                    if ($column['NUMERIC_SCALE']) {
+                    if (in_array($column['DATA_TYPE'], ['float', 'double', 'decimal', 'numeric']) && $column['NUMERIC_SCALE']) {
                         $columnParameters .= ', ' . $column['NUMERIC_SCALE'];
                     }
                 }
 
-                $definition .= '(' . $columnParameters . ')';
-            } elseif (in_array($column['DATA_TYPE'], ['bit'])) {
-                if ($column['NUMERIC_PRECISION']) {
-                    $definition .= '(' . $column['NUMERIC_PRECISION'] . ')';
+                if ($columnParameters) {
+                    $definition .= '(' . $columnParameters . ')';
                 }
-            } elseif (in_array($column['DATA_TYPE'], ['char', 'varchar', 'binary', 'varbinary'])) {
-                if ($column['CHARACTER_MAXIMUM_LENGTH']) {
-                    $definition .= '(' . $column['CHARACTER_MAXIMUM_LENGTH'] . ')';
-                }
-            } elseif (in_array($column['DATA_TYPE'], ['timestamp', 'time'])) {
-                if ($column['NUMERIC_PRECISION']) {
-                    $definition .= '(' . $column['NUMERIC_PRECISION'] . ')';
-                }
-            }  elseif (in_array($column['DATA_TYPE'], ['enum', 'set'])) {
+            } elseif (in_array($column['DATA_TYPE'], ['char', 'varchar', 'binary', 'varbinary'])
+                && $column['CHARACTER_MAXIMUM_LENGTH']) {
+                $definition .= '(' . $column['CHARACTER_MAXIMUM_LENGTH'] . ')';
+            } elseif (in_array($column['DATA_TYPE'], ['enum', 'set']) && $column['COLUMN_TYPE']) {
                 if ($column['COLUMN_TYPE']) {
                     $definition .= '('
                         . str_replace(
