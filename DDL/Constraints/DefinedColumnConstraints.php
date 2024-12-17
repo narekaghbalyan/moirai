@@ -2,7 +2,6 @@
 
 namespace Moirai\DDL\Constraints;
 
-use Moirai\DDL\AlterColumnActions;
 use Moirai\DDL\Blueprint;
 
 class DefinedColumnConstraints
@@ -34,14 +33,20 @@ class DefinedColumnConstraints
      * @param array $parameters
      * @return $this
      */
-    public function bind(int $key, array $parameters = []): self
+    private function bind(int $key, array $parameters = []): self
     {
-        $this->blueprintInstance->columns[$this->column]['constraints'][$key] = $parameters;
+        $this->blueprintInstance->columnsDefinitionsBindings[$this->column]['constraints'][$key] = $parameters;
 
         return $this;
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define unsigned column constraint.                           |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function unsigned(): self
@@ -50,6 +55,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define check column constraint.                              |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function check(): self
@@ -58,6 +69,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define autoincrement column constraint.                      |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, SQLite                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function autoincrement(): self
@@ -66,6 +83,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define not null column constraint.                           |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function notNull(): self
@@ -74,6 +97,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define unique column constraint.                             |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function unique(): self
@@ -82,6 +111,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define default column constraint.                            |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param int|string|float $value
      * @return $this
      */
@@ -91,6 +126,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define collation column constraint.                          |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, SQLite                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param int|string|float $value
      * @return $this
      */
@@ -100,6 +141,13 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define collation column constraint.                          |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, SQLite                      |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "collation".                                                   |
+     * --------------------------------------------------------------------------
      * @param int|string|float $value
      * @return $this
      */
@@ -109,6 +157,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define charset column constraint.                            |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param int|string|float $value
      * @return $this
      */
@@ -118,6 +172,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define primary key column constraint.                        |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function primaryKey(): self
@@ -126,6 +186,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to define invisible column constraint.                          |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @return $this
      */
     public function invisible(): self
@@ -134,6 +200,12 @@ class DefinedColumnConstraints
     }
 
     /**
+     * --------------------------------------------------------------------------
+     * | Clause to add comment for column.                                      |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, Oracle                                     |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
      * @param string $value
      * @return $this
      */
@@ -142,6 +214,14 @@ class DefinedColumnConstraints
         return $this->bind(ColumnConstraints::COMMENT, compact('value'));
     }
 
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to modify column.                                               |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     */
     public function modify(): void
     {
         $this->blueprintInstance->modify[] = $this->column;

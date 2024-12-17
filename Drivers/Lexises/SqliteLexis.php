@@ -58,16 +58,13 @@ class SqliteLexis extends Lexis implements LexisInterface
         Indexes::PARTIAL => 'CREATE UNIQUE INDEX {name} ON {table} ({columns}) {expression}'
     ];
 
-
     /**
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => '{table} ADD COLUMN {column} {definition}',
-        AlterActions::RENAME_COLUMN => '{table} RENAME COLUMN {old_name} TO {new_name};',
+        AlterActions::ADD_COLUMN => 'ADD COLUMN {column} {definition}',
+        AlterActions::RENAME_COLUMN => 'RENAME COLUMN {old_name} TO {new_name};',
         AlterActions::DROP_INDEX => 'DROP INDEX {name}',
-        AlterActions::RENAME_TABLE => 'TABLE {table} RENAME TO {new_name}',
+        AlterActions::RENAME_TABLE => 'RENAME TO {new_name}',
     ];
-
-
 }

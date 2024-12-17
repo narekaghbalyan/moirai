@@ -2,8 +2,6 @@
 
 namespace Moirai\DDL\Migration;
 
-use Moirai\DD\Migration\MigrationInterface;
-
 /**
  * @mixin \Moirai\DDL\Blueprint
  */

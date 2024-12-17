@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\DDL;
+namespace Moirai\DDL\Table;
 
 use Closure;
 use Moirai\Connection\Connections;
@@ -59,72 +59,10 @@ class Table
 
         $statement = 'ALTER TABLE ' . $table . ' ';
 
-        foreach ($blueprint->sewColumns() as $column => $columnDefinition) {
-            if (in_array($column, $blueprint->modify)) {
-                $statement .= 'MODIFY COLUMN ' . $columnDefinition;
-
-                continue;
-            }
-
-            if (!in_array($column, array_keys($blueprint->rename))) {
-                $statement .= 'CHANGE COLUMN '
-                    . $column
-                    . ' '
-                    . $blueprint->rename[$column]
-                    . ' '
-                    . $columnDefinition
-                    . ', ';
-
-                continue;
-            }
-
-            $statement .= 'ADD COLUMN ' . $columnDefinition . ', ';
-        }
-
-        /**
-         * ALTER TABLE table_name ADD PRIMARY KEY (column_name);
-         * ALTER TABLE table_name DROP PRIMARY KEY;
-         * ALTER TABLE table_name ADD UNIQUE (column_name);
-         * ALTER TABLE employees ADD UNIQUE (email);
-         * ALTER TABLE table_name DROP INDEX index_name;
-         *
-         * ALTER TABLE table_name
-         * ADD CONSTRAINT constraint_name FOREIGN KEY (column_name)
-         * REFERENCES other_table (other_column)
-         * ON DELETE action ON UPDATE action;
-         *
-         * ALTER TABLE table_name
-         * DROP FOREIGN KEY constraint_name;
-         *
-         * ALTER TABLE sales
-         * PARTITION BY RANGE (year)
-         * (
-         * PARTITION p0 VALUES LESS THAN (2000),
-         * PARTITION p1 VALUES LESS THAN (2010)
-         * );
-         *
-         *
-         *
-         * ALTER TABLE employees
-         * ADD CONSTRAINT check_salary CHECK (salary > 0);
-         *
-         *
-         * ALTER TABLE table_name
-         * AUTO_INCREMENT = new_value;
-         */
-
-        foreach ($blueprint->sewTableConstraints() as $column => $columnDefinition) {
+        foreach ($blueprint->sewAlterStatements() as $column => $columnDefinition) {
 
         }
-
-
-        foreach ($blueprint->drop as $column) {
-            $statement .= 'DROP COLUMN ' . $column;
-        }
-
     }
-
-
 
 
 

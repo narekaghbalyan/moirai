@@ -75,51 +75,33 @@ class OracleLexis extends Lexis implements LexisInterface
         Indexes::CLUSTERED => 'CREATE CLUSTER {name} ({columns})'
     ];
 
-
-
-
-
-
-
-
     /**
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => 'ALTER TABLE {table} ADD ({column} {definition})',
-        AlterActions::MODIFY_COLUMN => 'ALTER TABLE {table} MODIFY ({column} {definition})',
-        AlterActions::RENAME_COLUMN => 'ALTER TABLE {table} RENAME COLUMN {old_name} TO {new_name}',
-        AlterActions::DROP_COLUMN => 'ALTER TABLE {table} DROP COLUMN {column}',
-
-        AlterActions::SET_DEFAULT => 'ALTER TABLE {table} MODIFY ({column} DEFAULT {value})',
-        AlterActions::DROP_DEFAULT => 'ALTER TABLE {table} MODIFY ({column} DROP DEFAULT)',
-
-        AlterActions::ADD_CHECK_CONSTRAINT => 'ALTER TABLE {table} ADD CONSTRAINT {name} CHECK ({expression})',
-        AlterActions::DROP_CHECK_CONSTRAINT => 'ALTER TABLE {table} DROP CONSTRAINT {name}',
-        AlterActions::ADD_UNIQUE_CONSTRAINT => 'ALTER TABLE {table} ADD CONSTRAINT {name} UNIQUE ({columns})',
-        AlterActions::ADD_PRIMARY_KEY_CONSTRAINT => 'ALTER TABLE {table} ADD CONSTRAINT {name} PRIMARY KEY ({columns})',
-        AlterActions::DROP_PRIMARY_KEY_CONSTRAINT => 'ALTER TABLE {table} DROP CONSTRAINT {name}',
-        AlterActions::ADD_FOREIGN_KEY_CONSTRAINT => 'ALTER TABLE {table} ADD CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table} ({referenced_column}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
-        AlterActions::DROP_FOREIGN_KEY_CONSTRAINT => 'ALTER TABLE {table} DROP CONSTRAINT {name}',
+        AlterActions::ADD_COLUMN => 'ADD ({column} {definition})',
+        AlterActions::MODIFY_COLUMN => 'MODIFY ({column} {definition})',
+        AlterActions::RENAME_COLUMN => 'RENAME COLUMN {old_name} TO {new_name}',
+        AlterActions::DROP_COLUMN => 'DROP COLUMN {name}',
+        AlterActions::SET_DEFAULT => 'MODIFY ({column} DEFAULT {value})',
+        AlterActions::DROP_DEFAULT => 'MODIFY ({name} DROP DEFAULT)',
+        AlterActions::ADD_CHECK_CONSTRAINT => 'ADD CONSTRAINT {name} CHECK ({expression})',
+        AlterActions::DROP_CHECK_CONSTRAINT => 'DROP CONSTRAINT {name}',
+        AlterActions::ADD_UNIQUE_CONSTRAINT => 'ADD CONSTRAINT {name} UNIQUE ({columns})',
+        AlterActions::ADD_PRIMARY_KEY_CONSTRAINT => 'ADD CONSTRAINT {name} PRIMARY KEY ({columns})',
+        AlterActions::DROP_PRIMARY_KEY_CONSTRAINT => 'DROP CONSTRAINT {name}',
+        AlterActions::ADD_FOREIGN_KEY_CONSTRAINT => 'ADD CONSTRAINT {name} FOREIGN KEY ({columns}) REFERENCES {referenced_table} ({referenced_column}) ON DELETE {on_delete_action} ON UPDATE {on_update_action}',
+        AlterActions::DROP_FOREIGN_KEY_CONSTRAINT => 'DROP CONSTRAINT {name}',
         AlterActions::DROP_INDEX => 'DROP INDEX {name}',
-
-        AlterActions::ENABLE_KEYS => 'ALTER TABLE {table} ENABLE CONSTRAINT {constraint_name}',
-        AlterActions::DISABLE_KEYS => 'ALTER TABLE {table} DISABLE CONSTRAINT {constraint_name}',
-        AlterActions::ADD_PARTITION => 'ALTER TABLE {table} ADD PARTITION {name} VALUES LESS THAN ({value})',
-        AlterActions::DROP_PARTITION => 'ALTER TABLE {table} DROP PARTITION {name}',
-
+        AlterActions::ENABLE_KEYS => 'ENABLE ALL CONSTRAINTS',
+        AlterActions::DISABLE_KEYS => 'DISABLE ALL CONSTRAINTS',
         AlterActions::LOCK_TABLE => 'LOCK TABLE {table} IN EXCLUSIVE MODE',
         AlterActions::UNLOCK_TABLE => 'UNLOCK TABLE {table}',
-
-        AlterActions::RENAME_TABLE => 'ALTER TABLE {table} RENAME TO {new_name}',
-        AlterActions::CHANGE_TABLESPACE => 'ALTER TABLE {table} MOVE TABLESPACE {tablespace_name}',
-
-        AlterActions::SET_STORAGE => 'ALTER TABLE {table} MODIFY ({column} STORAGE {storage_type})', // Adjusting storage types of columns
-
-        AlterActions::CREATE_SEQUENCE => 'CREATE SEQUENCE {sequence_name}',
-        AlterActions::DROP_SEQUENCE => 'DROP SEQUENCE {sequence_name}',
+        AlterActions::RENAME_TABLE => 'RENAME TO {new_name}',
+        AlterActions::CHANGE_TABLESPACE => 'MOVE TABLESPACE {tablespace_name}',
+        AlterActions::SET_STORAGE => 'MODIFY ({column} STORAGE {storage_type})',
+        AlterActions::CREATE_SEQUENCE => 'CREATE SEQUENCE {name}',
+        AlterActions::DROP_SEQUENCE => 'DROP SEQUENCE {name}',
         AlterActions::RENAME_SEQUENCE => 'ALTER SEQUENCE {old_name} RENAME TO {new_name}',
     ];
-
-
 }

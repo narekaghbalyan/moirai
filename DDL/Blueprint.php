@@ -3,69 +3,15 @@
 namespace Moirai\DDL;
 
 use Closure;
-use Exception;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\DefinedColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DML\QueryBuilder;
 use Moirai\DML\QueryBuilderRepresentativeSpokesman;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\DriverInterface;
-use Moirai\Drivers\OracleDriver;
-use Moirai\Drivers\PostgreSqlDriver;
 
-class Blueprint
+class Blueprint extends DDL
 {
-    /**
-     * @var \Moirai\Drivers\DriverInterface
-     */
-    private DriverInterface $driver;
-
-    /**
-     * @var string
-     */
-    private string $table;
-
-    /**
-     * @var string
-     */
-    private string $action;
-
-    /**
-     * @var array
-     */
-    public array $columns = [];
-
-    /**
-     * @var array
-     */
-    private array $tableConstraints = [];
-
-    /**
-     * @var array
-     */
-    private array $indexes = [];
-
-    /**
-     * @var array
-     */
-    private array $chain = [];
-
-    /**
-     * @var array
-     */
-    public array $modify = [];
-
-    /**
-     * @var array
-     */
-    public array $rename = [];
-
-    /**
-     * @var array
-     */
-    public array $alterStatements = [];
-
     /**
      * Blueprint constructor.
      *
@@ -86,220 +32,6 @@ class Blueprint
     }
 
     /**
-     * @return array
-     */
-    public function getChainedStatements(): array
-    {
-        return $this->chain;
-    }
-
-    /**
-     * @return array
-     * @throws \Exception
-     */
-    public function sewColumns(): array
-    {
-        $sewedColumns = [];
-
-        foreach ($this->columns as $column => $options) {
-            $definitionSignature = $this->driver->getLexis()->getDataType($options['data_type']);
-
-            foreach ($options['parameters'] as $parameterKey => $parameterValue) {
-                $parameterKey = '{' . $parameterKey . '}';
-
-                if (!is_null($parameterValue)) {
-                    if (!str_contains($definitionSignature, $parameterKey)) {
-                        throw new Exception(
-                            'DBMS driver "'
-                            . $this->driver->getName()
-                            . '" do not support parameters for data type "'
-                            . $definitionSignature . '".'
-                        );
-                    }
-                } else {
-                    $parameterKey = '({' . $parameterKey . '})';
-                    $parameterValue = '';
-                }
-
-                $definitionSignature = str_replace(
-                    $parameterKey,
-                    $parameterValue,
-                    $definitionSignature
-                );
-            }
-
-            foreach ($options['constraints'] as $constraintKey => $constraintParameters) {
-                $constraintDefinitionSignature = $this->driver->getLexis()->getColumnConstraint($constraintKey);
-
-                if ($constraintKey === ColumnConstraints::COMMENT
-                    && in_array($this->driver::class, [PostgreSqlDriver::class, OracleDriver::class])) {
-                    $constraintParameters['table'] = $this->table;
-                    $constraintParameters['column'] = $column;
-                }
-
-                foreach ($constraintParameters as $constraintParameterKey => $constraintParameterValue) {
-                    $constraintDefinitionSignature = str_replace(
-                        '{' . $constraintParameterKey . '}',
-                        $constraintParameterValue,
-                        $constraintDefinitionSignature
-                    );
-                }
-
-                if ($constraintKey === ColumnConstraints::COMMENT
-                    && in_array($this->driver::class, [PostgreSqlDriver::class, OracleDriver::class])) {
-                    $this->chain[] = $constraintDefinitionSignature;
-                } else {
-                    $definitionSignature .= ' ' . $constraintDefinitionSignature;
-                }
-            }
-
-            $sewedColumns[$column] = $column . ' ' . $definitionSignature;
-        }
-
-        return $sewedColumns;
-    }
-
-    /**
-     * @return array
-     * @throws \Exception
-     */
-    public function sewTableConstraints(): array
-    {
-        $sewedTableConstraints = [];
-
-        $tableConstraintParameterKeyToPlaceholder = [
-            'name' => 'CONSTRAINT {name}',
-            'on_delete_action' => 'ON DELETE {on_delete_action}',
-            'on_update_action' => 'ON UPDATE {on_update_action}'
-        ];
-
-        foreach ($this->tableConstraints as $tableConstraint) {
-            $definitionSignature = $this->driver->getLexis()->getTableConstraint($tableConstraint['type']);
-
-            foreach ($tableConstraint['parameters'] as $parameterKey => $parameterValue) {
-                if (is_null($parameterValue)
-                    && isset($tableConstraintParameterKeyToPlaceholder[$parameterKey])) {
-                    $definitionSignature = str_replace(
-                        $tableConstraintParameterKeyToPlaceholder[$parameterKey],
-                        '',
-                        $definitionSignature
-                    );
-                }
-
-                if (in_array($parameterKey, ['on_delete_action', 'on_update_action'])
-                    && !in_array($parameterValue, $this->driver->getAllowedForeignKeyActions())) {
-                    throw new Exception(
-                        'DBMS driver "'
-                        . $this->driver->getName()
-                        . '" does not support "'
-                        . $parameterValue
-                        . '" action as foreign key action.'
-                    );
-                }
-
-                $definitionSignature = str_replace(
-                    '{' . $parameterKey . '}',
-                    $parameterValue,
-                    $definitionSignature
-                );
-            }
-
-            $sewedTableConstraints[] = $definitionSignature;
-        }
-
-        return $sewedTableConstraints;
-    }
-
-    /**
-     * @return array
-     * @throws \Exception
-     */
-    private function sewIndexes(): array
-    {
-        foreach ($this->indexes as $index) {
-            $creationSignature = $this->driver->getLexis()->getIndex($index['type']);
-
-            foreach ($index['parameters'] as $parameterKey => $parameter) {
-                $creationSignature = str_replace(
-                    '{' . $parameterKey . '}',
-                    $parameter,
-                    $creationSignature
-                );
-            }
-
-            $this->chain[] = $creationSignature;
-        }
-    }
-
-    /**
-     * @param string $column
-     * @param int $dataType
-     * @param array|null $parameters
-     * @param array|null $constraints
-     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
-     */
-    private function bindColumn(
-        string $column,
-        int $dataType,
-        array|null $parameters = null,
-        array|null $constraints = null
-    ): DefinedColumnConstraints
-    {
-        $this->columns[$column] = [
-            'data_type' => $dataType,
-            'parameters' => $parameters,
-            'constraints' => $constraints
-        ];
-
-        return new DefinedColumnConstraints($column, $this);
-    }
-
-    /**
-     * @param string $type
-     * @param array $parameters
-     * @throws \Exception
-     */
-    private function bindTableConstraint(string $type, array $parameters): void
-    {
-        if (in_array($type, [TableConstraints::PRIMARY_KEY])) {
-            if (!empty(array_filter($this->tableConstraints, function ($tableConstraint) {
-                return $tableConstraint['type'] === TableConstraints::PRIMARY_KEY;
-            }))) {
-                throw new Exception('Primary key already exists in table "' . $this->table . '".');
-            }
-        }
-
-        $this->tableConstraints[] = [
-            'type' => $type,
-            'parameters' => $parameters,
-        ];
-    }
-
-    /**
-     * @param string $type
-     * @param array $parameters
-     */
-    private function bindIndex(string $type, array $parameters): void
-    {
-        $this->indexes[] = [
-            'type' => $type,
-            'parameters' => $parameters
-        ];
-    }
-
-    /**
-     * @param int $action
-     * @param array $parameters
-     */
-    private function bindAlterStatement(int $action, array $parameters): void
-    {
-        $this->alterStatements[] = [
-            'action' => $action,
-            'parameters' => $parameters
-        ];
-    }
-
-    /**
      * --------------------------------------------------------------------------
      * | Clause to define boolean data type column.                             |
      * | -------------- DBMS drivers that support this data type -------------- |
@@ -311,7 +43,7 @@ class Blueprint
      */
     public function boolean(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BOOLEAN);
+        return $this->bindColumnDefinition($column, DataTypes::BOOLEAN);
     }
 
     /**
@@ -327,7 +59,7 @@ class Blueprint
      */
     public function bool(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BOOLEAN);
+        return $this->bindColumnDefinition($column, DataTypes::BOOLEAN);
     }
 
     /**
@@ -345,7 +77,7 @@ class Blueprint
      */
     public function bit(string $column, int|string $size = 1): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::BIT,
             in_array($this->driver::class, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
@@ -369,7 +101,7 @@ class Blueprint
     public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
 
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::TINY_INTEGER,
             null,
@@ -412,7 +144,7 @@ class Blueprint
      */
     public function smallInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::SMALL_INTEGER,
             null,
@@ -455,7 +187,7 @@ class Blueprint
      */
     public function mediumInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::MEDIUM_INTEGER,
             null,
@@ -498,7 +230,7 @@ class Blueprint
      */
     public function integer(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::INTEGER,
             null,
@@ -540,7 +272,7 @@ class Blueprint
      */
     public function bigInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::BIG_INTEGER,
             null,
@@ -586,7 +318,7 @@ class Blueprint
      */
     public function float(string $column, int|string|null $precision = null, bool $unsigned = false): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::FLOAT,
             compact('precision'),
@@ -630,7 +362,7 @@ class Blueprint
      */
     public function binaryFloat(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BINARY_FLOAT,);
+        return $this->bindColumnDefinition($column, DataTypes::BINARY_FLOAT,);
     }
 
     /**
@@ -651,7 +383,7 @@ class Blueprint
      */
     public function double(string $column, int|string|null $precision = null, bool $unsigned = false): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::DOUBLE,
             compact('precision'),
@@ -695,7 +427,7 @@ class Blueprint
      */
     public function binaryDouble(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BINARY_DOUBLE);
+        return $this->bindColumnDefinition($column, DataTypes::BINARY_DOUBLE);
     }
 
     /**
@@ -727,7 +459,7 @@ class Blueprint
         bool $unsigned = false
     ): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::DECIMAL,
             [
@@ -796,7 +528,7 @@ class Blueprint
         bool $unsigned = false
     ): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::NUMERIC,
             [
@@ -857,7 +589,7 @@ class Blueprint
      */
     public function number(string $column, int|string|null $precision = null, int|string|null $scale = null): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::NUMBER,
             [
@@ -878,7 +610,7 @@ class Blueprint
      */
     public function real(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::REAL);
+        return $this->bindColumnDefinition($column, DataTypes::REAL);
     }
 
     /**
@@ -893,7 +625,7 @@ class Blueprint
      */
     public function smallMoney(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::SMALL_MONEY);
+        return $this->bindColumnDefinition($column, DataTypes::SMALL_MONEY);
     }
 
     /**
@@ -908,7 +640,7 @@ class Blueprint
      */
     public function money(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MONEY);
+        return $this->bindColumnDefinition($column, DataTypes::MONEY);
     }
 
     /**
@@ -926,7 +658,7 @@ class Blueprint
      */
     public function char(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::CHAR, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::CHAR, compact('length'));
     }
 
     /**
@@ -944,7 +676,7 @@ class Blueprint
      */
     public function nchar(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::N_CHAR, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::N_CHAR, compact('length'));
     }
 
     /**
@@ -962,7 +694,7 @@ class Blueprint
      */
     public function varchar(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::VARCHAR, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::VARCHAR, compact('length'));
     }
 
     /**
@@ -980,7 +712,7 @@ class Blueprint
      */
     public function varchar2(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::VARCHAR_2, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::VARCHAR_2, compact('length'));
     }
 
     /**
@@ -998,7 +730,7 @@ class Blueprint
      */
     public function nvarchar(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::N_VARCHAR, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::N_VARCHAR, compact('length'));
     }
 
     /**
@@ -1016,7 +748,7 @@ class Blueprint
      */
     public function nvarchar2(string $column, int|string|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::N_VARCHAR_2, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::N_VARCHAR_2, compact('length'));
     }
 
     /**
@@ -1031,7 +763,7 @@ class Blueprint
      */
     public function tinyText(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TINY_TEXT);
+        return $this->bindColumnDefinition($column, DataTypes::TINY_TEXT);
     }
 
     /**
@@ -1046,7 +778,7 @@ class Blueprint
      */
     public function mediumText(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MEDIUM_TEXT);
+        return $this->bindColumnDefinition($column, DataTypes::MEDIUM_TEXT);
     }
 
     /**
@@ -1061,7 +793,7 @@ class Blueprint
      */
     public function text(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TEXT);
+        return $this->bindColumnDefinition($column, DataTypes::TEXT);
     }
 
     /**
@@ -1076,7 +808,7 @@ class Blueprint
      */
     public function longText(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::LONG_TEXT);
+        return $this->bindColumnDefinition($column, DataTypes::LONG_TEXT);
     }
 
     /**
@@ -1091,7 +823,7 @@ class Blueprint
      */
     public function nText(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::N_TEXT);
+        return $this->bindColumnDefinition($column, DataTypes::N_TEXT);
     }
 
     /**
@@ -1106,7 +838,7 @@ class Blueprint
      */
     public function tinyBlob(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TINY_BLOB);
+        return $this->bindColumnDefinition($column, DataTypes::TINY_BLOB);
     }
 
     /**
@@ -1121,7 +853,7 @@ class Blueprint
      */
     public function mediumBlob(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MEDIUM_BLOB);
+        return $this->bindColumnDefinition($column, DataTypes::MEDIUM_BLOB);
     }
 
     /**
@@ -1136,7 +868,7 @@ class Blueprint
      */
     public function blob(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BLOB);
+        return $this->bindColumnDefinition($column, DataTypes::BLOB);
     }
 
     /**
@@ -1151,7 +883,7 @@ class Blueprint
      */
     public function longBlob(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::LONG_BLOB);
+        return $this->bindColumnDefinition($column, DataTypes::LONG_BLOB);
     }
 
     /**
@@ -1167,7 +899,7 @@ class Blueprint
      */
     public function set(string $column, array $whiteList): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::SET,
             [
@@ -1189,7 +921,7 @@ class Blueprint
      */
     public function enum(string $column, array $whiteList): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::ENUM,
             [
@@ -1210,7 +942,7 @@ class Blueprint
      */
     public function json(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::JSON);
+        return $this->bindColumnDefinition($column, DataTypes::JSON);
     }
 
     /**
@@ -1225,7 +957,7 @@ class Blueprint
      */
     public function jsonb(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::JSONB);
+        return $this->bindColumnDefinition($column, DataTypes::JSONB);
     }
 
     /**
@@ -1243,7 +975,7 @@ class Blueprint
      */
     public function binary(string $column, string|int|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BINARY, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::BINARY, compact('length'));
     }
 
     /**
@@ -1261,7 +993,7 @@ class Blueprint
      */
     public function varbinary(string $column, string|int|null $length = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::VARBINARY, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::VARBINARY, compact('length'));
     }
 
     /**
@@ -1276,7 +1008,7 @@ class Blueprint
      */
     public function uuid(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::UUID);
+        return $this->bindColumnDefinition($column, DataTypes::UUID);
     }
 
     /**
@@ -1307,7 +1039,7 @@ class Blueprint
      */
     public function xml(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::XML);
+        return $this->bindColumnDefinition($column, DataTypes::XML);
     }
 
     /**
@@ -1338,7 +1070,7 @@ class Blueprint
      */
     public function image(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::IMAGE);
+        return $this->bindColumnDefinition($column, DataTypes::IMAGE);
     }
 
     /**
@@ -1353,7 +1085,7 @@ class Blueprint
      */
     public function sqlVariant(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::SQL_VARIANT);
+        return $this->bindColumnDefinition($column, DataTypes::SQL_VARIANT);
     }
 
     /**
@@ -1368,7 +1100,7 @@ class Blueprint
      */
     public function rowVersion(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::ROW_VERSION);
+        return $this->bindColumnDefinition($column, DataTypes::ROW_VERSION);
     }
 
     /**
@@ -1383,7 +1115,7 @@ class Blueprint
      */
     public function clob(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::CLOB);
+        return $this->bindColumnDefinition($column, DataTypes::CLOB);
     }
 
     /**
@@ -1399,7 +1131,7 @@ class Blueprint
      */
     public function nclob(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::NCLOB);
+        return $this->bindColumnDefinition($column, DataTypes::NCLOB);
     }
 
     /**
@@ -1417,7 +1149,7 @@ class Blueprint
      */
     public function raw(string $column, string|int $length): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::RAW, compact('length'));
+        return $this->bindColumnDefinition($column, DataTypes::RAW, compact('length'));
     }
 
     /**
@@ -1432,7 +1164,7 @@ class Blueprint
      */
     public function long(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::LONG);
+        return $this->bindColumnDefinition($column, DataTypes::LONG);
     }
 
     /**
@@ -1447,7 +1179,7 @@ class Blueprint
      */
     public function urowid(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::UROWID);
+        return $this->bindColumnDefinition($column, DataTypes::UROWID);
     }
 
     /**
@@ -1462,7 +1194,7 @@ class Blueprint
      */
     public function bytea(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BYTEA);
+        return $this->bindColumnDefinition($column, DataTypes::BYTEA);
     }
 
     /**
@@ -1477,7 +1209,7 @@ class Blueprint
      */
     public function hstore(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::HSTORE);
+        return $this->bindColumnDefinition($column, DataTypes::HSTORE);
     }
 
     /**
@@ -1492,7 +1224,7 @@ class Blueprint
      */
     public function inet(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::INET);
+        return $this->bindColumnDefinition($column, DataTypes::INET);
     }
 
     /**
@@ -1508,7 +1240,7 @@ class Blueprint
      */
     public function cidr(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::CIDR);
+        return $this->bindColumnDefinition($column, DataTypes::CIDR);
     }
 
     /**
@@ -1523,7 +1255,7 @@ class Blueprint
      */
     public function date(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::DATE);
+        return $this->bindColumnDefinition($column, DataTypes::DATE);
     }
 
     /**
@@ -1538,7 +1270,7 @@ class Blueprint
      */
     public function dateTime(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::DATE_TIME);
+        return $this->bindColumnDefinition($column, DataTypes::DATE_TIME);
     }
 
     /**
@@ -1557,7 +1289,7 @@ class Blueprint
      */
     public function dateTime2(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::DATE_TIME_2, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::DATE_TIME_2, compact('precision'));
     }
 
     /**
@@ -1572,7 +1304,7 @@ class Blueprint
      */
     public function smallDateTime(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::SMALL_DATE_TIME);
+        return $this->bindColumnDefinition($column, DataTypes::SMALL_DATE_TIME);
     }
 
     /**
@@ -1591,7 +1323,7 @@ class Blueprint
      */
     public function dateTimeOffset(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::DATE_TIME_OFFSET, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::DATE_TIME_OFFSET, compact('precision'));
     }
 
     /**
@@ -1610,7 +1342,7 @@ class Blueprint
      */
     public function time(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TIME, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::TIME, compact('precision'));
     }
 
     /**
@@ -1630,7 +1362,7 @@ class Blueprint
      */
     public function timestamp(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TIMESTAMP, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::TIMESTAMP, compact('precision'));
     }
 
     /**
@@ -1645,7 +1377,7 @@ class Blueprint
      */
     public function year(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::YEAR);
+        return $this->bindColumnDefinition($column, DataTypes::YEAR);
     }
 
     /**
@@ -1664,7 +1396,7 @@ class Blueprint
      */
     public function timeTz(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TIME_TZ, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::TIME_TZ, compact('precision'));
     }
 
     /**
@@ -1705,7 +1437,7 @@ class Blueprint
      */
     public function timestampTz(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TIMESTAMP_TZ, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::TIMESTAMP_TZ, compact('precision'));
     }
 
     /**
@@ -1746,7 +1478,7 @@ class Blueprint
      */
     public function timestampLtz(string $column, int|string|null $precision = null): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::TIMESTAMP_LTZ, compact('precision'));
+        return $this->bindColumnDefinition($column, DataTypes::TIMESTAMP_LTZ, compact('precision'));
     }
 
     /**
@@ -1782,7 +1514,7 @@ class Blueprint
      */
     public function intervalYearToMonth(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::INTERVAL_YEAR_TO_MONTH);
+        return $this->bindColumnDefinition($column, DataTypes::INTERVAL_YEAR_TO_MONTH);
     }
 
     /**
@@ -1808,7 +1540,7 @@ class Blueprint
         int|string|null $secondPrecision = null
     ): DefinedColumnConstraints
     {
-        return $this->bindColumn(
+        return $this->bindColumnDefinition(
             $column,
             DataTypes::INTERVAL_DAY_TO_SECOND,
             [
@@ -1830,7 +1562,7 @@ class Blueprint
      */
     public function geometry(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::GEOMETRY);
+        return $this->bindColumnDefinition($column, DataTypes::GEOMETRY);
     }
 
     /**
@@ -1845,7 +1577,7 @@ class Blueprint
      */
     public function geometryCollection(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::GEOMETRY_COLLECTION);
+        return $this->bindColumnDefinition($column, DataTypes::GEOMETRY_COLLECTION);
     }
 
     /**
@@ -1860,7 +1592,7 @@ class Blueprint
      */
     public function point(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::POINT);
+        return $this->bindColumnDefinition($column, DataTypes::POINT);
     }
 
     /**
@@ -1875,7 +1607,7 @@ class Blueprint
      */
     public function multipoint(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MULTI_POINT);
+        return $this->bindColumnDefinition($column, DataTypes::MULTI_POINT);
     }
 
     /**
@@ -1890,7 +1622,7 @@ class Blueprint
      */
     public function line(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::LINE);
+        return $this->bindColumnDefinition($column, DataTypes::LINE);
     }
 
     /**
@@ -1905,7 +1637,7 @@ class Blueprint
      */
     public function linestring(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::LINE_STRING);
+        return $this->bindColumnDefinition($column, DataTypes::LINE_STRING);
     }
 
     /**
@@ -1920,7 +1652,7 @@ class Blueprint
      */
     public function multilinestring(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MULTI_LINE_STRING);
+        return $this->bindColumnDefinition($column, DataTypes::MULTI_LINE_STRING);
     }
 
     /**
@@ -1935,7 +1667,7 @@ class Blueprint
      */
     public function polygon(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::POLYGON);
+        return $this->bindColumnDefinition($column, DataTypes::POLYGON);
     }
 
     /**
@@ -1950,7 +1682,7 @@ class Blueprint
      */
     public function multipolygon(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::MULTI_POLYGON);
+        return $this->bindColumnDefinition($column, DataTypes::MULTI_POLYGON);
     }
 
     /**
@@ -1965,7 +1697,7 @@ class Blueprint
      */
     public function geography(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::GEOGRAPHY);
+        return $this->bindColumnDefinition($column, DataTypes::GEOGRAPHY);
     }
 
     /**
@@ -1980,7 +1712,7 @@ class Blueprint
      */
     public function hierarchyId(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::HIERARYCHYID);
+        return $this->bindColumnDefinition($column, DataTypes::HIERARYCHYID);
     }
 
     /**
@@ -1995,7 +1727,7 @@ class Blueprint
      */
     public function lSeg(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::LSEG);
+        return $this->bindColumnDefinition($column, DataTypes::LSEG);
     }
 
     /**
@@ -2026,7 +1758,7 @@ class Blueprint
      */
     public function box(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::BOX);
+        return $this->bindColumnDefinition($column, DataTypes::BOX);
     }
 
     /**
@@ -2041,13 +1773,13 @@ class Blueprint
      */
     public function circle(string $column): DefinedColumnConstraints
     {
-        return $this->bindColumn($column, DataTypes::CIRCLE);
+        return $this->bindColumnDefinition($column, DataTypes::CIRCLE);
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to define check table constraint.                               |
-     * | -------------- DBMS drivers that support this constraint ------------- |
+     * | ------------- DBMS drivers that support this constraint -------------- |
      * | Creating - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite   |
      * | Altering - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle           |
      * | ---------------------------------------------------------------------- |
@@ -2064,7 +1796,7 @@ class Blueprint
     public function check(string $expression, string|null $name = null): void
     {
         if ($this->action === Actions::ALTER) {
-            $this->bindAlterStatement(
+            $this->bindAlterAction(
                 AlterActions::ADD_CHECK_CONSTRAINT,
                 compact('name', 'expression')
             );
@@ -2078,21 +1810,22 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to drop check constraint.                                       |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | --------------- DBMS drivers that support this action ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $name
+     * @throws \Exception
      */
     public function dropCheck(string $name): void
     {
-        $this->bindAlterStatement(AlterActions::ADD_CHECK_CONSTRAINT, compact('name'));
+        $this->bindAlterAction(AlterActions::ADD_CHECK_CONSTRAINT, compact('name'));
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to define unique table constraint.                              |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ------------- DBMS drivers that support this constraint -------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "columns" - column(s) that will be unique.                    |
@@ -2113,7 +1846,7 @@ class Blueprint
         ];
 
         if ($this->action === Actions::ALTER) {
-            $this->bindAlterStatement(AlterActions::ADD_UNIQUE_CONSTRAINT, $parameters);
+            $this->bindAlterAction(AlterActions::ADD_UNIQUE_CONSTRAINT, $parameters);
 
             return;
         }
@@ -2124,7 +1857,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define primary key table constraint.                         |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ------------- DBMS drivers that support this constraint -------------- |
      * | Creating - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite   |
      * | Altering - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle           |
      * | ---------------------------------------------------------------------- |
@@ -2142,7 +1875,7 @@ class Blueprint
         ];
 
         if ($this->action === Actions::ALTER) {
-            $this->bindAlterStatement(AlterActions::ADD_PRIMARY_KEY_CONSTRAINT, $parameters);
+            $this->bindAlterAction(AlterActions::ADD_PRIMARY_KEY_CONSTRAINT, $parameters);
 
             return;
         }
@@ -2152,8 +1885,30 @@ class Blueprint
 
     /**
      * --------------------------------------------------------------------------
+     * | Clause to drop primary key table constraint.                           |
+     * | ------------- DBMS drivers that support this constraint -------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of constraint.                              |
+     * |     Required - PostgreSQL, MS SQL Server, Oracle                       |
+     * --------------------------------------------------------------------------
+     * @param string|null $name
+     * @throws \Exception
+     */
+    public function dropPrimaryKey(string|null $name = null): void
+    {
+        $this->bindAlterAction(
+            AlterActions::ADD_PRIMARY_KEY_CONSTRAINT,
+            !in_array($this->driver::class, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])
+                ? compact('name')
+                : []
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
      * | Clause to define foreign key table constraint.                         |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ------------- DBMS drivers that support this constraint -------------- |
      * | Creating - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite   |
      * | Altering - MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle           |
      * | ---------------------------------------------------------------------- |
@@ -2211,7 +1966,7 @@ class Blueprint
         ];
 
         if ($this->action === Actions::ALTER) {
-            $this->bindAlterStatement(AlterActions::ADD_FOREIGN_KEY_CONSTRAINT, $parameters);
+            $this->bindAlterAction(AlterActions::ADD_FOREIGN_KEY_CONSTRAINT, $parameters);
 
             return;
         }
@@ -2222,21 +1977,22 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to drop foreign key table constraint.                           |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | --------------- DBMS drivers that support this action ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
      * | ---------------------------------------------------------------------- |
      * --------------------------------------------------------------------------
      * @param string $name
+     * @throws \Exception
      */
     public function dropForeignKey(string $name): void
     {
-        $this->bindAlterStatement(AlterActions::DROP_FOREIGN_KEY_CONSTRAINT, compact('name'));
+        $this->bindAlterAction(AlterActions::DROP_FOREIGN_KEY_CONSTRAINT, compact('name'));
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to define index.                                                |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2264,7 +2020,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define index.                                                |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2293,7 +2049,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define index.                                                |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2319,7 +2075,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define full text index.                                      |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB, MS SQL Server                                          |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2348,7 +2104,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define spatial index.                                        |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB, MS SQL Server, Oracle                                  |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2377,7 +2133,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define hash index.                                           |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB, PostgreSQL                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2406,7 +2162,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define invisible index.                                      |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MySQL, MariaDB                                                         |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2435,7 +2191,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define gin (Generalized Inverted Index).                     |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2464,7 +2220,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define gin (Generalized Inverted Index).                     |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2488,7 +2244,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define gist (Generalized Search Tree) index.                 |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2517,7 +2273,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define gist (Generalized Search Tree) index.                 |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2542,7 +2298,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * | Clause to define spgist (Space-partitioned Generalized Search Tree)    |
      * | index.                                                                 |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2572,7 +2328,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      * | Clause to define spgist (Space-partitioned Generalized Search Tree)    |
      * | index.                                                                 |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2596,7 +2352,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define brin (Block Range Index).                             |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2625,7 +2381,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define brin (Block Range Index).                             |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2649,7 +2405,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define bloom index.                                          |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL                                                             |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2678,7 +2434,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define partial index.                                        |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL, MS SQL Server, Oracle, SQLite                              |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2712,7 +2468,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define filtered index.                                       |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | PostgreSQL, MS SQL Server, Oracle, SQLite                              |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2740,7 +2496,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define clustered index.                                      |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MS SQL Server, Oracle                                                  |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2768,7 +2524,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define cluster index.                                        |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MS SQL Server, Oracle                                                  |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2791,7 +2547,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define non clustered index.                                  |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MS SQL Server                                                          |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2819,7 +2575,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define xml index.                                            |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MS SQL Server                                                          |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2847,7 +2603,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define columnstore index.                                    |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MS SQL Server                                                          |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2875,7 +2631,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define include index.                                        |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | MS SQL Server                                                          |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2905,7 +2661,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define bitmap index.                                         |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | Oracle                                                                 |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2933,7 +2689,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define reverse index.                                        |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | Oracle                                                                 |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2961,7 +2717,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define global index.                                         |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | Oracle                                                                 |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -2989,7 +2745,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define local index.                                          |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | Oracle                                                                 |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -3017,7 +2773,7 @@ class Blueprint
     /**
      * --------------------------------------------------------------------------
      * | Clause to define compress index.                                       |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | ---------------- DBMS drivers that support this index ---------------- |
      * | Oracle                                                                 |
      * | ---------------------------------------------------------------------- |
      * | Argument "name" - the name of index.                                   |
@@ -3044,25 +2800,35 @@ class Blueprint
 
     /**
      * --------------------------------------------------------------------------
-     * | Clause to define index.                                                |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Clause to drop index.                                                  |
+     * | --------------- DBMS drivers that support this action ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
-     * | Argument "name" - the name of index.                                   |
+     * | Argument "name" - the name of the index.                               |
      * |     Required - yes                                                     |
      * --------------------------------------------------------------------------
-     *
      * @param string $name
+     * @throws \Exception
      */
     public function dropIndex(string $name): void
     {
-        $this->bindAlterStatement(AlterActions::DROP_INDEX, compact('name'));
+        if (!in_array($this->driver::class, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB])) {
+            $this->chainedStatements[] = str_replace(
+                '{name}',
+                $name,
+                $this->driver->getLexis()->getAlterAction(AlterActions::DROP_INDEX)
+            );
+
+            return;
+        }
+
+        $this->bindAlterAction(AlterActions::DROP_INDEX, compact('name'));
     }
 
     /**
      * --------------------------------------------------------------------------
      * | Clause to rename column.                                               |
-     * | -------------- DBMS drivers that support this data type -------------- |
+     * | --------------- DBMS drivers that support this action ---------------- |
      * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
      * | ---------------------------------------------------------------------- |
      * | Argument "newName" - the name of the column that will be renamed.      |
@@ -3161,6 +2927,435 @@ class Blueprint
             $parameters['definition'] = $definition;
         }
 
-        $this->bindAlterStatement(AlterActions::DROP_INDEX, $parameters);
+        $this->bindAlterAction(AlterActions::RENAME_COLUMN, $parameters);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop column.                                                 |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the column.                              |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @throws \Exception
+     */
+    public function dropColumn(string $name): void
+    {
+        $this->bindAlterAction(AlterActions::DROP_COLUMN, compact('name'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to set default value for column.                                |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL, MS SQL Server, Oracle                                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "column" - the name of the column.                            |
+     * |     Required - yes                                                     |
+     * | Argument "value" - the default value of the column.                    |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param int|string $value
+     * @throws \Exception
+     */
+    public function setDefault(string $column, int|string $value): void
+    {
+        $this->bindAlterAction(AlterActions::SET_DEFAULT, compact('column', 'value'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop default value of column.                                |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the column. For MS SQL Server the name   |
+     * | of the constraint.                                                     |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @throws \Exception
+     */
+    public function dropDefault(string $name): void
+    {
+        $this->bindAlterAction(AlterActions::DROP_DEFAULT, compact('name'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to enable keys of table.                                        |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @throws \Exception
+     */
+    public function enableKeys(): void
+    {
+        $this->bindAlterAction(AlterActions::ENABLE_KEYS);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to disable keys of table.                                       |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @throws \Exception
+     */
+    public function disableKeys(): void
+    {
+        $this->bindAlterAction(AlterActions::DISABLE_KEYS);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to add computed column.                                         |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server                              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the column.                              |
+     * |     Required - yes                                                     |
+     * | Argument "expression" - the expression.                                |
+     * |     Required - yes                                                     |
+     * | Argument "definition" - the definition of column.                      |
+     * |     Not Required - MySQL, MariaDB, PostgreSQL                          |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @param string $expression
+     * @param string|null $definition
+     * @throws \Exception
+     */
+    public function addComputedColumn(string $name, string $expression, string|null $definition = null): void
+    {
+        $this->bindAlterAction(
+            AlterActions::ADD_COMPUTED_COLUMN,
+            compact('name', 'expression', 'definition')
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop computed column.                                        |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the column.                              |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @throws \Exception
+     */
+    public function dropComputedColumn(string $name): void
+    {
+        $this->bindAlterAction(AlterActions::DROP_COMPUTED_COLUMN, compact('name'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to lock table.                                                  |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @throws \Exception
+     */
+    public function lockTable(): void
+    {
+        $this->chainedStatements[] = str_replace(
+            '{table}',
+            $this->table,
+            $this->driver->getLexis()->getAlterAction(AlterActions::LOCK_TABLE)
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to unlock table.                                                |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle                      |
+     * | ---------------------------------------------------------------------- |
+     * --------------------------------------------------------------------------
+     * @throws \Exception
+     */
+    public function unlockTable(): void
+    {
+        $definition = $this->driver->getLexis()->getAlterAction(AlterActions::UNLOCK_TABLE);
+
+        $this->chainedStatements[] = !in_array(
+            $this->driver::class, [AvailableDbmsDrivers::MYSQL, AvailableDbmsDrivers::MARIADB]
+        )
+            ? str_replace('{table}', $this->table, $definition)
+            : $definition;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to rename table.                                                |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, MS SQL Server, Oracle, SQLite              |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "newName" - the new name of the table.                        |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     *
+     * @param string $newName
+     * @throws \Exception
+     */
+    public function renameTable(string $newName): void
+    {
+        if ($this->driver::class === AvailableDbmsDrivers::MS_SQL_SERVER) {
+            $this->chainedStatements[] = str_replace(
+                [
+                    '{table}',
+                    '{new_name}'
+                ],
+                [
+                    $this->table,
+                    $newName
+                ],
+                $this->driver->getLexis()->getAlterAction(AlterActions::RENAME_TABLE)
+            );
+
+            return;
+        }
+
+        $this->bindAlterAction(
+            AlterActions::RENAME_TABLE,
+            [
+                'new_name' => $newName,
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to change table engine.                                         |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "engine" - the engine of the table.                           |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $engine
+     * @throws \Exception
+     */
+    public function changeEngine(string $engine): void
+    {
+        $this->bindAlterAction(AlterActions::CHANGE_ENGINE, compact('engine'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to change row format.                                           |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "format" - the format of the table.                           |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $format
+     * @throws \Exception
+     */
+    public function changeRowFormat(string $format): void
+    {
+        $this->bindAlterAction(AlterActions::CHANGE_ROW_FORMAT, compact('format'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to change autoincrement.                                        |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB                                                         |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "format" - the format of the table.                           |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $value
+     * @throws \Exception
+     */
+    public function changeAutoincrement(string $value): void
+    {
+        $this->bindAlterAction(AlterActions::CHANGE_AUTO_INCREMENT, compact('value'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to change tablespace.                                           |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | MySQL, MariaDB, PostgreSQL, Oracle                                     |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "format" - the format of the table.                           |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $value
+     * @throws \Exception
+     */
+    public function changeTablespace(string $value): void
+    {
+        $this->bindAlterAction(AlterActions::CHANGE_TABLESPACE, compact('value'));
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to change storage type.                                         |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL, Oracle                                                     |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "column" - the name of the column.                            |
+     * |     Required - yes                                                     |
+     * | Argument "storageType" - the storage type of the column.               |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @param string $storageType
+     * @throws \Exception
+     */
+    public function setStorage(string $column, string $storageType): void
+    {
+        $this->bindAlterAction(
+            AlterActions::SET_STORAGE,
+            [
+                'column' => $column,
+                'storage_type' => $storageType
+            ]
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to add extension.                                               |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the extension.                           |
+     * |     Required - yes                                                     |
+     * | Argument "ifNotExists" - condition for checking extension existence.   |
+     * |     Required - no                                                      |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @param bool $ifNotExists
+     * @throws \Exception
+     */
+    public function addExtension(string $name, bool $ifNotExists = false): void
+    {
+        $statement = str_replace(
+            '{name}',
+            $name,
+            $this->driver->getLexis()->getAlterAction(AlterActions::ADD_EXTENSION)
+        );
+
+        if ($ifNotExists) {
+            $statement = str_replace(' IF NOT EXISTS', '', $statement);
+        }
+
+        $this->chainedStatements[] = $statement;
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop extension.                                              |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the extension.                           |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @throws \Exception
+     */
+    public function dropExtension(string $name): void
+    {
+        $this->chainedStatements[] = str_replace(
+            '{name}',
+            $name,
+            $this->driver->getLexis()->getAlterAction(AlterActions::DROP_EXTENSION)
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to create sequence.                                             |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL, MS SQL Server, Oracle                                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the sequence.                            |
+     * |     Required - yes                                                     |
+     * | Argument "expression" - the expression of sequence.                    |
+     * |     Required - MS SQL Server                                           |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @param string|null $expression
+     * @throws \Exception
+     */
+    public function createSequence(string $name, string|null $expression = null): void
+    {
+        $this->chainedStatements[] = str_replace(
+            [
+                '{name}',
+                '{expression}'
+            ],
+            [
+                $name,
+                $expression
+            ],
+            $this->driver->getLexis()->getAlterAction(AlterActions::CREATE_SEQUENCE)
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to drop sequence.                                               |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL, MS SQL Server, Oracle                                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the sequence.                            |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @throws \Exception
+     */
+    public function dropSequence(string $name): void
+    {
+        $this->chainedStatements[] = str_replace(
+            '{name}',
+            $name,
+            $this->driver->getLexis()->getAlterAction(AlterActions::DROP_SEQUENCE)
+        );
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to rename sequence.                                             |
+     * | --------------- DBMS drivers that support this action ---------------- |
+     * | PostgreSQL, MS SQL Server, Oracle                                      |
+     * | ---------------------------------------------------------------------- |
+     * | Argument "name" - the name of the sequence.                            |
+     * |     Required - yes                                                     |
+     * | Argument "oldName" - the new name of the sequence.                     |
+     * |     Required - yes                                                     |
+     * --------------------------------------------------------------------------
+     * @param string $name
+     * @param string $newName
+     * @throws \Exception
+     */
+    public function renameSequence(string $name, string $newName): void
+    {
+        $this->chainedStatements[] = str_replace(
+            [
+                'old_name',
+                'new_name'
+            ],
+            [
+                $name,
+                $newName
+            ],
+            $this->driver->getLexis()->getAlterAction(AlterActions::RENAME_SEQUENCE)
+        );
     }
 }
