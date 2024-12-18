@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\DDL\Table;
+namespace Moirai\DDL;
 
 use ReflectionClass;
 

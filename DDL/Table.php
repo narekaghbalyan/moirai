@@ -1,9 +1,9 @@
 <?php
 
-namespace Moirai\DDL\Table;
+namespace Moirai\DDL;
 
 use Closure;
-use Moirai\Connection\Connections;
+use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\MySqlDriver;
 
 class Table
@@ -25,202 +25,101 @@ class Table
         bool $ifNotExists = false
     ): bool
     {
+        $driver = new MySqlDriver();
+
         if ($blueprint instanceof Closure) {
-            $blueprint = new Blueprint(new MySqlDriver(), $table, $blueprint);
+            $blueprint = new Blueprint($driver, $table, Actions::CREATE, $blueprint);
         }
 
-        $statement = 'CREATE ';
-
-        if ($isTemporary) {
-            $statement .= 'TEMPORARY';
-        }
-
-        if ($ifNotExists) {
-            $statement .= 'IF NOT EXISTS';
-        }
-
-        $statement .= $table . ' ('
-            . implode(', ', array_merge($blueprint->sewColumns(), $blueprint->sewTableConstraints()))
+        $statement = 'CREATE TABLE '
+            . $table
+            . ' ('
+            . implode(
+                ', ',
+                array_merge(
+                    $blueprint->getColumnsDefinitions(),
+                    $blueprint->getTableConstraintsDefinitions()
+                )
+            )
             . '); '
             . implode('; ', $blueprint->getChainedStatements());
+
+        if ($ifNotExists) {
+            if (in_array(
+                $driver::class,
+                [
+                    AvailableDbmsDrivers::MYSQL,
+                    AvailableDbmsDrivers::MARIADB,
+                    AvailableDbmsDrivers::POSTGRESQL,
+                    AvailableDbmsDrivers::SQLITE
+                ]
+            )) {
+               $statement = str_replace(
+                   'TABLE',
+                   'TABLE IF NOT EXISTS',
+                   $statement
+               );
+            } elseif ($driver::class === AvailableDbmsDrivers::MS_SQL_SERVER) {
+                $statement = 'IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = \''
+                    . $table
+                    . '\' AND schema_id = SCHEMA_ID(\'dbo\')) BEGIN '
+                    . $statement
+                    . ' END;';
+            } elseif ($driver::class === AvailableDbmsDrivers::ORACLE) {
+                $statement = 'IF NOT EXISTS (SELECT * FROM user_tables WHERE table_name = \''
+                    . $table
+                    . '\' THEN EXECUTE IMMEDIATE \''
+                    . rtrim($statement, ';')
+                    . '\'; END IF; END;';
+            }
+        }
+
+        if ($isTemporary) {
+            if (in_array(
+                $driver::class,
+                [
+                    AvailableDbmsDrivers::MYSQL,
+                    AvailableDbmsDrivers::MARIADB,
+                    AvailableDbmsDrivers::POSTGRESQL,
+                    AvailableDbmsDrivers::SQLITE
+                ]
+            )) {
+                $statement = str_replace(
+                    'CREATE',
+                    'CREATE TEMPORARY',
+                    $statement
+                );
+            } elseif ($driver::class === AvailableDbmsDrivers::MS_SQL_SERVER) {
+                $statement = str_replace(
+                    $table,
+                    '#' . $table,
+                    $statement
+                );
+            } elseif ($driver::class === AvailableDbmsDrivers::ORACLE) {
+                $statement = str_replace(
+                    'CREATE',
+                    'CREATE GLOBAL TEMPORARY',
+                    $statement
+                );
+            }
+        }
 
         return static::execute($statement);
     }
 
 
-    /**
-     * @throws \Exception
-     */
     public static function alter(string $connection, string $table, Closure|Blueprint $blueprint): void
     {
-        if ($blueprint instanceof Closure) {
-            $blueprint = new Blueprint(new MySqlDriver(), $table, $blueprint);
-        }
 
-        $statement = 'ALTER TABLE ' . $table . ' ';
-
-        foreach ($blueprint->sewAlterStatements() as $column => $columnDefinition) {
-
-        }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /**
-     * @param string $connection
-     * @param string $table
-     * @param string $newName
-     * @return bool
-     * @throws \Exception
-     */
-    public static function rename(string $connection, string $table, string $newName): bool
-    {
-        $driver = new MySqlDriver();
-
-        return static::execute(
-            'ALTER TABLE '
-            . str_replace(
-                ['{name}', '{new_name}'],
-                [$table, $newName],
-                $driver->getLexis()->getAlterAction(AlterActions::RENAME_TABLE)
-            )
-        );
-    }
-
-    /**
-     * @param string $connection
-     * @param string $table
-     * @param string $engine
-     * @return bool
-     * @throws \Exception
-     */
-    public static function changeEngine(string $connection, string $table, string $engine): bool
-    {
-        $driver = new MySqlDriver();
-
-        return static::execute(
-            'ALTER TABLE '
-            . str_replace(
-                ['{table}', '{engine}'],
-                [$table, $engine],
-                $driver->getLexis()->getAlterAction(AlterActions::CHANGE_ENGINE)
-            )
-        );
-    }
-
-    /**
-     * @param string $connection
-     * @param string $table
-     * @param int|string $value
-     * @return bool
-     * @throws \Exception
-     */
-    public static function changeAutoincrement(string $connection, string $table, int|string $value): bool
-    {
-        $driver = new MySqlDriver();
-
-        return static::execute(
-            'ALTER TABLE '
-            . str_replace(
-                ['{table}', '{value}'],
-                [$table, $value],
-                $driver->getLexis()->getAlterAction(AlterActions::CHANGE_AUTO_INCREMENT)
-            )
-        );
-    }
-
-    private static function execute(string $statement): bool
-    {
-        return true;
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public static function drop(string $connection, string $table): bool
     {
         return true;
     }
 
-    public static function truncate(string $connection, string $table): bool
+    private static function execute(string $statement): bool
     {
-        /**
-         * ALTER TABLE table_name TRUNCATE;
-         */
-
-        return true;
-    }
-
-    public static function lock(string $connection, string $table): bool
-    {
-        /**
-         * ALTER TABLE table_name LOCK;
-         */
-
-        return true;
-    }
-
-    public static function unlock(string $connection, string $table): bool
-    {
-        /**
-         * ALTER TABLE table_name UNLOCK;
-         */
-
         return true;
     }
 }
