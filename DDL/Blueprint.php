@@ -98,7 +98,28 @@ class Blueprint
      */
     public function getAlterActionsDefinitions(): array
     {
-        return $this->sewAlterActionsBindings();
+        $addColumnsActions = [];
+
+        if (in_array($this->driver::class, [AvailableDbmsDrivers::MS_SQL_SERVER, AvailableDbmsDrivers::ORACLE])) {
+            $addColumnsActions[] = str_replace(
+                '{definition}',
+                implode(', ', $this->getColumnsDefinitions()),
+                $this->driver->getLexis()->getAlterAction(AlterActions::ADD_COLUMN)
+            );
+        } else {
+            foreach ($this->getColumnsDefinitions() as $columnDefinition) {
+                $addColumnsActions[] = str_replace(
+                    '{definition}',
+                    $columnDefinition,
+                    $this->driver->getLexis()->getAlterAction(AlterActions::ADD_COLUMN)
+                );
+            }
+        }
+
+        return [
+            'add_columns_actions' => $addColumnsActions,
+            'other_actions' => $this->sewAlterActionsBindings()
+        ];
     }
 
     /**

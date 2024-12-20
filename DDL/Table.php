@@ -107,10 +107,47 @@ class Table
         return static::execute($statement);
     }
 
-
-    public static function alter(string $connection, string $table, Closure|Blueprint $blueprint): void
+    /**
+     * @throws \Exception
+     */
+    public static function alter(string $connection, string $table, Closure|Blueprint $blueprint): bool
     {
+        $driver = new MySqlDriver();
 
+        if ($blueprint instanceof Closure) {
+            $blueprint = new Blueprint($driver, $table, Actions::CREATE, $blueprint);
+        }
+
+        $alterActions = $blueprint->getAlterActionsDefinitions();
+
+        $baseStatement = 'ALTER TABLE ' . $table . ' ';
+
+        $statements = [];
+
+        if (in_array(
+            $driver::class,
+            [
+                AvailableDbmsDrivers::MYSQL,
+                AvailableDbmsDrivers::MARIADB,
+                AvailableDbmsDrivers::POSTGRESQL
+            ]
+        )) {
+            $statements[] = $baseStatement
+                . implode(' ', [...$alterActions['add_columns_actions'], ...$alterActions['other_actions']])
+                . ';';
+        } elseif (in_array($driver::class, [AvailableDbmsDrivers::MS_SQL_SERVER, AvailableDbmsDrivers::ORACLE])) {
+            $statements[] = $baseStatement . $alterActions['add_columns_actions'];
+
+            foreach ($alterActions['other_actions'] as $otherAction) {
+                $statements[] = $baseStatement . $otherAction;
+            }
+        } elseif ($driver::class === AvailableDbmsDrivers::SQLITE) {
+            foreach ([...$alterActions['add_columns_actions'], ...$alterActions['other_actions']] as $action) {
+                $statements[] = $baseStatement . $action;
+            }
+        }
+
+        return static::execute(implode('; ', [...$statements, ...$blueprint->getChainedStatements()]));
     }
 
     public static function drop(string $connection, string $table): bool

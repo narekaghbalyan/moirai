@@ -94,7 +94,7 @@ class MsSqlServerLexis extends Lexis implements LexisInterface
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => 'ADD {column} {definition}',
+        AlterActions::ADD_COLUMN => 'ADD {definition}',
         AlterActions::ADD_COMPUTED_COLUMN => 'ADD {name} AS {expression} PERSISTED',
         AlterActions::MODIFY_COLUMN => 'ALTER COLUMN {column} {definition}',
         AlterActions::RENAME_COLUMN => 'EXEC sp_rename \'{table}.{old_name}\', \'{new_name}\', \'COLUMN\'',

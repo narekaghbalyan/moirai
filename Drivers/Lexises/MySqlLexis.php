@@ -98,7 +98,7 @@ class MySqlLexis extends Lexis implements LexisInterface
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => 'ADD COLUMN {column} {definition}',
+        AlterActions::ADD_COLUMN => 'ADD COLUMN {definition}',
         AlterActions::ADD_COMPUTED_COLUMN => 'ADD COLUMN {name} {definition} GENERATED ALWAYS AS ({expression}) STORED',
         AlterActions::MODIFY_COLUMN => 'MODIFY COLUMN {column} {definition}',
         AlterActions::RENAME_COLUMN => 'CHANGE COLUMN {old_name} {new_name} {definition}',

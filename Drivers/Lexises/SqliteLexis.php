@@ -62,7 +62,7 @@ class SqliteLexis extends Lexis implements LexisInterface
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => 'ADD COLUMN {column} {definition}',
+        AlterActions::ADD_COLUMN => 'ADD COLUMN {definition}',
         AlterActions::RENAME_COLUMN => 'RENAME COLUMN {old_name} TO {new_name};',
         AlterActions::DROP_INDEX => 'DROP INDEX {name}',
         AlterActions::RENAME_TABLE => 'RENAME TO {new_name}',

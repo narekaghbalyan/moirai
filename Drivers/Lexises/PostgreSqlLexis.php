@@ -91,7 +91,7 @@ class PostgreSqlLexis extends Lexis implements LexisInterface
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => 'ADD COLUMN {column} {definition}',
+        AlterActions::ADD_COLUMN => 'ADD COLUMN {definition}',
         AlterActions::ADD_COMPUTED_COLUMN => 'ADD COLUMN {name} {definition} GENERATED ALWAYS AS ({expression}) STORED',
         AlterActions::DROP_COMPUTED_COLUMN => 'DROP COLUMN {name}',
         AlterActions::MODIFY_COLUMN => 'ALTER COLUMN {column} SET DATA TYPE {definition}',

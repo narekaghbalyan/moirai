@@ -79,7 +79,7 @@ class OracleLexis extends Lexis implements LexisInterface
      * @var array|string[]
      */
     protected array $alterActions = [
-        AlterActions::ADD_COLUMN => 'ADD ({column} {definition})',
+        AlterActions::ADD_COLUMN => 'ADD ({definition})',
         AlterActions::MODIFY_COLUMN => 'MODIFY ({column} {definition})',
         AlterActions::RENAME_COLUMN => 'RENAME COLUMN {old_name} TO {new_name}',
         AlterActions::DROP_COLUMN => 'DROP COLUMN {name}',
