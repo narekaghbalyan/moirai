@@ -3,6 +3,7 @@
 namespace Moirai\DDL;
 
 use Closure;
+use Exception;
 use Moirai\Drivers\AvailableDbmsDrivers;
 use Moirai\Drivers\MySqlDriver;
 
@@ -150,9 +151,45 @@ class Table
         return static::execute(implode('; ', [...$statements, ...$blueprint->getChainedStatements()]));
     }
 
-    public static function drop(string $connection, string $table): bool
+    /**
+     * @param string $connection
+     * @param string $table
+     * @param bool $ifExists
+     * @param bool $cascade
+     * @return bool
+     * @throws \Exception
+     */
+    public static function drop(string $connection, string $table, bool $ifExists = false, bool $cascade = false): bool
     {
-        return true;
+        $driver = new MySqlDriver();
+
+        $cascadeDefinition = $cascade ? match ($driver::class) {
+            AvailableDbmsDrivers::POSTGRESQL => ' CASCADE',
+            AvailableDbmsDrivers::ORACLE => ' CASCADE CONSTRAINTS',
+            default => throw new Exception('CASCADE is not supported for this database driver'),
+        } : '';
+
+        if (!$ifExists) {
+            $statement = 'DROP TABLE ' . $table . $cascadeDefinition . ';';
+        } else {
+            $statement = match ($driver::class) {
+                AvailableDbmsDrivers::MYSQL,
+                AvailableDbmsDrivers::MARIADB,
+                AvailableDbmsDrivers::POSTGRESQL,
+                AvailableDbmsDrivers::SQLITE => 'DROP TABLE IF EXISTS ' . $table . $cascadeDefinition . ';',
+                AvailableDbmsDrivers::MS_SQL_SERVER => 'IF OBJECT_ID(\''
+                    . $table
+                    . '\', \'U\') IS NOT NULL DROP TABLE '
+                    . $table
+                    . ';',
+                AvailableDbmsDrivers::ORACLE => 'BEGIN EXECUTE IMMEDIATE \'DROP TABLE '
+                    . $table
+                    . $cascadeDefinition
+                    . '\'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF; END;',
+            };
+        }
+
+        return static::execute($statement);
     }
 
     private static function execute(string $statement): bool
