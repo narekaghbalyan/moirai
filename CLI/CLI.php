@@ -2,7 +2,7 @@
 
 namespace Moirai\CLI;
 
-require_once ('../vendor/autoload.php');
+require_once('../vendor/autoload.php');
 
 use DateTime;
 use Moirai\DDL\Actions;
@@ -36,10 +36,6 @@ class CLI
      */
     public static function run(array $argv): void
     {
-        static::$migrationsDestinationPath = str_replace('CLI', '', __DIR__)
-            . 'Migrations'
-            . DIRECTORY_SEPARATOR;
-
         $action = $argv[1] ?? null;
 
         if (!method_exists(self::class, $action)) {
@@ -54,6 +50,10 @@ class CLI
             die();
         }
 
+        static::$migrationsDestinationPath = str_replace('CLI', '', __DIR__)
+            . 'Migrations'
+            . DIRECTORY_SEPARATOR;
+
         self::$action($argv[2] ?? null);
     }
 
@@ -67,7 +67,11 @@ class CLI
             Templates::getForCreate($table)
         );
 
-        echo '[+] Migration for creating table "' . $table . '" successfully created.' . PHP_EOL;
+        echo static::$prefixForSuccessMessages
+            . ' Migration for creating table "'
+            . $table
+            . '" successfully created.'
+            . PHP_EOL;
     }
 
     /**
@@ -80,7 +84,11 @@ class CLI
             Templates::getForAlter($table)
         );
 
-        echo '[+] Migration for altering table "' . $table . '" successfully created.' . PHP_EOL;
+        echo static::$prefixForSuccessMessages
+            . ' Migration for altering table "'
+            . $table
+            . '" successfully created.'
+            . PHP_EOL;
     }
 
     /**
@@ -93,33 +101,19 @@ class CLI
             Templates::getForDrop($table)
         );
 
-        echo '[+] Migration for dropping table "' . $table . '" successfully created.' . PHP_EOL;
+        echo static::$prefixForSuccessMessages
+            . ' Migration for dropping table "'
+            . $table
+            . '" successfully created.'
+            . PHP_EOL;
     }
 
+    /**
+     *
+     */
     private static function migrate(): void
     {
-        $migrations = glob(static::$migrationsDestinationPath . '*.php');
-
-        usort($migrations, function ($a, $b) {
-            return DateTime::createFromFormat(
-                    'd-m-Y-H-i-s',
-                    substr(
-                        pathinfo($b, PATHINFO_FILENAME),
-                        0,
-                        19
-                    )
-                )
-                <=> DateTime::createFromFormat(
-                    'd-m-Y-H-i-s',
-                    substr(
-                        pathinfo($a, PATHINFO_FILENAME),
-                        0,
-                        19
-                    )
-                );
-        });
-
-        foreach ($migrations as $migration) {
+        foreach (static::getSortedMigrationFiles('desc') as $migration) {
             $migrationClass = require_once $migration;
 
             if (!$migrationClass->onMigrate()) {
@@ -128,28 +122,62 @@ class CLI
                 continue;
             }
 
-            echo static::$prefixForSuccessMessages . ' Migration "' . $migration . '" migrated successfully.' . PHP_EOL;
+            echo static::$prefixForSuccessMessages . ' Migration "' . $migration . '" were migrated successfully.' . PHP_EOL;
         }
 
-        echo static::$prefixForSuccessMessages . ' All migrations migrated successfully.' . PHP_EOL;
+        echo static::$prefixForSuccessMessages . ' All migrations were migrated successfully.' . PHP_EOL;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private static function rollback(string|null $table)
+    /**
+     *
+     */
+    private static function rollback()
     {
+        foreach (static::getSortedMigrationFiles() as $migration) {
+            $migrationClass = require_once $migration;
 
+            if (!$migrationClass->onRollback()) {
+                echo static::$prefixForFailedMessages . ' Migration "' . $migration . '" rollback failed.' . PHP_EOL;
+
+                continue;
+            }
+
+            echo static::$prefixForSuccessMessages . ' Migration "' . $migration . '" rolled back successfully.' . PHP_EOL;
+        }
+
+        echo static::$prefixForSuccessMessages . ' All migrations were rolled back successfully.' . PHP_EOL;
+    }
+
+    /**
+     * @param string $direction
+     * @return array
+     */
+    private static function getSortedMigrationFiles(string $direction = 'asc'): array
+    {
+        $migrations = glob(static::$migrationsDestinationPath . '*.php');
+
+        $order = $direction === 'desc' ? -1 : 1;
+
+        usort($migrations, function ($a, $b) use ($order) {
+            return $order * DateTime::createFromFormat(
+                    'd-m-Y-H-i-s',
+                    substr(
+                        pathinfo($a, PATHINFO_FILENAME),
+                        0,
+                        19
+                    )
+                )
+                <=> DateTime::createFromFormat(
+                    'd-m-Y-H-i-s',
+                    substr(
+                        pathinfo($b, PATHINFO_FILENAME),
+                        0,
+                        19
+                    )
+                );
+        });
+
+        return $migrations;
     }
 
     /**

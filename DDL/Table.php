@@ -192,6 +192,10 @@ class Table
         return static::execute($statement);
     }
 
+    /**
+     * @param string $statement
+     * @return bool
+     */
     private static function execute(string $statement): bool
     {
         return true;

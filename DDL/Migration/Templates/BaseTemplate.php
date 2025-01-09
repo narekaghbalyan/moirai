@@ -7,7 +7,7 @@ namespace Moirai\Migrations;
 
 use Moirai\DDL\Migration\Migration;
 use Moirai\DDL\Table;
-use Moirai\DDL\Blueprint;
+{blueprint_namespace}
 
 /**
  * Migration for {migration_action_comment} "{table}" table.
@@ -59,6 +59,7 @@ return new class extends Migration
      * is specified, only that one will be rolled back.
      *
      * @return bool
+     * @throws \Exception
      */
     public function onRollback(): bool
     {
