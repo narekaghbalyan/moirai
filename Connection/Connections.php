@@ -5,10 +5,9 @@ namespace Moirai\Connection;
 use Exception;
 use Moirai\Connection\DTO\CredentialsDTO;
 use Moirai\Connection\DTO\FileConnectionDTO;
-use Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface;
-use Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface;
 use Moirai\Connection\DTO\OptionsDTO;
 use Moirai\Drivers\AvailableDbmsDrivers;
+use Moirai\Drivers\DriverInterface;
 
 class Connections
 {
@@ -25,12 +24,12 @@ class Connections
     /**
      * @var string
      */
-    private string $connectionKey;
+    private string $configBasePath;
 
     /**
-     * @var \Moirai\Connection\DTO\Interfaces\CredentialsDTOInterface|\Moirai\Connection\DTO\Interfaces\FileConnectionDTOInterface
+     * @var string
      */
-    private CredentialsDTOInterface|FileConnectionDTOInterface $dto;
+    private string $dbmsDriver;
 
     /**
      * DBH - Database Handle
@@ -53,7 +52,7 @@ class Connections
             throw new Exception('Connection(s) are empty in configs file.');
         }
 
-        if (empty($this->configs->getValue('connections.default'))) {
+        if (empty($this->configs->getValue('connections.'  . $connectionKey))) {
             throw new Exception(
                 'Could not find a connection credentials with connection key "'
                 . $connectionKey
@@ -61,13 +60,24 @@ class Connections
             );
         }
 
-        $this->connectionKey = $connectionKey;
+        $this->configBasePath = 'connections.' . $connectionKey . '.';
 
-        $this->initializeDTO();
+        $this->dbmsDriver = $this->configs->getValue($this->sculptConfigPath('db_driver'))
+            ?: AvailableDbmsDrivers::MYSQL;
 
         $this->dbh = new DBH(
-            $this->dto,
-            OptionsDTO::create($this->configs->getValue('persistent'))
+            $this->initializeDTO(),
+            OptionsDTO::create(
+                $this->configs->getValue($this->sculptConfigPath('persistent')),
+                $this->configs->getValue($this->sculptConfigPath('emulate_prepares')),
+                $this->configs->getValue($this->sculptConfigPath('autocommit')),
+                $this->configs->getValue($this->sculptConfigPath('case')),
+                $this->configs->getValue($this->sculptConfigPath('error_mode')),
+                $this->configs->getValue($this->sculptConfigPath('default_fetch_mode')),
+                $this->configs->getValue($this->sculptConfigPath('timeout')),
+                $this->configs->getValue($this->sculptConfigPath('cursor')),
+                $this->configs->getValue($this->sculptConfigPath('statement_class'))
+            )
         );
     }
 
@@ -95,28 +105,49 @@ class Connections
     }
 
     /**
+     * @return \Moirai\Connection\DBH
+     */
+    public function getDbh(): DBH
+    {
+        return $this->dbh;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDbmsDriver(): string
+    {
+        return $this->dbmsDriver;
+    }
+
+    /**
+     * @return \Moirai\Drivers\DriverInterface
+     */
+    public function getDbmsDriverInstance(): DriverInterface
+    {
+        return new ($this->dbmsDriver);
+    }
+
+    /**
+     * @return \Moirai\Connection\DTO\CredentialsDTO|\Moirai\Connection\DTO\FileConnectionDTO
      * @throws \Exception
      */
-    private function initializeDTO()
+    private function initializeDTO(): CredentialsDTO|FileConnectionDTO
     {
-        $dbmsDriver = $this->configs->getValue($this->sculptConfigPath('db_driver')) ?: AvailableDbmsDrivers::MYSQL;
-
-        if ($dbmsDriver !== AvailableDbmsDrivers::SQLITE) {
-            $this->dto = CredentialsDTO::create(
+        if ($this->dbmsDriver !== AvailableDbmsDrivers::SQLITE) {
+            return CredentialsDTO::create(
                 $this->configs->getValue($this->sculptConfigPath('db_host'), true),
                 $this->configs->getValue($this->sculptConfigPath('db_port')) ?? 3306,
                 $this->configs->getValue($this->sculptConfigPath('db_database'), true),
                 $this->configs->getValue($this->sculptConfigPath('db_username')) ?? '',
                 $this->configs->getValue($this->sculptConfigPath('db_password')) ?? '',
-                $dbmsDriver
+                $this->dbmsDriver
             );
-
-            return;
         }
 
-        $this->dto = FileConnectionDTO::create(
+        return FileConnectionDTO::create(
             $this->configs->getValue($this->sculptConfigPath('db_file_path'), true),
-            $dbmsDriver
+            $this->dbmsDriver
         );
     }
 
@@ -126,6 +157,6 @@ class Connections
      */
     private function sculptConfigPath(string $key): string
     {
-        return 'connections.' . $this->connectionKey . '.' . $key;
+        return $this->configBasePath . $key;
     }
 }

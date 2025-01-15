@@ -4,13 +4,13 @@ namespace Moirai\DDL;
 
 use Closure;
 use Exception;
+use Moirai\Connection\Connections;
 use Moirai\Drivers\AvailableDbmsDrivers;
-use Moirai\Drivers\MySqlDriver;
 
 class Table
 {
     /**
-     * @param string $connection
+     * @param string $connectionKey
      * @param string $table
      * @param \Closure|\Moirai\DDL\Blueprint $blueprint
      * @param bool $isTemporary
@@ -19,14 +19,16 @@ class Table
      * @throws \Exception
      */
     public static function create(
-        string $connection,
+        string $connectionKey,
         string $table,
         Closure|Blueprint $blueprint,
         bool $isTemporary = false,
         bool $ifNotExists = false
     ): bool
     {
-        $driver = new MySqlDriver();
+        $connectionInstance = Connections::getInstance($connectionKey);
+
+        $driver = $connectionInstance->getDbmsDriverInstance();
 
         if ($blueprint instanceof Closure) {
             $blueprint = new Blueprint($driver, $table, Actions::CREATE, $blueprint);
@@ -105,15 +107,21 @@ class Table
             }
         }
 
-        return static::execute($statement);
+        return static::execute($connectionInstance, $statement);
     }
 
     /**
+     * @param string $connectionKey
+     * @param string $table
+     * @param \Closure|\Moirai\DDL\Blueprint $blueprint
+     * @return bool
      * @throws \Exception
      */
-    public static function alter(string $connection, string $table, Closure|Blueprint $blueprint): bool
+    public static function alter(string $connectionKey, string $table, Closure|Blueprint $blueprint): bool
     {
-        $driver = new MySqlDriver();
+        $connectionInstance = Connections::getInstance($connectionKey);
+
+        $driver = $connectionInstance->getDbmsDriverInstance();
 
         if ($blueprint instanceof Closure) {
             $blueprint = new Blueprint($driver, $table, Actions::CREATE, $blueprint);
@@ -148,22 +156,25 @@ class Table
             }
         }
 
-        return static::execute(implode('; ', [...$statements, ...$blueprint->getChainedStatements()]));
+        return static::execute(
+            $connectionInstance,
+            implode('; ', [...$statements, ...$blueprint->getChainedStatements()])
+        );
     }
 
     /**
-     * @param string $connection
+     * @param string $connectionKey
      * @param string $table
      * @param bool $ifExists
      * @param bool $cascade
      * @return bool
      * @throws \Exception
      */
-    public static function drop(string $connection, string $table, bool $ifExists = false, bool $cascade = false): bool
+    public static function drop(string $connectionKey, string $table, bool $ifExists = false, bool $cascade = false): bool
     {
-        $driver = new MySqlDriver();
+        $connectionInstance = Connections::getInstance($connectionKey);
 
-        $cascadeDefinition = $cascade ? match ($driver::class) {
+        $cascadeDefinition = $cascade ? match ($connectionInstance->getDbmsDriver()) {
             AvailableDbmsDrivers::POSTGRESQL => ' CASCADE',
             AvailableDbmsDrivers::ORACLE => ' CASCADE CONSTRAINTS',
             default => throw new Exception('CASCADE is not supported for this database driver'),
@@ -172,7 +183,7 @@ class Table
         if (!$ifExists) {
             $statement = 'DROP TABLE ' . $table . $cascadeDefinition . ';';
         } else {
-            $statement = match ($driver::class) {
+            $statement = match ($connectionInstance->getDbmsDriver()) {
                 AvailableDbmsDrivers::MYSQL,
                 AvailableDbmsDrivers::MARIADB,
                 AvailableDbmsDrivers::POSTGRESQL,
@@ -189,15 +200,16 @@ class Table
             };
         }
 
-        return static::execute($statement);
+        return static::execute($connectionInstance, $statement);
     }
 
     /**
+     * @param \Moirai\Connection\Connections $connectionInstance
      * @param string $statement
      * @return bool
      */
-    private static function execute(string $statement): bool
+    private static function execute(Connections $connectionInstance, string $statement): bool
     {
-        return true;
+        return $connectionInstance->getDbh()->execute($statement);
     }
 }

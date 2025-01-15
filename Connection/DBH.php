@@ -50,8 +50,15 @@ class DBH
         $this->checkDbmsDriver();
 
         $options = [
-            PDO::ATTR_EMULATE_PREPARES => true,
-            PDO::ATTR_PERSISTENT => $this->optionsDTO->persistent() ?? true
+            PDO::ATTR_PERSISTENT => $this->optionsDTO->persistent(),
+            PDO::ATTR_EMULATE_PREPARES => $this->optionsDTO->emulatePrepares(),
+            PDO::ATTR_AUTOCOMMIT => $this->optionsDTO->autocommit(),
+            PDO::ATTR_CASE => $this->optionsDTO->case(),
+            PDO::ATTR_ERRMODE => $this->optionsDTO->errorMode(),
+            PDO::ATTR_DEFAULT_FETCH_MODE => $this->optionsDTO->defaultFetchMode(),
+            PDO::ATTR_TIMEOUT => $this->optionsDTO->timeout(),
+            PDO::ATTR_CURSOR => $this->optionsDTO->cursor(),
+            PDO::ATTR_STATEMENT_CLASS => $this->optionsDTO->statementClass()
         ];
 
         try {
@@ -128,5 +135,15 @@ class DBH
             . ':host=' . $this->dto->host()
             . ';port=' . $this->dto->port()
             . ';dbname=' . $this->dto->database();
+    }
+
+    public function execute(string $statement): bool
+    {
+//        if () {
+//
+//        }
+
+//        $statement = $this->dbh->prepare($statement);
+//        $statement->bindParam('ke', '');
     }
 }
