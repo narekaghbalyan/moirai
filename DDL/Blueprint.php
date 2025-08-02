@@ -4,6 +4,10 @@ namespace Moirai\DDL;
 
 use Closure;
 use Exception;
+use Moirai\DDL\Shared\Actions;
+use Moirai\DDL\Shared\AlterActions;
+use Moirai\DDL\Shared\DataTypes;
+use Moirai\DDL\Shared\Indexes;
 use Moirai\Drivers\DriverInterface;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
@@ -142,8 +146,7 @@ class Blueprint
         int $dataType,
         array|null $parameters = null,
         array|null $constraints = null
-    ): DefinedColumnConstraints
-    {
+    ): DefinedColumnConstraints {
         $this->columnsDefinitionsBindings[$column] = [
             'data_type' => $dataType,
             'parameters' => $parameters,
@@ -401,7 +404,6 @@ class Blueprint
      */
     public function tinyInteger(string $column, bool $autoIncrement = false, bool $unsigned = false): DefinedColumnConstraints
     {
-
         return $this->bindColumnDefinition(
             $column,
             DataTypes::TINY_INTEGER,
@@ -758,8 +760,7 @@ class Blueprint
         int|string|null $precision = null,
         int|string|null $scale = null,
         bool $unsigned = false
-    ): DefinedColumnConstraints
-    {
+    ): DefinedColumnConstraints {
         return $this->bindColumnDefinition(
             $column,
             DataTypes::DECIMAL,
@@ -827,8 +828,7 @@ class Blueprint
         int|string|null $precision = null,
         int|string|null $scale = null,
         bool $unsigned = false
-    ): DefinedColumnConstraints
-    {
+    ): DefinedColumnConstraints {
         return $this->bindColumnDefinition(
             $column,
             DataTypes::NUMERIC,
@@ -1421,6 +1421,22 @@ class Blueprint
 
     /**
      * --------------------------------------------------------------------------
+     * | Clause to define clob (Character Large Object) data type column.       |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "clob".                                                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
+     */
+    public function characterLargeObject(string $column): DefinedColumnConstraints
+    {
+        return $this->bindColumnDefinition($column, DataTypes::CLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
      * | Clause to define nclob (National Character Large Object) data type     |
      * | column.                                                                |
      * | -------------- DBMS drivers that support this data type -------------- |
@@ -1433,6 +1449,23 @@ class Blueprint
     public function nclob(string $column): DefinedColumnConstraints
     {
         return $this->bindColumnDefinition($column, DataTypes::NCLOB);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define nclob (National Character Large Object) data type     |
+     * | column.                                                                |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | Oracle                                                                 |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "nclob"                                                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
+     */
+    public function notationalCharacterLargeObject(string $column): DefinedColumnConstraints
+    {
+        return $this->nclob($column);
     }
 
     /**
@@ -1542,6 +1575,23 @@ class Blueprint
     public function cidr(string $column): DefinedColumnConstraints
     {
         return $this->bindColumnDefinition($column, DataTypes::CIDR);
+    }
+
+    /**
+     * --------------------------------------------------------------------------
+     * | Clause to define cidr (Classless Inter-Domain Routing notation) data   |
+     * | type column.                                                           |
+     * | -------------- DBMS drivers that support this data type -------------- |
+     * | PostgreSQL                                                             |
+     * | ---------------------------------------------------------------------- |
+     * | Same as "cidr".                                                        |
+     * --------------------------------------------------------------------------
+     * @param string $column
+     * @return \Moirai\DDL\Constraints\DefinedColumnConstraints
+     */
+    public function classlessInterDomainRoutingNotation(string $column): DefinedColumnConstraints
+    {
+        return $this->cidr($column);
     }
 
     /**
@@ -1839,8 +1889,7 @@ class Blueprint
         string $column,
         int|string|null $dayPrecision = null,
         int|string|null $secondPrecision = null
-    ): DefinedColumnConstraints
-    {
+    ): DefinedColumnConstraints {
         return $this->bindColumnDefinition(
             $column,
             DataTypes::INTERVAL_DAY_TO_SECOND,
@@ -2229,13 +2278,13 @@ class Blueprint
      * | Argument "onDelete" - the action that should be taken when a record in |
      * | the referenced (parent) table is deleted.                              |
      * |     Required - no                                                      |
-     * |     Available values - Moirai\DDL\ForeignKeyActions                    |
+     * |     Available values - Moirai\DDL\Shared\ForeignKeyActions             |
      * |                                                                        |
      * | Argument "onUpdate" - the action that should be taken when a record in |
      * | the referenced (parent) table is updated.                              |
      * |     Required - no                                                      |
      * |     Unavailable - Oracle                                               |
-     * |     Available values - Moirai\DDL\ForeignKeyActions                    |
+     * |     Available values - Moirai\DDL\Shared\ForeignKeyActions             |
      * |                                                                        |
      * | Argument "name" - the name of constraint.                              |
      * |     Required - no                                                      |
@@ -2255,8 +2304,7 @@ class Blueprint
         string|null $onDelete = null,
         string|null $onUpdate = null,
         string|null $name = null
-    ): void
-    {
+    ): void {
         $parameters = [
             'name' => $name,
             'columns' => implode(', ', $columns),
@@ -2361,6 +2409,7 @@ class Blueprint
      * --------------------------------------------------------------------------
      *
      * @param string|array $columns
+     * @throws \Exception
      */
     public function primaryKeyIndex(string|array $columns): void
     {
@@ -2752,6 +2801,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      * @param string|array $expression
+     * @throws \Exception
      */
     public function partialIndex(string $name, string|array $columns, string|array $expression): void
     {
@@ -2788,6 +2838,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      * @param string|array $expression
+     * @throws \Exception
      */
     public function filteredIndex(string $name, string|array $columns, string|array $expression): void
     {
@@ -2809,6 +2860,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function clusteredIndex(string $name, string|array $columns): void
     {
@@ -2839,6 +2891,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function clusterIndex(string $name, string|array $columns): void
     {
@@ -2860,6 +2913,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function nonClusteredIndex(string $name, string|array $columns): void
     {
@@ -2888,6 +2942,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function xmlIndex(string $name, string|array $columns): void
     {
@@ -2916,6 +2971,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function columnStoreIndex(string $name, string|array $columns): void
     {
@@ -2945,6 +3001,7 @@ class Blueprint
      * @param string $name
      * @param string|array $columns
      * @param string|array $includedColumns
+     * @throws \Exception
      */
     public function includeIndex(string $name, string|array $columns, string|array $includedColumns): void
     {
@@ -2974,6 +3031,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function bitmapIndex(string $name, string|array $columns): void
     {
@@ -3002,6 +3060,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function reverseIndex(string $name, string|array $columns): void
     {
@@ -3030,6 +3089,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function globalIndex(string $name, string|array $columns): void
     {
@@ -3058,6 +3118,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function localIndex(string $name, string|array $columns): void
     {
@@ -3086,6 +3147,7 @@ class Blueprint
      *
      * @param string $name
      * @param string|array $columns
+     * @throws \Exception
      */
     public function compressIndex(string $name, string|array $columns): void
     {

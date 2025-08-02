@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\ForeignKeyActions;
+use Moirai\DDL\Shared\ForeignKeyActions;
 use Moirai\Drivers\Grammars\PostgreSqlGrammar;
 use Moirai\Drivers\Lexises\PostgreSqlLexis;
 

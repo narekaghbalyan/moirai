@@ -5,9 +5,10 @@ namespace Moirai\DDL;
 use Closure;
 use Exception;
 use Moirai\Connection\Connections;
+use Moirai\DDL\Shared\Actions;
 use Moirai\Drivers\AvailableDbmsDrivers;
 
-class Table
+class Schema
 {
     /**
      * @param string $connectionKey
@@ -24,8 +25,7 @@ class Table
         Closure|Blueprint $blueprint,
         bool $isTemporary = false,
         bool $ifNotExists = false
-    ): bool
-    {
+    ): bool {
         $connectionInstance = Connections::getInstance($connectionKey);
 
         $driver = $connectionInstance->getDbmsDriverInstance();
@@ -57,11 +57,11 @@ class Table
                     AvailableDbmsDrivers::SQLITE
                 ]
             )) {
-               $statement = str_replace(
-                   'TABLE',
-                   'TABLE IF NOT EXISTS',
-                   $statement
-               );
+                $statement = str_replace(
+                    'TABLE',
+                    'TABLE IF NOT EXISTS',
+                    $statement
+                );
             } elseif ($driver::class === AvailableDbmsDrivers::MS_SQL_SERVER) {
                 $statement = 'IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = \''
                     . $table
@@ -174,31 +174,23 @@ class Table
     {
         $connectionInstance = Connections::getInstance($connectionKey);
 
-        $cascadeDefinition = $cascade ? match ($connectionInstance->getDbmsDriver()) {
+        $driver = $connectionInstance->getDbmsDriverInstance();
+
+        $cascadeDefinition = $cascade ? match ($driver::class) {
             AvailableDbmsDrivers::POSTGRESQL => ' CASCADE',
             AvailableDbmsDrivers::ORACLE => ' CASCADE CONSTRAINTS',
             default => throw new Exception('CASCADE is not supported for this database driver'),
         } : '';
 
-        if (!$ifExists) {
-            $statement = 'DROP TABLE ' . $table . $cascadeDefinition . ';';
-        } else {
-            $statement = match ($connectionInstance->getDbmsDriver()) {
-                AvailableDbmsDrivers::MYSQL,
-                AvailableDbmsDrivers::MARIADB,
-                AvailableDbmsDrivers::POSTGRESQL,
-                AvailableDbmsDrivers::SQLITE => 'DROP TABLE IF EXISTS ' . $table . $cascadeDefinition . ';',
-                AvailableDbmsDrivers::MS_SQL_SERVER => 'IF OBJECT_ID(\''
-                    . $table
-                    . '\', \'U\') IS NOT NULL DROP TABLE '
-                    . $table
-                    . ';',
-                AvailableDbmsDrivers::ORACLE => 'BEGIN EXECUTE IMMEDIATE \'DROP TABLE '
-                    . $table
-                    . $cascadeDefinition
-                    . '\'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF; END;',
-            };
-        }
+        $statement = match ($driver::class) {
+            AvailableDbmsDrivers::MYSQL,
+            AvailableDbmsDrivers::MARIADB,
+            AvailableDbmsDrivers::POSTGRESQL,
+            AvailableDbmsDrivers::SQLITE => ($ifExists ? 'DROP TABLE IF EXISTS ' : 'DROP TABLE ') . $table . $cascadeDefinition . ';',
+            AvailableDbmsDrivers::MS_SQL_SERVER => 'IF OBJECT_ID(\'' . $table . '\', \'U\') IS NOT NULL DROP TABLE ' . $table . ';',
+            AvailableDbmsDrivers::ORACLE => 'BEGIN EXECUTE IMMEDIATE \'DROP TABLE ' . $table . $cascadeDefinition . '\'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF; END;',
+            default => throw new Exception('Unsupported database driver'),
+        };
 
         return static::execute($connectionInstance, $statement);
     }

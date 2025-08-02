@@ -2,7 +2,7 @@
 
 namespace Moirai\Drivers;
 
-use Moirai\DDL\ForeignKeyActions;
+use Moirai\DDL\Shared\ForeignKeyActions;
 use Moirai\Drivers\Grammars\OracleGrammar;
 use Moirai\Drivers\Lexises\OracleLexis;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Moirai\DDL;
+namespace Moirai\DDL\Shared;
 
 final class DataTypes
 {
@@ -53,7 +53,6 @@ final class DataTypes
     public const LONG = 46;
     public const UROWID = 47;
     public const BYTEA = 48;
-//    public const ARRAY = 51;
     public const HSTORE = 49;
     public const INET = 50;
     public const CIDR = 51;
@@ -65,7 +64,6 @@ final class DataTypes
     public const TIME = 57;
     public const TIMESTAMP = 58;
     public const YEAR = 59;
-//    public const INTERVAL = 63;
     public const TIME_TZ = 60;
     public const TIMESTAMP_TZ = 61;
     public const TIMESTAMP_LTZ = 62;

@@ -2,11 +2,11 @@
 
 namespace Moirai\Drivers\Lexises;
 
-use Moirai\DDL\AlterActions;
+use Moirai\DDL\Shared\AlterActions;
 use Moirai\DDL\Constraints\ColumnConstraints;
 use Moirai\DDL\Constraints\TableConstraints;
-use Moirai\DDL\DataTypes;
-use Moirai\DDL\Indexes;
+use Moirai\DDL\Shared\DataTypes;
+use Moirai\DDL\Shared\Indexes;
 
 class MariaDbLexis extends Lexis implements LexisInterface
 {
