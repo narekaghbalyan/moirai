@@ -4,6 +4,11 @@ namespace Moirai\CLI;
 
 require_once('../vendor/autoload.php');
 
+use Moirai\CLI\Actions\Alter;
+use Moirai\CLI\Actions\Create;
+use Moirai\CLI\Actions\Drop;
+use Moirai\CLI\Actions\Migrate;
+use Moirai\CLI\Actions\Rollback;
 use Moirai\CLI\Traits\CLIToolkit;
 
 class CLI
@@ -21,9 +26,17 @@ class CLI
      */
     public static function run(array $argv): void
     {
+        $actionsMap = [
+            'create' => Create::class,
+            'alter' => Alter::class,
+            'drop' => Drop::class,
+            'migrate' => Migrate::class,
+            'rollback' => Rollback::class
+        ];
+
         $action = $argv[1] ?? null;
 
-        if (!method_exists(self::class, $action)) {
+        if (!in_array($action, $actionsMap)) {
             echo static::$prefixForFailedMessages
                 . ' Error: Action "'
                 . $action
@@ -35,7 +48,7 @@ class CLI
             die();
         }
 
-        self::$action($argv[2] ?? null);
+        $action::dispatch($argv[2] ?? []);
     }
 }
 
