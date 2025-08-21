@@ -113,5 +113,8 @@ return [
      * DDL configs
      */
 
+    'migrations_path' => __DIR__ . DIRECTORY_SEPARATOR . 'db' . DIRECTORY_SEPARATOR . 'migrations',
+    'models_path' => __DIR__ . DIRECTORY_SEPARATOR . 'db' . DIRECTORY_SEPARATOR . 'models'
+
 //    'nullable' => false // by default all columns are nullable
 ];

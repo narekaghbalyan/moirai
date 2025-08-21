@@ -2,8 +2,6 @@
 
 namespace Moirai\CLI;
 
-require_once('../vendor/autoload.php');
-
 use Moirai\CLI\Actions\Alter;
 use Moirai\CLI\Actions\Create;
 use Moirai\CLI\Actions\Drop;
@@ -51,5 +49,3 @@ class CLI
         $action::dispatch($argv[2] ?? []);
     }
 }
-
-CLI::run($argv);

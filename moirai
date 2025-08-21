@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+
+use Moirai\CLI\CLI;
+
+require __DIR__  . '/vendor/autoload.php';
+
+CLI::run($argv);
