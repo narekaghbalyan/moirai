@@ -4,7 +4,7 @@ use Moirai\Drivers\AvailableDbmsDrivers;
 
 return [
     /**
-     * Connection configs
+     * Connections configs
      */
 
     /**

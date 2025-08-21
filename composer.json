@@ -1,14 +1,21 @@
 {
-    "name": "narekaghbalyan/moarai.loc",
+    "name": "narekaghbalyan/moirai",
+    "description": "PHP ORM",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Narek Aghbalyan",
+            "email": "n.aghbalyan07@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.0.0",
+        "ext-pdo": "*"
+    },
     "autoload": {
         "psr-4": {
-            "Moirai\\": ""
-        },
-        "files": [
-            "helpers.php"
-        ]
-    },
-    "require": {
-      "ext-pdo": "*"
+            "Moirai\\": "src/" 
+        }
     }
 }

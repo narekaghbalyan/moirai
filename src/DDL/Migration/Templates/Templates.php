@@ -45,7 +45,7 @@ class Templates
         bool $includeBlueprintNamespace = true
     ): string
     {
-        $snippetsBasePath = __DIR__ . DIRECTORY_SEPARATOR . 'Snippets' . DIRECTORY_SEPARATOR;
+        $snippetsBasePath = __DIR__ . DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR;
 
         $blueprintNamespacePlaceholder = '{blueprint_namespace}';
         $blueprintNamespaceReplacement = 'use Moirai\DDL\Blueprint;';

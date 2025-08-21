@@ -1,5 +1,5 @@
 /vendor/
 /.idea/
-index.php
+db/example.php
 helpers.php
 test.php
