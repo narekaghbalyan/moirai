@@ -2,11 +2,12 @@
 
 namespace Moirai\CLI;
 
-use Moirai\CLI\Actions\Alter;
 use Moirai\CLI\Actions\Create;
+use Moirai\CLI\Actions\Alter;
 use Moirai\CLI\Actions\Drop;
 use Moirai\CLI\Actions\Migrate;
 use Moirai\CLI\Actions\Rollback;
+use Moirai\CLI\Actions\Help;
 use Moirai\CLI\Traits\CLIToolkit;
 
 class CLI
@@ -21,20 +22,37 @@ class CLI
      * php moirai rollback
      *
      * @param array $argv
+     * @return bool
      */
-    public static function run(array $argv): void
+    public static function run(array $argv): bool
     {
         $actionsMap = [
-            'create' => Create::class,
-            'alter' => Alter::class,
-            'drop' => Drop::class,
-            'migrate' => Migrate::class,
-            'rollback' => Rollback::class
+            'create' => [
+                'class' => Create::class,
+                'context_key' => 'table'
+            ],
+            'alter' => [
+                'class' => Alter::class,
+                'context_key' => 'table'
+            ],
+            'drop' => [
+                'class' => Drop::class,
+                'context_key' => 'table'
+            ],
+            'migrate' => [
+                'class' => Migrate::class
+            ],
+            'rollback' => [
+                'class' => Rollback::class
+            ],
+            'help' => [
+                'class' => Help::class
+            ]
         ];
 
         $action = $argv[1] ?? null;
 
-        if (!in_array($action, $actionsMap)) {
+        if (!array_key_exists($action, $actionsMap)) {
             echo static::$prefixForFailedMessages
                 . ' Error: Action "'
                 . $action
@@ -43,9 +61,15 @@ class CLI
                 . '".'
                 . PHP_EOL;
 
-            die();
+            exit();
         }
 
-        $action::dispatch($argv[2] ?? []);
+        $context = [];
+
+        if (isset($argv[2]) && isset($actionsMap[$action]['context_key'])) {
+            $context = [$actionsMap[$action]['context_key'] => $argv[2]];
+        }
+
+        return $actionsMap[$action]['class']::dispatch($context);
     }
 }
